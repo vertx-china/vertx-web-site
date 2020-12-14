@@ -118,5 +118,11 @@ clean {
     .flatten()
     .findAll { it.name != ".gitkeep" }
 }
+// 复制翻译文档覆盖源文档
+task copyTranslationDocs(type: Copy) {
+  dependsOn copyApidocs
+  from "$projectDir/translation"
+  into "$projectDir/extracted"
+}
 
-defaultTasks 'extractDocs', 'copyApidocs'
+defaultTasks 'extractDocs', 'copyApidocs', 'copyTranslationDocs'
