@@ -1,0 +1,13 @@
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().
+  setPreferNativeTransport(true)
+);
+
+// True when native is available
+boolean usingNative = vertx.isNativeTransportEnabled();
+System.out.println("Running with native: " + usingNative);
+----
+
+NOTE: preferring native transport will not prevent the application to execute (for example if a JAR is missing).
+If your application requires native transport, you need to check `link:../../apidocs/io/vertx/core/Vertx.html#isNativeTransportEnabled--[isNativeTransportEnabled]`.

@@ -1,0 +1,453 @@
+= Infinispan Cluster Manager
+
+This is a cluster manager implementation for Vert.x that uses https://infinispan.org/[Infinispan].
+
+This implementation is packaged inside:
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-infinispan</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+In Vert.x a cluster manager is used for various functions including:
+
+* Discovery and group membership of Vert.x nodes in a cluster
+* Maintaining cluster wide topic subscriber lists (so we know which nodes are interested in which event bus addresses)
+* Distributed Map support
+* Distributed Locks
+* Distributed Counters
+
+Cluster managers *do not* handle the event bus inter-node transport, this is done directly by Vert.x with TCP connections.
+
+== Using this cluster manager
+
+If you are using Vert.x from the command line, the jar corresponding to this cluster manager (it will be named `vertx-infinispan-4.0.0.jar`
+should be in the `lib` directory of the Vert.x installation.
+
+If you want clustering with this cluster manager in your Vert.x Maven or Gradle project then just add a dependency to
+the artifact: `io.vertx:vertx-infinispan:4.0.0` in your project.
+
+If the jar is on your classpath as above then Vert.x will automatically detect this and use it as the cluster manager.
+Please make sure you don't have any other cluster managers on your classpath or Vert.x might
+choose the wrong one.
+
+You can also specify the cluster manager programmatically if you are embedding Vert.x by specifying it on the options
+when you are creating your Vert.x instance, for example:
+
+[source,java]
+----
+ClusterManager mgr = new InfinispanClusterManager();
+
+VertxOptions options = new VertxOptions().setClusterManager(mgr);
+
+Vertx.clusteredVertx(options, res -> {
+  if (res.succeeded()) {
+    Vertx vertx = res.result();
+  } else {
+    // failed!
+  }
+});
+----
+
+== Configuring this cluster manager
+
+The default cluster manager configuration can be modified with `infinispan.xml` and/or `jgroups.xml` files.
+The former configures the data grid, the latter group management and member discovery.
+
+You can place one or both of them on your classpath.
+If you want to embed your custom file in a fat jar, it must be located at the root of the fat jar.
+If it's an external file, the **directory** containing the file must be added to the classpath. For
+example, if you are using the _launcher_ class from Vert.x, the classpath enhancement can be done as follows:
+
+[source,shell]
+----
+# If infinispan.xml and/or jgroups.xml files are in the current directory:
+java -jar my-app.jar -cp . -cluster
+
+# If infinispan.xml and/or jgroups.xml files are in the conf directory:
+java -jar my-app.jar -cp conf -cluster
+----
+
+Another way to override the configuration is by providing the file locations via system properties:
+`vertx.infinispan.config` and/or `vertx.jgroups.config`.
+
+[source,shell]
+----
+# Use a cluster configuration located in an external file
+java -Dvertx.infinispan.config=./config/my-infinispan.xml -jar ... -cluster
+
+# Or use a custom configuration from the classpath
+java -Dvertx.infinispan.config=my/package/config/my-infinispan.xml -jar ... -cluster
+----
+
+The cluster manager will search for the file in classpath first, and fallback to the filesystem.
+
+The system properties, when present, override any `infinispan.xml` or `jgroups.xml` on the classpath.
+
+The xml files are Infinispan and JGroups configuration files and are described in detail in the documentation on the Infinispan and JGroups web-sites.
+
+IMPORTANT: if a `jgroups.xml` file is on the classpath or if you set the `vertx.jgroups.config` system property,
+it will override any JGroups `stack-file` path defined in the Infinispan configuration file.
+
+The default JGroups configuration uses multicast for discovery and TCP for group management.
+Make sure multicast is enabled on your network for this to work.
+
+For full documentation on how to configure the transport differently or use a different transport please consult the
+Infinispan / JGroups documentations.
+
+== Using an existing Infinispan Cache Manager
+
+You can pass an existing `DefaultCacheManager` in the cluster manager to reuse an existing cache manager:
+
+[source,java]
+----
+ClusterManager mgr = new InfinispanClusterManager(cacheManager);
+
+VertxOptions options = new VertxOptions().setClusterManager(mgr);
+
+Vertx.clusteredVertx(options, res -> {
+  if (res.succeeded()) {
+    Vertx vertx = res.result();
+  } else {
+    // failed!
+  }
+});
+----
+
+In this case, vert.x is not the cache manager owner and so do not shut it down on close.
+
+Notice that the custom Infinispan instance need to be configured with:
+
+[source,xml]
+----
+<cache-container default-cache="distributed-cache">
+ <distributed-cache name="distributed-cache"/>
+ <replicated-cache name="__vertx.subs"/>
+ <replicated-cache name="__vertx.haInfo"/>
+ <replicated-cache name="__vertx.nodeInfo"/>
+ <distributed-cache-configuration name="__vertx.distributed.cache.configuration"/>
+</cache-container>
+----
+
+== Packaging an executable uber JAR
+
+Infinispan uses Java's `ServiceLoader` mechanism to discover implementations of a few classes at runtime.
+
+You must configure your build tool to merge service descriptors files when creating an executable uber JAR (also known as "fat" JAR).
+
+If you use Maven and the Maven Shade Plugin, the plugin configuration should look like:
+
+[source,xml]
+----
+<configuration>
+ <transformers>
+   <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+   <!-- ... -->
+ </transformers>
+ <!-- ... -->
+</configuration>
+----
+
+If you use Gradle and the Gradle Shadow Plugin:
+
+[source,kotlin]
+----
+shadowJar {
+ mergeServiceFiles()
+}
+----
+
+== Configuring for Kubernetes
+
+On Kubernetes, JGroups can be configured to use either the Kubernetes API (`KUBE_PING`) or DNS (`DNS_PING`) for discovery.
+In this document, we will use DNS discovery.
+
+First, force usage of IPv4 in the JVM with a system property.
+
+[source,shell]
+----
+-Djava.net.preferIPv4Stack=true
+----
+
+Then, set the `vertx.jgroups.config` system property to `default-configs/default-jgroups-kubernetes.xml`.
+This JGroups stack file is located in the `infinispan-core` JAR and preconfigured for Kubernetes.
+
+[source,shell]
+----
+-Dvertx.jgroups.config=default-configs/default-jgroups-kubernetes.xml
+----
+
+Also, set the JGroups DNS query to find members.
+
+[source,shell]
+----
+-Djgroups.dns.query=MY-SERVICE-DNS-NAME
+----
+
+The `MY-SERVICE-DNS-NAME` value must be a https://kubernetes.io/docs/user-guide/services/#headless-services[*headless* Kubernetes service] name that will be used by JGroups to identify all cluster members.
+A headless service can be created with:
+
+[source,yaml]
+----
+apiVersion: v1
+kind: Service
+metadata:
+ name: clustered-app
+spec:
+ selector:
+   cluster: clustered-app # <2>
+ ports:
+   - name: jgroups
+     port: 7800 # <1>
+     protocol: TCP
+ publishNotReadyAddresses: true # <3>
+ clusterIP: None
+----
+<1> JGroups TCP port
+<2> Cluster members selected by the `cluster=clustered-app` label
+<3> Set to true so that members can be discovered without interfering with your readiness probe logic
+
+Eventually, apply the `cluster=clustered-app` label to all deployments that should be part of the cluster:
+
+[source,yaml]
+----
+apiVersion: apps/v1
+kind: Deployment
+spec:
+ template:
+   metadata:
+     labels:
+       cluster: clustered-app
+----
+
+=== Rolling updates
+
+During rolling udpates, the Infinispan team http://infinispan.org/docs/stable/user_guide/user_guide.html#using_kubernetes_and_openshift_rolling_updates[recommends] to replace pods one by one.
+
+To do so, we must configure Kubernetes to:
+
+* never start more than one new pod at once
+* forbid more than one unavailable pod during the process
+
+[source,yaml]
+----
+spec:
+ strategy:
+   type: Rolling
+   rollingParams:
+     updatePeriodSeconds: 10
+     intervalSeconds: 20
+     timeoutSeconds: 600
+     maxUnavailable: 1 <1>
+     maxSurge: 1 <2>
+----
+<1> the maximum number of pods that can be unavailable during the update process
+<2> the maximum number of pods that can be created over the desired number of pods
+
+Also, pod readiness probe must take cluster health into account.
+Please refer to the <<one-by-one, cluster administration>> section for details on how to implement a readiness probe with link:../../vertx-health-check/java/[Vert.x Health Checks].
+
+== Configuring for Docker Compose
+
+Make sure to start the Java Virtual Machines with those system properties:
+
+[source,shell]
+----
+-Djava.net.preferIPv4Stack=true -Djgroups.bind.address=NON_LOOPBACK
+----
+
+This will make JGroups pick the interface of the virtual private network created by Docker.
+
+== Trouble shooting clustering
+
+If the default multicast discovery configuration is not working here are some common causes:
+
+=== Multicast not enabled on the machine.
+
+It is quite common in particular on OSX machines for multicast to be disabled by default. Please google for
+information on how to enable this.
+
+=== Using wrong network interface
+
+If you have more than one network interface on your machine (and this can also be the case if you are running
+VPN software on your machine), then JGroups may be using the wrong one.
+
+To tell JGroups to use a specific interface you can provide the IP address of the interface in the `bind_addr`
+element of the configuration. For example:
+
+[source,xml]
+----
+<TCP bind_addr="192.168.1.20"
+    ...
+    />
+<MPING bind_addr="192.168.1.20"
+    ...
+    />
+----
+
+Alternatively, if you want to stick with the bundled `jgroups.xml` file, you can set the `jgroups.bind.address` system property:
+
+----
+-Djgroups.bind.address=192.168.1.20
+----
+
+When running Vert.x is in clustered mode, you should also make sure that Vert.x knows about the correct interface.
+When running at the command line this is done by specifying the `cluster-host` option:
+
+----
+vertx run myverticle.js -cluster -cluster-host your-ip-address
+----
+
+Where `your-ip-address` is the same IP address you specified in the JGroups configuration.
+
+If using Vert.x programmatically you can specify this using `link:../../apidocs/io/vertx/core/eventbus/EventBusOptions.html#setHost-java.lang.String-[setHost]`.
+
+=== Using a VPN
+
+This is a variation of the above case.
+VPN software often works by creating a virtual network interface which often doesn't support multicast.
+If you have a VPN running and you do not specify the correct interface to use in both the JGroups configuration and to Vert.x then the VPN interface may be chosen instead of the correct interface.
+
+So, if you have a VPN running you may have to configure both JGroups and Vert.x to use the correct interface as described in the previous section.
+
+=== When multicast is not available
+
+In some cases you may not be able to use multicast discovery as it might not be available in your environment.
+In that case you should configure another protocol, e.g. `TCPPING` to use TCP sockets, or `S3_PING` when running on Amazon EC2.
+
+For more information on available JGroups discovery protocols and how to configure them please consult the http://www.jgroups.org/manual/index.html#Discovery[JGroups documentation].
+
+=== Problems with IPv6
+
+If you have troubles configuring an IPv6 host, force the use of IPv4 with the `java.net.preferIPv4Stack` system property.
+
+----
+-Djava.net.preferIPv4Stack=true
+----
+
+=== Enabling logging
+
+When trouble-shooting clustering issues with it's often useful to get some logging output from Infinispan and JGroups
+to see if it's forming a cluster properly. You can do this (when using the default JUL logging) by adding a file
+called `vertx-default-jul-logging.properties` on your classpath. This is a standard java.util.logging (JUL)
+configuration file. Inside it set:
+
+----
+org.infinispan.level=INFO
+org.jgroups.level=INFO
+----
+
+and also
+
+----
+java.util.logging.ConsoleHandler.level=INFO
+java.util.logging.FileHandler.level=INFO
+----
+
+== Infinispan logging
+
+Infinispan relies on JBoss logging. JBoss Logging is a logging bridge providing integration with numerous logging frameworks.
+
+Add the logging JARs of you choice to the classpath and JBoss Logging will pick them up automatically.
+
+If you have multiple logging backends on your classpath, you can force selection with the `org.jboss.logging.provider` system property.
+For exeample:
+
+----
+-Dorg.jboss.logging.provider=log4j2
+----
+
+See this http://docs.jboss.org/hibernate/orm/4.3/topical/html/logging/Logging.html[JBoss Logging guide] for more details.
+
+== JGroups logging
+
+JGroups uses JDK logging by default. log4j and log4j2 are supported if the corresponding JARs are found on the classpath.
+
+Please refer to the http://www.jgroups.org/manual/index.html#Logging[JGroups logging documentation] if you need
+more details or want to implement your own logging backend implementation.
+
+== SharedData extensions
+
+=== AsyncMap content streams
+
+The `InfinispanAsyncMap` API allows to retrieve keys, values and entries as streams.
+This can be useful if you need to go through the content of a large map for bulk processing.
+
+[source,java]
+----
+InfinispanAsyncMap<K, V> infinispanAsyncMap = InfinispanAsyncMap.unwrap(asyncMap);
+ReadStream<K> keyStream = infinispanAsyncMap.keyStream();
+ReadStream<V> valueStream = infinispanAsyncMap.valueStream();
+ReadStream<Map.Entry<K, V>> entryReadStream = infinispanAsyncMap.entryStream();
+----
+
+== Cluster administration
+
+The Infinispan cluster manager works by turning Vert.x nodes into members of an Infinispan cluster.
+As a consequence, Vert.x cluster manager administration should follow the Infinispan management guidelines.
+
+First, let's take a step back and introduce rebalancing and split-brain syndrome.
+
+=== Rebalancing
+
+Each Vert.x node holds pieces of the clustering data: eventbus subscriptions, async map entries, clustered counters... etc.
+
+When a member joins or leaves the cluster, Infinispan rebalances cache entries on the new set of members.
+In other words, it moves data around to accomodate the new cluster topology.
+This process may take some time, depending on the amount of clustered data and number of nodes.
+
+=== Split-brain syndrome
+
+In a perfect world, there would be no network equipment failures.
+Reality is, though, that sooner or later your cluster will be divided into smaller groups, unable to see each others.
+
+Infinispan is capable of merging the nodes back into a single cluster.
+But just as with rebalancing, this process may take some time.
+Before the cluster is fully functional again, some eventbus consumers might not be able to get messages.
+Or high-availability may not be able to redeploy a failing verticle.
+
+[NOTE]
+====
+It is difficult (if possible at all) to make a difference between a network partition and:
+
+- long GC pauses (leading to missed pings),
+- many nodes being killed forcefully, at-once, because you are deploying a new version of your application
+====
+
+=== Recommendations
+
+Considering the common clustering issues discussed above, it is recommended to stick to the following good practices.
+
+==== Graceful shutdown
+
+Avoid stopping members forcefully (e.g, `kill -9` a node).
+
+Of course process crashes are inevitable, but a graceful shutdown helps to get the remaining nodes in a stable state faster.
+
+[[one-by-one]]
+==== One node after the other
+
+When rolling a new version of your app, scaling-up or down your cluster, add or remove nodes one after the other.
+
+Stopping nodes one by one prevents the cluster from thinking a network partition occured.
+Adding them one by one allows for clean, incremental rebalancing operations.
+
+The cluster healthiness can be verified with link:../../vertx-health-check/java/[Vert.x Health Checks]:
+
+[source,java]
+----
+Handler<Promise<Status>> procedure = ClusterHealthCheck.createProcedure(vertx, true);
+HealthChecks checks = HealthChecks.create(vertx).register("cluster-health", procedure);
+----
+
+After creation, the health check can be exposed over HTTP with a link:../../vertx-web/java/[Vert.x Web] router handler:
+
+[source,java]
+----
+Router router = Router.router(vertx);
+router.get("/readiness").handler(HealthCheckHandler.createWithHealthChecks(checks));
+----

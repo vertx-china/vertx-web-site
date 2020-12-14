@@ -1,0 +1,19 @@
+== RxJava 2 API
+
+The Kafka client provides an Rxified version of the original API.
+
+[source,java]
+----
+Observable<KafkaConsumerRecord<String, Long>> observable = consumer.toObservable();
+
+observable
+  .map(record -> record.value())
+  .buffer(256)
+  .map(
+  list -> list.stream().mapToDouble(n -> n).average()
+).subscribe(val -> {
+
+  // Obtained an average
+
+});
+----

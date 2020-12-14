@@ -1,0 +1,53 @@
+=== Yaml Configuration Format
+
+The Yaml Configuration Format extends the Vert.x Configuration Retriever and provides the
+support for the Yaml Configuration Format format.
+
+==== Using the Yaml Configuration Format
+
+To use the Yaml Configuration Format, add the following dependency to the
+_dependencies_ section of your build descriptor:
+
+* Maven (in your `pom.xml`):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-config-yaml</artifactId>
+ <version>4.0.0</version>
+</dependency>
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-config</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+* Gradle (in your `build.gradle` file):
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-config:4.0.0'
+compile 'io.vertx:vertx-config-yaml:4.0.0'
+----
+
+==== Configuring the store to use YAML
+
+Once added to your classpath or dependencies, you need to configure the
+`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` to use this format:
+
+[source, java]
+----
+ConfigStoreOptions store = new ConfigStoreOptions()
+  .setType("file")
+  .setFormat("yaml")
+  .setConfig(new JsonObject()
+    .put("path", "my-config.yaml")
+  );
+
+ConfigRetriever retriever = ConfigRetriever.create(vertx,
+    new ConfigRetrieverOptions().addStore(store));
+----
+
+You just need to set `format` to `yaml`.

@@ -1,0 +1,53 @@
+== RxJava 2 API
+
+The Cassandra client provides an Rxified version of the original API.
+
+=== Creating an Rxified client
+
+To create an Rxified Cassandra client, make sure to import the `link:../../apidocs/io/vertx/reactivex/cassandra/CassandraClient.html[CassandraClient]` class.
+Then use one of the `create` methods to get an instance:
+
+[source,java]
+----
+CassandraClientOptions options = new CassandraClientOptions()
+  .addContactPoint("node1.corp.int", 7000)
+  .addContactPoint("node2.corp.int", 7000)
+  .addContactPoint("node3.corp.int", 7000);
+CassandraClient cassandraClient = CassandraClient.createShared(vertx, options);
+----
+
+=== Querying
+
+In this section, we will reconsider some of the previous use cases with the Rxified API.
+
+==== Streaming
+
+A `link:../../apidocs/io/vertx/reactivex/cassandra/CassandraRowStream.html[CassandraRowStream]` can be converted to a `link:../../apidocs/io/reactivex/Flowable.html[Flowable]`, which is handy when you have to deal with large data sets:
+
+[source,java]
+----
+cassandraClient.rxQueryStream("SELECT my_key FROM my_keyspace.my_table where my_key = my_value")
+  // Convert the stream to a Flowable
+  .flatMapPublisher(CassandraRowStream::toFlowable)
+  .subscribe(row -> {
+    // Handle single row
+  }, t -> {
+    // Handle failure
+  }, () -> {
+    // End of stream
+  });
+----
+
+==== Bulk fetching
+
+When your data set is small, it might be easier to get all results at once:
+
+[source,java]
+----
+cassandraClient.rxExecuteWithFullFetch("SELECT my_key FROM my_keyspace.my_table where my_key = my_value")
+  .subscribe(rows -> {
+    // Handle list of rows
+  }, throwable -> {
+    // Handle failure
+  });
+----

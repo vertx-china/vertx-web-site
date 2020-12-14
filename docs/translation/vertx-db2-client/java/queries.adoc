@@ -1,0 +1,165 @@
+== Running queries
+
+When you don't need a transaction or run single queries, you can run queries directly on the pool; the pool
+will use one of its connection to run the query and return the result to you.
+
+Here is how to run simple queries:
+
+[source,java]
+----
+client
+  .query("SELECT * FROM users WHERE id='andy'")
+  .execute(ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> result = ar.result();
+    System.out.println("Got " + result.size() + " rows ");
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+=== Prepared queries
+
+You can do the same with prepared queries.
+
+The SQL string can refer to parameters by position, using the database syntax {PREPARED_PARAMS}
+
+[source,java]
+----
+client
+  .preparedQuery("SELECT * FROM users WHERE id=$1")
+  .execute(Tuple.of("andy"), ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> rows = ar.result();
+    System.out.println("Got " + rows.size() + " rows ");
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+Query methods provides an asynchronous `link:../../apidocs/io/vertx/sqlclient/RowSet.html[RowSet]` instance that works for _SELECT_ queries
+
+[source,java]
+----
+client
+  .preparedQuery("SELECT first_name, last_name FROM users")
+  .execute(ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> rows = ar.result();
+    for (Row row : rows) {
+      System.out.println("User " + row.getString(0) + " " + row.getString(1));
+    }
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+or _UPDATE_/_INSERT_ queries:
+
+[source,java]
+----
+client
+  .preparedQuery("INSERT INTO users (first_name, last_name) VALUES ($1, $2)")
+  .execute(Tuple.of("Andy", "Guibert"),  ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> rows = ar.result();
+    System.out.println(rows.rowCount());
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+The `link:../../apidocs/io/vertx/sqlclient/Row.html[Row]` gives you access to your data by index
+
+[source,java]
+----
+System.out.println("User " + row.getString(0) + " " + row.getString(1));
+----
+
+or by name
+
+[source,java]
+----
+System.out.println("User " + row.getString("first_name") + " " + row.getString("last_name"));
+----
+
+The client will not do any magic here and the column name is identified with the name in the table regardless of how your SQL text is.
+
+You can access a wide variety of of types
+
+[source,java]
+----
+String firstName = row.getString("first_name");
+Boolean male = row.getBoolean("male");
+Integer age = row.getInteger("age");
+----
+
+You can use cached prepared statements to execute one-shot prepared queries:
+
+[source,java]
+----
+connectOptions.setCachePreparedStatements(true);
+client
+  .preparedQuery("SELECT * FROM users WHERE id = ?")
+  .execute(Tuple.of("julien"), ar -> {
+    if (ar.succeeded()) {
+      RowSet<Row> rows = ar.result();
+      System.out.println("Got " + rows.size() + " rows ");
+    } else {
+      System.out.println("Failure: " + ar.cause().getMessage());
+    }
+  });
+----
+
+You can create a `PreparedStatement` and manage the lifecycle by yourself.
+
+[source,java]
+----
+sqlConnection
+  .prepare("SELECT * FROM users WHERE id= ?", ar -> {
+    if (ar.succeeded()) {
+      PreparedStatement preparedStatement = ar.result();
+      preparedStatement.query()
+        .execute(Tuple.of("julien"), ar2 -> {
+          if (ar2.succeeded()) {
+            RowSet<Row> rows = ar2.result();
+            System.out.println("Got " + rows.size() + " rows ");
+            preparedStatement.close();
+          } else {
+            System.out.println("Failure: " + ar2.cause().getMessage());
+          }
+        });
+    } else {
+      System.out.println("Failure: " + ar.cause().getMessage());
+    }
+  });
+----
+
+=== Batches
+
+You can execute prepared batch
+
+[source,java]
+----
+List<Tuple> batch = new ArrayList<>();
+batch.add(Tuple.of("julien", "Julient Viet"));
+batch.add(Tuple.of("emad", "Emad Alblueshi"));
+batch.add(Tuple.of("andy", "Andy Guibert"));
+
+// Execute the prepared batch
+client
+  .preparedQuery("INSERT INTO USERS (id, name) VALUES ($1, $2)")
+  .executeBatch(batch, res -> {
+  if (res.succeeded()) {
+
+    // Process rows
+    RowSet<Row> rows = res.result();
+  } else {
+    System.out.println("Batch failed " + res.cause());
+  }
+});
+----

@@ -1,0 +1,349 @@
+= Vert.x Web API Contract
+:toc: left
+
+Vert.x Web API Contract extends Vert.x Web to support https://www.openapis.org/[OpenAPI 3], bringing to you a simple interface to build your router and mount security and validation handler.
+
+If you are interested in building an application that routes API Requests to event bus, check out https://vertx.io/docs/vertx-web-api-service/java/[Vert.x Web API Service]
+
+WARNING: this module is deprecated, if you're going to create a new application, please look at https://vertx.io/docs/vertx-web-openapi/java/[Vert.x Web OpenAPI]
+
+== Using Vert.x API Contract
+
+To use Vert.x API Contract, add the following dependency to the _dependencies_ section of your build descriptor:
+
+* Maven (in your `pom.xml`):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-web-api-contract</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+* Gradle (in your `build.gradle` file):
+
+[source,groovy,subs="+attributes"]
+----
+dependencies {
+ compile 'io.vertx:vertx-web-api-contract:4.0.0'
+}
+----
+
+== HTTP Requests validation
+
+Vert.x provides a validation framework that will validate requests for you and will put results of validation inside a container. To define a `link:../../apidocs/io/vertx/ext/web/api/validation/HTTPRequestValidationHandler.html[HTTPRequestValidationHandler]`:
+
+[source,java]
+----
+HTTPRequestValidationHandler validationHandler = HTTPRequestValidationHandler.create().addQueryParam("parameterName", ParameterType.INT, true).addFormParamWithPattern("formParameterName", "a{4}", true).addPathParam("pathParam", ParameterType.FLOAT);
+----
+
+Then you can mount your validation handler:
+
+[source,java]
+----
+router.route().handler(BodyHandler.create());
+
+router.get("/awesome/:pathParam")
+  // Mount validation handler
+  .handler(validationHandler)
+  //Mount your handler
+  .handler((routingContext) -> {
+    // Get Request parameters container
+    RequestParameters params = routingContext.get("parsedParameters");
+
+    // Get parameters
+    Integer parameterName = params.queryParameter("parameterName").getInteger();
+    String formParameterName = params.formParameter("formParameterName").getString();
+    Float pathParam = params.pathParameter("pathParam").getFloat();
+  })
+
+  //Mount your failure handler
+  .failureHandler((routingContext) -> {
+    Throwable failure = routingContext.failure();
+    if (failure instanceof ValidationException) {
+      // Something went wrong during validation!
+      String validationErrorMessage = failure.getMessage();
+    }
+  });
+----
+
+If validation succeeds, It returns request parameters inside `link:../../apidocs/io/vertx/ext/web/api/RequestParameters.html[RequestParameters]`,
+otherwise It will throw a fail inside `RoutingContext` with 400 status code and `link:../../apidocs/io/vertx/ext/web/api/validation/ValidationException.html[ValidationException]` failure.
+
+=== Types of request parameters
+Every parameter has a type validator, a class that describes the expected type of parameter.
+A type validator validates the value, casts it in required language type and then loads it inside a `link:../../apidocs/io/vertx/ext/web/api/RequestParameter.html[RequestParameter]` object. There are three ways to describe the type of your parameter:
+
+* There is a set of prebuilt types that you can use: `link:../../apidocs/io/vertx/ext/web/api/validation/ParameterType.html[ParameterType]`
+* You can instantiate a custom instance of prebuilt type validators using static methods of `link:../../apidocs/io/vertx/ext/web/api/validation/ParameterTypeValidator.html[ParameterTypeValidator]` and then load it into `link:../../apidocs/io/vertx/ext/web/api/validation/HTTPRequestValidationHandler.html[HTTPRequestValidationHandler]` using functions ending with `WithCustomTypeValidator`
+* You can create your own `ParameterTypeValidator` implementing `link:../../apidocs/io/vertx/ext/web/api/validation/ParameterTypeValidator.html[ParameterTypeValidator]` interface
+
+=== Handling parameters
+Now you can handle parameter values:
+
+[source,java]
+----
+RequestParameters params = routingContext.get("parsedParameters");
+RequestParameter awesomeParameter = params.queryParameter("awesomeParameter");
+if (awesomeParameter != null) {
+  if (!awesomeParameter.isEmpty()) {
+    // Parameter exists and isn't empty
+    // ParameterTypeValidator mapped the parameter in equivalent language object
+    Integer awesome = awesomeParameter.getInteger();
+  } else {
+    // Parameter exists, but it's empty
+  }
+} else {
+  // Parameter doesn't exist (it's not required)
+}
+----
+
+As you can see, every parameter is mapped in respective language objects. You can also get a json body:
+
+[source,java]
+----
+RequestParameter body = params.body();
+if (body != null) {
+  JsonObject jsonBody = body.getJsonObject();
+}
+----
+
+=== Manage validation failures
+A validation error fails the `RoutingContext` with 400 status code and `link:../../apidocs/io/vertx/ext/web/api/validation/ValidationException.html[ValidationException]` failure.
+You can manage these failures both at route level using `link:../../apidocs/io/vertx/ext/web/Route.html#failureHandler-io.vertx.core.Handler-[failureHandler]` or at router level using `link:../../apidocs/io/vertx/ext/web/Router.html#errorHandler-int-io.vertx.core.Handler-[errorHandler]`:
+
+[source,java]
+----
+router.get("/awesome/:pathParam")
+  // Mount validation handler
+  .handler(validationHandler)
+  //Mount your handler
+  .handler((routingContext) -> {
+    // Your logic
+  })
+  //Mount your failure handler to manage the validation failure at path level
+  .failureHandler((routingContext) -> {
+    Throwable failure = routingContext.failure();
+    if (failure instanceof ValidationException) {
+      // Something went wrong during validation!
+      String validationErrorMessage = failure.getMessage();
+    }
+  });
+
+// Manage the validation failure for all routes in the router
+router.errorHandler(400, routingContext -> {
+  if (routingContext.failure() instanceof ValidationException) {
+    // Something went wrong during validation!
+    String validationErrorMessage = routingContext.failure().getMessage();
+  } else {
+    // Unknown 400 failure happened
+    routingContext.response().setStatusCode(400).end();
+  }
+});
+----
+
+== OpenAPI 3
+Vert.x allows you to use your OpenAPI 3 specification directly inside your code using the design first approach. Vert.x-Web API Contract provides:
+
+* OpenAPI 3 compliant API specification validation with automatic **loading of external Json schemas**
+* Automatic request validation
+* Automatic mount of security validation handlers
+
+You can also use the community project https://github.com/pmlopes/vertx-starter[`vertx-starter`] to generate server code from your OpenAPI 3 specification.
+
+=== The Router Factory
+You can create your web service based on OpenAPI 3 specification with `link:../../apidocs/io/vertx/ext/web/api/contract/openapi3/OpenAPI3RouterFactory.html[OpenAPI3RouterFactory]`.
+This class, as name says, is a router factory based on your OpenAPI 3 specification.
+`link:../../apidocs/io/vertx/ext/web/api/contract/openapi3/OpenAPI3RouterFactory.html[OpenAPI3RouterFactory]` is intended to give you a really simple user interface to use OpenAPI 3 related features. It includes:
+
+* Async loading of specification and its schema dependencies
+* Mount path with operationId or with combination of path and HTTP method
+* Automatic generation of validation handlers
+* Automatic conversion between OpenAPI style paths and Vert.x style paths
+* Lazy methods: operations are mounted in declaration order inside specification
+* Automatic mount of security handlers
+
+=== Create a new router factory
+To create a new router factory, use method `link:../../apidocs/io/vertx/ext/web/api/contract/openapi3/OpenAPI3RouterFactory.html#create-io.vertx.core.Vertx-java.lang.String-io.vertx.core.Handler-[OpenAPI3RouterFactory.create]`.
+As location It accepts absolute paths, local paths and local or remote URLs (HTTP or file protocol).
+
+For example to load a spec from the local filesystem:
+
+[source,java]
+----
+OpenAPI3RouterFactory.create(vertx, "src/main/resources/petstore.yaml", ar -> {
+  if (ar.succeeded()) {
+    // Spec loaded with success
+    OpenAPI3RouterFactory routerFactory = ar.result();
+  } else {
+    // Something went wrong during router factory initialization
+    Throwable exception = ar.cause();
+  }
+});
+----
+
+You can also construct a router factory from a remote spec:
+
+[source,java]
+----
+OpenAPI3RouterFactory.create(
+  vertx,
+  "https://raw.githubusercontent.com/OAI/OpenAPI-Specification/master/examples/v3.0/petstore.yaml",
+  ar -> {
+    if (ar.succeeded()) {
+      // Spec loaded with success
+      OpenAPI3RouterFactory routerFactory = ar.result();
+    } else {
+      // Something went wrong during router factory initialization
+      Throwable exception = ar.cause();
+    }
+  });
+----
+
+Or, you can also access a private remote spec by passing one or more https://github.com/swagger-api/swagger-parser#usage[AuthorizationValue]:
+
+[source,java]
+----
+AuthorizationValue authorizationValue = new AuthorizationValue()
+  .type("header")
+  .keyName("Authorization")
+  .value("Bearer xx.yy.zz");
+List<JsonObject> authorizations = Collections.singletonList(JsonObject.mapFrom(authorizationValue));
+OpenAPI3RouterFactory.create(
+  vertx,
+  "https://raw.githubusercontent.com/OAI/OpenAPI-Specification/master/examples/v3.0/petstore.yaml",
+  authorizations,
+  ar -> {
+    if (ar.succeeded()) {
+      // Spec loaded with success
+      OpenAPI3RouterFactory routerFactory = ar.result();
+    } else {
+      // Something went wrong during router factory initialization
+      Throwable exception = ar.cause();
+    }
+  });
+----
+
+You can also modify the behaviours of the router factory with `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactoryOptions.html[RouterFactoryOptions]`.
+
+=== Mount the handlers
+Now load your first operation handlers.
+To load an handler use `link:../../apidocs/io/vertx/ext/web/api/contract/openapi3/OpenAPI3RouterFactory.html#addHandlerByOperationId-java.lang.String-io.vertx.core.Handler-[addHandlerByOperationId]`.
+To load a failure handler use `link:../../apidocs/io/vertx/ext/web/api/contract/openapi3/OpenAPI3RouterFactory.html#addFailureHandlerByOperationId-java.lang.String-io.vertx.core.Handler-[addFailureHandlerByOperationId]`
+
+You can, of course, **add multiple handlers to same operation**, without overwrite the existing ones.
+
+For example:
+
+[source,java]
+----
+routerFactory.addHandlerByOperationId("awesomeOperation", routingContext -> {
+  RequestParameters params = routingContext.get("parsedParameters");
+  RequestParameter body = params.body();
+  JsonObject jsonBody = body.getJsonObject();
+  // Do something with body
+});
+routerFactory.addFailureHandlerByOperationId("awesomeOperation", routingContext -> {
+  // Handle failure
+});
+----
+
+Now you can use parameter values as described above
+
+=== Define security handlers
+A security handler is defined by a combination of schema name and scope. You can mount only one security handler for a combination.
+For example:
+
+[source,java]
+----
+routerFactory.addSecurityHandler("security_scheme_name", securityHandler);
+----
+
+You can of course use included Vert.x security handlers, for example:
+
+[source,java]
+----
+routerFactory.addSecurityHandler("jwt_auth", JWTAuthHandler.create(jwtAuthProvider));
+----
+
+When you generate the `link:../../apidocs/io/vertx/ext/web/Router.html[Router]` the Router Factory fails if For debugging/testing purpose
+
+=== Not Implemented Error
+Router Factory automatically mounts a default handler for operations without a specified handler.
+This default handler fails the routing context with 405 `Method Not Allowed`/501 `Not Implemented` error.
+You can enable/disable it with `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactoryOptions.html#setMountNotImplementedHandler-boolean-[setMountNotImplementedHandler]`
+and you can customize this error handling with `link:../../apidocs/io/vertx/ext/web/Router.html#errorHandler-int-io.vertx.core.Handler-[errorHandler]`
+
+=== Response Content Type Handler
+Router Factory automatically mounts a `link:../../apidocs/io/vertx/ext/web/handler/ResponseContentTypeHandler.html[ResponseContentTypeHandler]` handler when contract requires it.
+You can disable this feature with `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactoryOptions.html#setMountResponseContentTypeHandler-boolean-[setMountResponseContentTypeHandler]`
+
+=== Operation model
+If you need to access to your operation contract while handling the request,
+you can configure the router factory to push it inside the `RoutingContext` with `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactoryOptions.html#setOperationModelKey-java.lang.String-[setOperationModelKey]`. For example:
+
+[source,java]
+----
+options.setOperationModelKey("operationPOJO");
+routerFactory.setOptions(options);
+
+// Add an handler that uses the operation model
+routerFactory.addHandlerByOperationId("listPets", routingContext -> {
+  io.swagger.v3.oas.models.Operation operation = routingContext.get("operationPOJO");
+
+  routingContext
+    .response()
+    .setStatusCode(200)
+    .setStatusMessage("OK")
+    // Write the response with operation id "listPets"
+    .end(operation.getOperationId());
+});
+----
+
+=== Body Handler
+Router Factory automatically mounts a `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]` to manage request bodies.
+You can configure the instance of `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]` (e.g. to change upload directory) with `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactory.html#setBodyHandler-io.vertx.ext.web.handler.BodyHandler-[setBodyHandler]`.
+
+=== `multipart/form-data` validation
+The validation handler separates file uploads and form attributes as explained:
+
+* If the parameter doesn't have an encoding associated field:
+ - If the parameter has `type: string` and `format: base64` or `format: binary` is a file upload with content-type `application/octet-stream`
+ - Otherwise is a form attribute
+* If the parameter has the encoding associated field is a file upload
+
+The form attributes are parsed and validated as other request parameters,
+while for file uploads the validation handler just checks the existence and the content type.
+
+=== Custom global handlers
+If you need to mount handlers that must be executed for each operation in your router before the operation specific handlers, you can use `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactory.html#addGlobalHandler-io.vertx.core.Handler-[addGlobalHandler]`
+
+=== Router factory handlers mount order
+Handlers are loaded by the router factory in this order:
+
+1. Body handler
+2. Custom global handlers
+3. Global security handlers defined in upper spec level
+4. Operation specific security handlers
+5. Generated validation handler
+6. User handlers or "Not implemented" handler (if enabled)
+
+=== Generate the router
+When you are ready, generate the router and use it:
+
+[source,java]
+----
+Router router = routerFactory.getRouter();
+
+HttpServer server = vertx.createHttpServer(new HttpServerOptions().setPort(8080).setHost("localhost"));
+server.requestHandler(router).listen();
+----
+
+This method can fail with a `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactoryException.html[RouterFactoryException]` if you didn't provide the required security handlers.
+
+ifeval::["java" == "java"]
+include::override/rxjava2.adoc[]
+endif::[]

@@ -1,0 +1,36 @@
+== RxJava 2 API
+
+The Mongo client provides an Rxified version of the original API.
+
+=== Creating an Rxified client
+
+To create an Rxified Mongo client, make sure to import the `link:../../apidocs/io/vertx/reactivex/ext/mongo/MongoClient.html[MongoClient]` class.
+Then use one of the `create` methods to get an instance:
+
+[source,java]
+----
+MongoClient client = MongoClient.createShared(vertx, config);
+----
+
+=== Finding documents in batches
+
+A `link:../../apidocs/io/vertx/reactivex/core/streams/ReadStream.html[ReadStream]` can be converted to a `link:../../apidocs/io/reactivex/Flowable.html[Flowable]`, which is handy when you have to deal with large data sets:
+
+[source,java]
+----
+JsonObject query = new JsonObject()
+  .put("author", "J. R. R. Tolkien");
+
+ReadStream<JsonObject> books = mongoClient.findBatch("book", query);
+
+// Convert the stream to a Flowable
+Flowable<JsonObject> flowable = books.toFlowable();
+
+flowable.subscribe(doc -> {
+  System.out.println("Found doc: " + doc.encodePrettily());
+}, throwable -> {
+  throwable.printStackTrace();
+}, () -> {
+  System.out.println("End of research");
+});
+----

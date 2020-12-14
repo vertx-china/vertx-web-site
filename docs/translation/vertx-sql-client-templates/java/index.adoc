@@ -1,0 +1,630 @@
+= SQL Client Templates
+:toc:
+
+SQL Client Templates is a small library designed to facilitate the execution of SQL queries.
+
+== Usage
+
+To use SQL Client Templates add the following dependency to the _dependencies_ section of your build descriptor:
+
+* Maven (in your `pom.xml`):
+
+[source,xml]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-sql-client-templates</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+* Gradle (in your `build.gradle` file):
+
+[source,groovy]
+----
+dependencies {
+ implementation 'io.vertx:vertx-sql-client-templates:4.0.0'
+}
+----
+
+== Getting started
+
+Here is the simplest way to use an SQL template.
+
+A SQL template consumes _named_ parameters and thus takes (by default) a map as parameters sources instead of a tuple.
+
+A SQL template produces (by default) a `RowSet<Row>` like a client `PreparedQuery`. In fact the template is a thin
+wrapper for a `PreparedQuery`.
+
+[source,java]
+----
+Map<String, Object> parameters = Collections.singletonMap("id", 1);
+
+SqlTemplate
+  .forQuery(client, "SELECT * FROM users WHERE id=#{id}")
+  .execute(parameters)
+  .onSuccess(users -> {
+    users.forEach(row -> {
+      System.out.println(row.getString("first_name") + " " + row.getString("last_name"));
+    });
+  });
+----
+
+When you need to perform an insert or update operation and you do not care of the result, you can use `link:../../apidocs/io/vertx/sqlclient/templates/SqlTemplate.html#forUpdate-io.vertx.sqlclient.SqlClient-java.lang.String-[SqlTemplate.forUpdate]` instead:
+
+[source,java]
+----
+Map<String, Object> parameters = new HashMap<>();
+parameters.put("id", 1);
+parameters.put("firstName", "Dale");
+parameters.put("lastName", "Cooper");
+
+SqlTemplate
+  .forUpdate(client, "INSERT INTO users VALUES (#{id},#{firstName},#{lastName})")
+  .execute(parameters)
+  .onSuccess(v -> {
+    System.out.println("Successful update");
+  });
+----
+
+== Template syntax
+
+The template syntax uses `#{XXX}` syntax where `XXX` is a valid https://docs.oracle.com/javase/specs/jls/se8/html/jls-3.html#jls-3.8[java identifier] string
+(without the keyword restriction).
+
+You can use the backslash char `\` to escape  any `#` character, i.e `\#{foo}` will be interpreted as `#{foo}` string without a `foo` parameter.
+
+== Row mapping
+
+By default templates produce `link:../../apidocs/io/vertx/sqlclient/Row.html[Row]` as result type.
+
+You can provide a custom `link:../../apidocs/io/vertx/sqlclient/templates/RowMapper.html[RowMapper]` to achieve row level mapping instead:
+
+[source,java]
+----
+RowMapper<User> ROW_USER_MAPPER = row -> {
+  User user = new User();
+  user.id = row.getInteger("id");
+  user.firstName = row.getString("firstName");
+  user.lastName = row.getString("lastName");
+  return user;
+};
+----
+
+[[row_mapping_with_custom_mapper]]
+to achieve row level mapping instead:
+
+[source,java]
+----
+SqlTemplate
+  .forQuery(client, "SELECT * FROM users WHERE id=#{id}")
+  .mapTo(ROW_USER_MAPPER)
+  .execute(Collections.singletonMap("id", 1))
+  .onSuccess(users -> {
+    users.forEach(user -> {
+      System.out.println(user.firstName + " " + user.lastName);
+    });
+  });
+----
+
+== Anemic JSON row mapping
+
+Anemic JSON row mapping is a trivial mapping between template row columns and a JSON object
+using the `link:../../apidocs/io/vertx/sqlclient/Row.html#toJson--[toJson]`
+
+[source,java]
+----
+SqlTemplate
+  .forQuery(client, "SELECT * FROM users WHERE id=#{id}")
+  .mapTo(Row::toJson)
+  .execute(Collections.singletonMap("id", 1))
+  .onSuccess(users -> {
+    users.forEach(user -> {
+      System.out.println(user.encode());
+    });
+  });
+----
+
+== Parameters mapping
+
+Templates consume `Map<String, Object>` as default input.
+
+You can provide a custom mapper:
+
+[source,java]
+----
+TupleMapper<User> PARAMETERS_USER_MAPPER = TupleMapper.mapper(user -> {
+  Map<String, Object> parameters = new HashMap<>();
+  parameters.put("id", user.id);
+  parameters.put("firstName", user.firstName);
+  parameters.put("lastName", user.lastName);
+  return parameters;
+});
+----
+
+[[params_mapping_with_custom_mapper]]
+to achieve parameter mapping instead:
+
+[source,java]
+----
+User user = new User();
+user.id = 1;
+user.firstName = "Dale";
+user.firstName = "Cooper";
+
+SqlTemplate
+  .forUpdate(client, "INSERT INTO users VALUES (#{id},#{firstName},#{lastName})")
+  .mapFrom(PARAMETERS_USER_MAPPER)
+  .execute(user)
+  .onSuccess(res -> {
+    System.out.println("User inserted");
+  });
+----
+
+You can also perform batching easily:
+
+[source,java]
+----
+SqlTemplate
+  .forUpdate(client, "INSERT INTO users VALUES (#{id},#{firstName},#{lastName})")
+  .mapFrom(PARAMETERS_USER_MAPPER)
+  .executeBatch(users)
+  .onSuccess(res -> {
+    System.out.println("Users inserted");
+  });
+----
+
+== Anemic JSON parameters mapping
+
+Anemic JSON parameters mapping is a trivial mapping between template parameters and a JSON object:
+
+[source,java]
+----
+JsonObject user = new JsonObject();
+user.put("id", 1);
+user.put("firstName", "Dale");
+user.put("lastName", "Cooper");
+
+SqlTemplate
+  .forUpdate(client, "INSERT INTO users VALUES (#{id},#{firstName},#{lastName})")
+  .mapFrom(TupleMapper.jsonObject())
+  .execute(user)
+  .onSuccess(res -> {
+    System.out.println("User inserted");
+  });
+----
+
+== Mapping with Jackson databind
+
+You can do mapping using Jackson databind capabilities.
+
+You need to add the Jackson databind dependency to the _dependencies_ section of your build descriptor:
+
+* Maven (in your `pom.xml`):
+
+[source,xml]
+----
+<dependency>
+ <groupId>com.fasterxml.jackson.core</groupId>
+ <artifactId>jackson-databind</artifactId>
+ <version>${jackson.version}</version>
+</dependency>
+----
+* Gradle (in your `build.gradle` file):
+
+[source,groovy]
+----
+dependencies {
+ compile 'com.fasterxml.jackson.core:jackson-databind:${jackson.version}'
+}
+----
+
+Row mapping is achieved by creating a `JsonObject` using the row key/value pairs and then calling
+`link:../../apidocs/io/vertx/core/json/JsonObject.html#mapTo-java.lang.Class-[mapTo]` to map it to any Java class with Jackson databind.
+
+[source,java]
+----
+SqlTemplate
+  .forQuery(client, "SELECT * FROM users WHERE id=#{id}")
+  .mapTo(User.class)
+  .execute(Collections.singletonMap("id", 1))
+  .onSuccess(users -> {
+    users.forEach(user -> {
+      System.out.println(user.firstName + " " + user.lastName);
+    });
+  });
+----
+
+Likewise parameters mapping is achieved by mapping the object to a `JsonObject` using  `link:../../apidocs/io/vertx/core/json/JsonObject.html#mapFrom-java.lang.Object-[JsonObject.mapFrom]`
+and then using the key/value pairs to produce template parameters.
+
+[source,java]
+----
+User u = new User();
+u.id = 1;
+
+SqlTemplate
+  .forUpdate(client, "INSERT INTO users VALUES (#{id},#{firstName},#{lastName})")
+  .mapFrom(User.class)
+  .execute(u)
+  .onSuccess(res -> {
+    System.out.println("User inserted");
+  });
+----
+
+=== Java Date/Time API mapping
+
+You can map `java.time` types with the _jackson-modules-java8_ Jackson extension.
+
+You need to add the Jackson JSR 310 datatype dependency to the _dependencies_ section of your build descriptor:
+
+
+* Maven (in your `pom.xml`):
+
+[source,xml]
+----
+<dependency>
+ <groupId>com.fasterxml.jackson.datatype</groupId>
+ <artifactId>jackson-datatype-jsr310</artifactId>
+ <version>${jackson.version}</version>
+</dependency>
+----
+* Gradle (in your `build.gradle` file):
+
+[source,groovy]
+----
+dependencies {
+ compile 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson.version}'
+}
+----
+
+Then you need to register the time module to the Jackson `ObjectMapper`:
+
+[source,java]
+----
+ObjectMapper mapper = io.vertx.core.json.jackson.DatabindCodec.mapper();
+
+mapper.registerModule(new JavaTimeModule());
+----
+
+You can now use `java.time` types such as `LocalDateTime`:
+
+[source,java]
+----
+public class LocalDateTimePojo {
+
+ public LocalDateTime localDateTime;
+
+}
+----
+
+== Mapping with Vert.x data objects
+
+The SQL Client Templates component can generate mapping function for Vert.x data objects.
+
+A Vert.x data object is a simple Java bean class annotated with the `@DataObject` annotation.
+
+[source,java]
+----
+@DataObject
+class UserDataObject {
+
+  private long id;
+  private String firstName;
+  private String lastName;
+
+  public long getId() {
+    return id;
+  }
+
+  public void setId(long id) {
+    this.id = id;
+  }
+
+  public String getFirstName() {
+    return firstName;
+  }
+
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
+  public String getLastName() {
+    return lastName;
+  }
+
+  public void setLastName(String lastName) {
+    this.lastName = lastName;
+  }
+}
+----
+
+=== Code generation
+
+Any data object annotated by `link:../../apidocs/io/vertx/sqlclient/templates/annotations/RowMapped.html[@RowMapped]` or `link:../../apidocs/io/vertx/sqlclient/templates/annotations/ParametersMapped.html[@ParametersMapped]`
+will trigger  the generation of a corresponding mapper class.
+
+The _codegen_ annotation processor generates these classes at compilation time. It is a feature of the Java
+compiler so _no extra step_ is required, it is just a matter of configuring correctly your build:
+
+Just add the `io.vertx:vertx-codegen:processor` and `io.vertx:vertx-sql-client-templates`
+dependencies to your build.
+
+Here a configuration example for Maven:
+
+[source,xml]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-codegen</artifactId>
+ <version>4.0.0</version>
+ <classifier>processor</classifier>
+</dependency>
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-sql-client-templates</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+This feature can also be used in Gradle:
+
+[source]
+----
+annotationProcessor "io.vertx:vertx-codegen:4.0.0:processor"
+compile "io.vertx:vertx-sql-client-templates:4.0.0"
+----
+
+IDEs usually provide usually support for annotation processors.
+
+The codegen `processor` classifier adds to the jar the automatic configuration of the service proxy annotation processor
+via the `META-INF/services` plugin mechanism.
+
+If you want you can use it too with the regular jar but you need then to declare the annotation processor
+explicitly, for instance in Maven:
+
+[source,xml]
+----
+<plugin>
+ <artifactId>maven-compiler-plugin</artifactId>
+ <configuration>
+   <annotationProcessors>
+     <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
+   </annotationProcessors>
+ </configuration>
+</plugin>
+----
+
+=== Row mapping
+
+You can generate a row mapper by annotating your data object by `link:../../apidocs/io/vertx/sqlclient/templates/annotations/RowMapped.html[@RowMapped]`.
+
+[source,java]
+----
+@DataObject
+@RowMapped
+class UserDataObject {
+
+  private long id;
+  private String firstName;
+  private String lastName;
+
+  public long getId() {
+    return id;
+  }
+
+  public void setId(long id) {
+    this.id = id;
+  }
+
+  public String getFirstName() {
+    return firstName;
+  }
+
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
+  public String getLastName() {
+    return lastName;
+  }
+
+  public void setLastName(String lastName) {
+    this.lastName = lastName;
+  }
+}
+----
+
+By default each column name is bound after the data object properties, e.g the `userName` property binds to
+the `userName` column.
+
+You can use custom names thanks to the `link:../../apidocs/io/vertx/sqlclient/templates/annotations/Column.html[@Column]`
+annotation.
+
+[source,java]
+----
+@DataObject
+@RowMapped
+class UserDataObject {
+
+  private long id;
+  @Column(name = "first_name")
+  private String firstName;
+  @Column(name = "last_name")
+  private String lastName;
+
+  public long getId() {
+    return id;
+  }
+
+  public void setId(long id) {
+    this.id = id;
+  }
+
+  public String getFirstName() {
+    return firstName;
+  }
+
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
+  public String getLastName() {
+    return lastName;
+  }
+
+  public void setLastName(String lastName) {
+    this.lastName = lastName;
+  }
+}
+----
+
+You can annotate the field, the getter or the setter.
+
+The generated mapper can be used to perform row mapping like explained in <<row_mapping_with_custom_mapper,row mapping chapter>>.
+
+[source,java]
+----
+SqlTemplate
+  .forQuery(client, "SELECT * FROM users WHERE id=#{id}")
+  .mapTo(UserDataObjectRowMapper.INSTANCE)
+  .execute(Collections.singletonMap("id", 1))
+  .onSuccess(users -> {
+    users.forEach(user -> {
+      System.out.println(user.getFirstName() + " " + user.getLastName());
+    });
+  });
+----
+
+=== Parameters mapping
+
+You can generate a parameters mapper by annotating your data object by `link:../../apidocs/io/vertx/sqlclient/templates/annotations/ParametersMapped.html[@ParametersMapped]`.
+
+[source,java]
+----
+@DataObject
+@ParametersMapped
+class UserDataObject {
+
+  private long id;
+  private String firstName;
+  private String lastName;
+
+  public long getId() {
+    return id;
+  }
+
+  public void setId(long id) {
+    this.id = id;
+  }
+
+  public String getFirstName() {
+    return firstName;
+  }
+
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
+  public String getLastName() {
+    return lastName;
+  }
+
+  public void setLastName(String lastName) {
+    this.lastName = lastName;
+  }
+}
+----
+
+By default each parameter is bound after the data object properties, e.g the `userName` property binds to
+the `userName` parameter.
+
+You can use custom names thanks to the `link:../../apidocs/io/vertx/sqlclient/templates/annotations/TemplateParameter.html[@TemplateParameter]`
+annotation.
+
+[source,java]
+----
+@DataObject
+@ParametersMapped
+class UserDataObject {
+
+  private long id;
+  @TemplateParameter(name = "first_name")
+  private String firstName;
+  @TemplateParameter(name = "last_name")
+  private String lastName;
+
+  public long getId() {
+    return id;
+  }
+
+  public void setId(long id) {
+    this.id = id;
+  }
+
+  public String getFirstName() {
+    return firstName;
+  }
+
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
+  public String getLastName() {
+    return lastName;
+  }
+
+  public void setLastName(String lastName) {
+    this.lastName = lastName;
+  }
+}
+----
+
+You can annotate the field, the getter or the setter.
+
+The generated mapper can be used to perform param mapping like explained in <<params_mapping_with_custom_function,parameter mapping chapter>>.
+
+[source,java]
+----
+UserDataObject user = new UserDataObject().setId(1);
+
+SqlTemplate
+  .forQuery(client, "SELECT * FROM users WHERE id=#{id}")
+  .mapFrom(UserDataObjectParamMapper.INSTANCE)
+  .execute(user)
+  .onSuccess(users -> {
+    users.forEach(row -> {
+      System.out.println(row.getString("firstName") + " " + row.getString("lastName"));
+    });
+  });
+----
+
+=== Java enum types mapping
+
+You can map Java enum types when the client supports it (e.g the Reactive PostgreSQL client).
+
+Usually Java enum types are mapped to string / numbers and possibly custom database enumerated types.
+
+=== Naming format
+
+The default template use the same case for parameters and columns. You can override the default names in the `Column`
+and `TemplateParameter` annotations and use the formatting you like.
+
+You can also configure a specific formatting case of a mapper in the `RowMapped` and `ParametersMapped` annotations:
+
+[source,java]
+----
+@DataObject
+@RowMapped(formatter = SnakeCase.class)
+@ParametersMapped(formatter = QualifiedCase.class)
+class UserDataObject {
+  // ...
+}
+----
+
+The following cases can be used:
+
+- `link:../../apidocs/io/vertx/codegen/format/CamelCase.html[CamelCase]` : `FirstName`
+- `link:../../apidocs/io/vertx/codegen/format/LowerCamelCase.html[LowerCamelCase]` : `firstName` - like camel case but starts with a lower case, this is the default case
+- `link:../../apidocs/io/vertx/codegen/format/SnakeCase.html[SnakeCase]` : `first_name`
+- `link:../../apidocs/io/vertx/codegen/format/KebabCase.html[KebabCase]` : `first-name`
+- `link:../../apidocs/io/vertx/codegen/format/QualifiedCase.html[QualifiedCase]` : `first.name`

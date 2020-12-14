@@ -1,0 +1,96 @@
+= Vertx Zipkin Tracing
+
+Vert.x integrates with Zipkin thanks to the Zipkin Brave client.
+
+Vert.x uses the ZipKin HTTP sender based using a Vert.x HTTP Client reporting
+spans to `http://localhost:9411/api/v2/spans` in JSON format.
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions()
+  .setTracingOptions(
+    new ZipkinTracingOptions().setServiceName("A cute service")
+  )
+);
+----
+
+The service name is the mandatory Zipkin service name. If you don't set it, then `a-service` will be used instead.
+
+You can configure the sender to use a specific URL
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions()
+  .setTracingOptions(
+    new ZipkinTracingOptions()
+      .setSenderOptions(new HttpSenderOptions().setSenderEndpoint(senderEndpoint))
+  )
+);
+----
+
+The default sender uses a single HTTP connection in plain text with compressed bodies.
+
+You can override the configuration of the HTTP sender with custom `HttpClientOptions`.
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions()
+  .setTracingOptions(
+    new ZipkinTracingOptions()
+      .setSenderOptions(new HttpSenderOptions()
+        .setSenderEndpoint(senderEndpoint)
+        .setSsl(true)
+        .setKeyCertOptions(sslOptions))
+  )
+);
+----
+
+Finally you can set a custom ZipKin `Tracing` allowing for greater control
+over the configuration.
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions()
+  .setTracingOptions(
+    new ZipkinTracingOptions(tracing)
+  )
+);
+----
+
+== Tracing policy
+
+The tracing policy defines the behavior of a component when tracing is enabled:
+
+- `link:../../apidocs/io/vertx/core/tracing/TracingPolicy.html#PROPAGATE[PROPAGATE]`: the component reports a span in the active trace
+- `link:../../apidocs/io/vertx/core/tracing/TracingPolicy.html#ALWAYS[ALWAYS]`: the component reports a span in the active trace or creates a new active trace
+- `link:../../apidocs/io/vertx/core/tracing/TracingPolicy.html#IGNORE[IGNORE]`: the component will not be involved in any trace.
+
+The tracing policy is usually configured in the component options.
+
+== HTTP tracing
+
+The Vert.x HTTP server and client reports span around HTTP requests:
+
+- `operationName`: the HTTP method
+- tags
+- `http.method`: the HTTP method
+- `http.url`: the request URL
+- `http.status_code`: the HTTP status code
+
+The default HTTP server tracing policy is `ALWAYS`, you can configure the policy with `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setTracingPolicy-io.vertx.core.tracing.TracingPolicy-[setTracingPolicy]`
+
+[source,java]
+----
+HttpServer server = vertx.createHttpServer(new HttpServerOptions()
+  .setTracingPolicy(TracingPolicy.IGNORE)
+);
+----
+
+The default HTTP client tracing policy is `PROPAGATE`, you can configure the policy with `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setTracingPolicy-io.vertx.core.tracing.TracingPolicy-[setTracingPolicy]`
+
+[source,java]
+----
+HttpClient client = vertx.createHttpClient(new HttpClientOptions()
+  .setTracingPolicy(TracingPolicy.IGNORE)
+);
+----

@@ -1,0 +1,274 @@
+= Cassandra Client for Vert.x
+
+A Vert.x client allowing applications to interact with an http://cassandra.apache.org/[Apache Cassandra] service.
+
+WARNING: This module has _Tech Preview_ status, this means the API can change between versions.
+
+== Getting started
+
+To use this module, add the following to the _dependencies_ section of your Maven POM file:
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-cassandra-client</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+Or, if you use Gradle:
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-cassandra-client:4.0.0'
+----
+
+WARNING: The Cassandra client is not compatible with the Vert.x Dropwizard Metrics library.
+Both are using a different major version of the Dropwizard Metrics library and the Datastax Java driver https://github.com/datastax/java-driver/pull/943[won't upgrade] to the most recent version due to the drop of Java 7.
+The next major version (4.x) of the driver will use a more recent Dropwizard Metrics library  version.
+
+== Creating a client
+
+=== Client options
+
+Cassandra is a distributed system, and it can have many nodes.
+To connect to Cassandra you need to specify the addresses of some cluster nodes when creating a `link:../../apidocs/io/vertx/cassandra/CassandraClientOptions.html[CassandraClientOptions]` object:
+
+[source,java]
+----
+CassandraClientOptions options = new CassandraClientOptions()
+  .addContactPoint("node1.address", 9142)
+  .addContactPoint("node2.address", 9142)
+  .addContactPoint("node3.address", 9142);
+CassandraClient client = CassandraClient.create(vertx, options);
+----
+
+By default, the Cassandra client for Vert.x connects to the local machine's port `9042` and is not tied to any specific keyspace.
+But you can set either or both of these options:
+
+[source,java]
+----
+CassandraClientOptions options = new CassandraClientOptions()
+  .addContactPoint("localhost", 9142)
+  .setKeyspace("my_keyspace");
+CassandraClient client = CassandraClient.create(vertx, options);
+----
+
+TIP: For fine tuning purposes, `link:../../apidocs/io/vertx/cassandra/CassandraClientOptions.html[CassandraClientOptions]` exposes a `com.datastax.driver.core.Cluster.Builder` instance.
+
+=== Shared clients
+
+If you deploy multiple instances of your verticle or have different verticles interacting with the same database, it is recommended to create a shared client:
+
+[source,java]
+----
+CassandraClientOptions options = new CassandraClientOptions()
+  .addContactPoint("node1.address", 9142)
+  .addContactPoint("node2.address", 9142)
+  .addContactPoint("node3.address", 9142)
+  .setKeyspace("my_keyspace");
+CassandraClient client = CassandraClient.createShared(vertx, "sharedClientName", options);
+----
+
+Shared clients with the same name will use a single underlying `com.datastax.driver.core.Session`.
+
+=== Client lifecycle
+
+After the client is created, it is not connected until the first query is executed.
+
+TIP: A shared client can be connected after creation if another client with the same name has already executed a query.
+
+Clients created inside a verticle are automatically stopped when the verticle is undeployed.
+In other words, you do not need to invoke `link:../../apidocs/io/vertx/cassandra/CassandraClient.html#close--[close]` in the verticle `stop` method.
+
+In all other cases, you must manually close the client.
+
+NOTE: When a shared client is closed, the driver dession is not closed if other clients with the same name are still running.
+
+== Using the API
+
+The client API is represented by `link:../../apidocs/io/vertx/cassandra/CassandraClient.html[CassandraClient]`.
+
+=== Querying
+
+You can get query results using three different ways.
+
+==== Streaming
+
+The streaming API is most appropriate when you need to consume results iteratively, e.g you want to process each item.
+This is very efficient specially for large amount of rows.
+
+In order to give you some inspiration and ideas on how you can use the API, we'd like to you to consider this example:
+
+[source,java]
+----
+cassandraClient.queryStream("SELECT my_string_col FROM my_keyspace.my_table where my_key = 'my_value'", queryStream -> {
+  if (queryStream.succeeded()) {
+    CassandraRowStream stream = queryStream.result();
+
+    // resume stream when queue is ready to accept buffers again
+    response.drainHandler(v -> stream.resume());
+
+    stream.handler(row -> {
+      String value = row.getString("my_string_col");
+      response.write(value);
+
+      // pause row stream when we buffer queue is full
+      if (response.writeQueueFull()) {
+        stream.pause();
+      }
+    });
+
+    // end request when we reached end of the stream
+    stream.endHandler(end -> response.end());
+
+  } else {
+    queryStream.cause().printStackTrace();
+    // response with internal server error if we are not able to execute given query
+    response
+      .setStatusCode(500)
+      .end("Unable to execute the query");
+  }
+});
+----
+
+In the example, we are executing a query, and stream results via HTTP.
+
+==== Bulk fetching
+
+This API should be used when you need to process all the rows at the same time.
+
+[source,java]
+----
+cassandraClient.executeWithFullFetch("SELECT * FROM my_keyspace.my_table where my_key = 'my_value'", executeWithFullFetch -> {
+  if (executeWithFullFetch.succeeded()) {
+    List<Row> rows = executeWithFullFetch.result();
+    for (Row row : rows) {
+      // handle each row here
+    }
+  } else {
+    System.out.println("Unable to execute the query");
+    executeWithFullFetch.cause().printStackTrace();
+  }
+});
+----
+
+CAUTION: Use bulk fetching only if you can afford to load the full result set in memory.
+
+=== Collector queries
+
+You can use Java collectors with the query API:
+
+[source,java]
+----
+cassandraClient.execute("SELECT * FROM users", listCollector, ar -> {
+  if (ar.succeeded()) {
+    // Get the string created by the collector
+    String list = ar.result();
+    System.out.println("Got " + list);
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+==== Low level fetch
+
+This API provides greater control over loading at the expense of being a bit lower-level than the streaming and bulk fetching APIs.
+
+[source,java]
+----
+cassandraClient.execute("SELECT * FROM my_keyspace.my_table where my_key = 'my_value'", execute -> {
+  if (execute.succeeded()) {
+    ResultSet resultSet = execute.result();
+
+    if (resultSet.remaining() != 0) {
+      Row row = resultSet.one();
+      System.out.println("One row successfully fetched");
+    } else if (!resultSet.hasMorePages()) {
+      System.out.println("No pages to fetch");
+    } else {
+      resultSet.fetchNextPage().onComplete(fetchMoreResults -> {
+        if (fetchMoreResults.succeeded()) {
+          int availableWithoutFetching = resultSet.remaining();
+          System.out.println("Now we have " + availableWithoutFetching + " rows fetched, but not consumed!");
+        } else {
+          System.out.println("Unable to fetch more results");
+          fetchMoreResults.cause().printStackTrace();
+        }
+      });
+    }
+  } else {
+    System.out.println("Unable to execute the query");
+    execute.cause().printStackTrace();
+  }
+});
+----
+
+=== Prepared queries
+
+For security and efficiency reasons, it is a good idea to use prepared statements for all the queries you are using more than once.
+
+You can prepare a query:
+
+[source,java]
+----
+cassandraClient.prepare("SELECT * FROM my_keyspace.my_table where my_key = ? ", preparedStatementResult -> {
+  if (preparedStatementResult.succeeded()) {
+    System.out.println("The query has successfully been prepared");
+    PreparedStatement preparedStatement = preparedStatementResult.result();
+    // now you can use this PreparedStatement object for the next queries
+  } else {
+    System.out.println("Unable to prepare the query");
+    preparedStatementResult.cause().printStackTrace();
+  }
+});
+----
+
+And then use the https://docs.datastax.com/en/drivers/java/${datastax.driver.minor.version}/com/datastax/driver/core/PreparedStatement.html[`PreparedStatement`] for all the next queries:
+
+[source,java]
+----
+cassandraClient.execute(preparedStatement.bind("my_value"), done -> {
+  ResultSet results = done.result();
+  // handle results here
+});
+
+// Bulk fetching API
+cassandraClient.executeWithFullFetch(preparedStatement.bind("my_value"), done -> {
+  List<Row> results = done.result();
+  // handle results here
+});
+
+// Streaming API
+cassandraClient.queryStream(preparedStatement.bind("my_value"), done -> {
+  CassandraRowStream results = done.result();
+  // handle results here
+});
+----
+
+=== Batching
+
+In case you'd like to execute several queries at once, you can use https://docs.datastax.com/en/drivers/java/${datastax.driver.minor.version}/com/datastax/driver/core/BatchStatement.html[`BatchStatement`] for that:
+
+[source,java]
+----
+BatchStatement batchStatement = BatchStatement.newInstance(BatchType.LOGGED)
+  .add(SimpleStatement.newInstance("INSERT INTO NAMES (name) VALUES ('Pavel')"))
+  .add(SimpleStatement.newInstance("INSERT INTO NAMES (name) VALUES ('Thomas')"))
+  .add(SimpleStatement.newInstance("INSERT INTO NAMES (name) VALUES ('Julien')"));
+
+cassandraClient.execute(batchStatement, result -> {
+  if (result.succeeded()) {
+    System.out.println("The given batch executed successfully");
+  } else {
+    System.out.println("Unable to execute the batch");
+    result.cause().printStackTrace();
+  }
+});
+----
+
+ifeval::["java" == "java"]
+include::override/rxjava2.adoc[]
+endif::[]

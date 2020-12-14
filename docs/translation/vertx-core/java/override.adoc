@@ -1,0 +1,566 @@
+Create a buffer from a byte[]
+
+[source,java]
+----
+byte[] bytes = new byte[] {1, 3, 5};
+Buffer buff = Buffer.buffer(bytes);
+----The event bus can be configured. It is particularly useful when the event bus is clustered.
+Under the hood the event bus uses TCP connections to send and receive messages, so the `link:../../apidocs/io/vertx/core/eventbus/EventBusOptions.html[EventBusOptions]` let you configure all aspects of these TCP connections.
+As the event bus acts as a server and client, the configuration is close to `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` and `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]`.
+
+[source,java]
+----
+VertxOptions options = new VertxOptions()
+    .setEventBusOptions(new EventBusOptions()
+        .setSsl(true)
+        .setKeyStoreOptions(new JksOptions().setPath("keystore.jks").setPassword("wibble"))
+        .setTrustStoreOptions(new JksOptions().setPath("keystore.jks").setPassword("wibble"))
+        .setClientAuth(ClientAuth.REQUIRED)
+    );
+
+Vertx.clusteredVertx(options, res -> {
+  if (res.succeeded()) {
+    Vertx vertx = res.result();
+    EventBus eventBus = vertx.eventBus();
+    System.out.println("We now have a clustered event bus: " + eventBus);
+  } else {
+    System.out.println("Failed: " + res.cause());
+  }
+});
+----
+
+The previous snippet depicts how you can use SSL connections for the event bus, instead of plain TCP connections.
+
+**WARNING**: to enforce the security in clustered mode, you **must** configure the cluster manager to use encryption or enforce security.
+Refer to the documentation of the cluster manager for further details.
+
+The event bus configuration needs to be consistent in all the cluster nodes.
+
+The `link:../../apidocs/io/vertx/core/eventbus/EventBusOptions.html[EventBusOptions]` also lets you specify whether or not the event bus is clustered, the port and host.
+
+When used in containers, you can also configure the public host and port:
+
+[source,java]
+----
+VertxOptions options = new VertxOptions()
+    .setEventBusOptions(new EventBusOptions()
+        .setClusterPublicHost("whatever")
+        .setClusterPublicPort(1234)
+    );
+
+Vertx.clusteredVertx(options, res -> {
+  if (res.succeeded()) {
+    Vertx vertx = res.result();
+    EventBus eventBus = vertx.eventBus();
+    System.out.println("We now have a clustered event bus: " + eventBus);
+  } else {
+    System.out.println("Failed: " + res.cause());
+  }
+});
+----[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().
+  setPreferNativeTransport(true)
+);
+
+// True when native is available
+boolean usingNative = vertx.isNativeTransportEnabled();
+System.out.println("Running with native: " + usingNative);
+----
+
+NOTE: preferring native transport will not prevent the application to execute (for example if a JAR is missing).
+If your application requires native transport, you need to check `link:../../apidocs/io/vertx/core/Vertx.html#isNativeTransportEnabled--[isNativeTransportEnabled]`.If you are using Maven or Gradle, add the following dependency to the _dependencies_ section of your
+project descriptor to access the Vert.x Core API:
+
+* Maven (in your `pom.xml`):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-core</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+* Gradle (in your `build.gradle` file):
+
+[source,groovy,subs="+attributes"]
+----
+dependencies {
+ compile 'io.vertx:vertx-core:4.0.0'
+}
+----=== Error handling
+
+As you saw in previous sections the DnsClient allows you to pass in a Handler which will be notified with an
+AsyncResult once the query was complete. In case of an error it will be notified with a DnsException which will
+hole a `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html[DnsResponseCode]` that indicate why the resolution failed. This DnsResponseCode
+can be used to inspect the cause in more detail.
+
+Possible DnsResponseCodes are:
+
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NOERROR[NOERROR]` No record was found for a given query
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#FORMERROR[FORMERROR]` Format error
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#SERVFAIL[SERVFAIL]` Server failure
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NXDOMAIN[NXDOMAIN]` Name error
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NOTIMPL[NOTIMPL]` Not implemented by DNS Server
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#REFUSED[REFUSED]` DNS Server refused the query
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#YXDOMAIN[YXDOMAIN]` Domain name should not exist
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#YXRRSET[YXRRSET]` Resource record should not exist
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NXRRSET[NXRRSET]` RRSET does not exist
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NOTZONE[NOTZONE]` Name not in zone
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADVERS[BADVERS]` Bad extension mechanism for version
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADSIG[BADSIG]` Bad signature
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADKEY[BADKEY]` Bad key
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADTIME[BADTIME]` Bad timestamp
+
+All of those errors are "generated" by the DNS Server itself.
+
+You can obtain the DnsResponseCode from the DnsException like:
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+client.lookup("nonexisting.vert.xio", ar -> {
+  if (ar.succeeded()) {
+    String record = ar.result();
+    System.out.println(record);
+  } else {
+    Throwable cause = ar.cause();
+    if (cause instanceof DnsException) {
+      DnsException exception = (DnsException) cause;
+      DnsResponseCode code = exception.code();
+      // ...
+    } else {
+      System.out.println("Failed to resolve entry" + ar.cause());
+    }
+  }
+});
+----==== Message Codecs
+
+You can send any object you like across the event bus if you define and register a `link:../../apidocs/io/vertx/core/eventbus/MessageCodec.html[message codec]` for it.
+
+Message codecs have a name and you specify that name in the `link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]`
+when sending or publishing the message:
+
+[source,java]
+----
+eventBus.registerCodec(myCodec);
+
+DeliveryOptions options = new DeliveryOptions().setCodecName(myCodec.name());
+
+eventBus.send("orders", new MyPOJO(), options);
+----
+
+If you always want the same codec to be used for a particular type then you can register a default codec for it, then
+you don't have to specify the codec on each send in the delivery options:
+
+[source,java]
+----
+eventBus.registerDefaultCodec(MyPOJO.class, myCodec);
+
+eventBus.send("orders", new MyPOJO());
+----
+
+You unregister a message codec with `link:../../apidocs/io/vertx/core/eventbus/EventBus.html#unregisterCodec-java.lang.String-[unregisterCodec]`.
+
+Message codecs don't always have to encode and decode as the same type. For example you can write a codec that
+allows a MyPOJO class to be sent, but when that message is sent to a handler it arrives as a MyOtherPOJO class.==== Setting headers on messages
+
+Messages sent over the event bus can also contain headers. This can be specified by providing a
+`link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]` when sending or publishing:
+
+[source,java]
+----
+DeliveryOptions options = new DeliveryOptions();
+options.addHeader("some-header", "some-value");
+eventBus.send("news.uk.sport", "Yay! Someone kicked a ball", options);
+----== Host name resolution
+
+Vert.x uses an an address resolver for resolving host name into IP addresses instead of
+the JVM built-in blocking resolver.
+
+An host name resolves to an IP address using:
+
+- the _hosts_ file of the operating system
+- otherwise DNS queries against a list of servers
+
+By default it will use the list of the system DNS server addresses from the environment, if that list cannot be
+retrieved it will use Google's public DNS servers `"8.8.8.8"` and `"8.8.4.4"`.
+
+DNS servers can be also configured when creating a `link:../../apidocs/io/vertx/core/Vertx.html[Vertx]` instance:
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().
+    setAddressResolverOptions(
+        new AddressResolverOptions().
+            addServer("192.168.0.1").
+            addServer("192.168.0.2:40000"))
+);
+----
+
+The default port of a DNS server is `53`, when a server uses a different port, this port can be set
+using a colon delimiter: `192.168.0.2:40000`.
+
+NOTE: sometimes it can be desirable to use the JVM built-in resolver, the JVM system property
+_-Dvertx.disableDnsResolver=true_ activates this behavior
+
+=== Failover
+
+When a server does not reply in a timely manner, the resolver will try the next one from the list, the search
+is limited by `link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#setMaxQueries-int-[setMaxQueries]` (the default value is `4` queries).
+
+A DNS query is considered as failed when the resolver has not received a correct answer within
+`link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#getQueryTimeout--[getQueryTimeout]` milliseconds (the default value is `5` seconds).
+
+=== Server list rotation
+
+By default the dns server selection uses the first one, the remaining servers are used for failover.
+
+You can configure `link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#setRotateServers-boolean-[setRotateServers]` to `true` to let
+the resolver perform a round-robin selection instead. It spreads the query load among the servers and avoids
+all lookup to hit the first server of the list.
+
+Failover still applies and will use the next server in the list.
+
+=== Hosts mapping
+
+The _hosts_ file of the operating system is used to perform an hostname lookup for an ipaddress.
+
+An alternative _hosts_ file can be used instead:
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().
+    setAddressResolverOptions(
+        new AddressResolverOptions().
+            setHostsPath("/path/to/hosts"))
+);
+----
+
+=== Search domains
+
+By default the resolver will use the system DNS search domains from the environment. Alternatively an explicit search domain
+list can be provided:
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().
+    setAddressResolverOptions(
+        new AddressResolverOptions().addSearchDomain("foo.com").addSearchDomain("bar.com"))
+);
+----
+
+When a search domain list is used, the threshold for the number of dots is `1` or loaded from `/etc/resolv.conf`
+on Linux, it can be configured to a specific value with `link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#setNdots-int-[setNdots]`.== In the beginning there was Vert.x
+
+You can't do much in Vert.x-land unless you can communicate with a `link:../../apidocs/io/vertx/core/Vertx.html[Vertx]` object!
+
+It's the control centre of Vert.x and is how you do pretty much everything, including creating clients and servers,
+getting a reference to the event bus, setting timers, as well as many other things.
+
+So how do you get an instance?
+
+If you're embedding Vert.x then you simply create an instance as follows:
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx();
+----
+
+NOTE: Most applications will only need a single Vert.x instance, but it's possible to create multiple Vert.x instances if you
+require, for example, isolation between the event bus or different groups of servers and clients.
+
+=== Specifying options when creating a Vertx object
+
+When creating a Vert.x object you can also specify options if the defaults aren't right for you:
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().setWorkerPoolSize(40));
+----
+
+The `link:../../apidocs/io/vertx/core/VertxOptions.html[VertxOptions]` object has many settings and allows you to configure things like clustering, high availability, pool sizes and various other settings.
+
+=== Creating a clustered Vert.x object
+
+If you're creating a *clustered Vert.x* (See the section on the <<event_bus, event bus>> for more information on clustering the event bus),
+then you will normally use the asynchronous variant to create the Vertx object.
+
+This is because it usually takes some time (maybe a few seconds) for the different Vert.x instances in a cluster to group together.
+During that time, we don't want to block the calling thread, so we give the result to you asynchronously.== JSON
+:toc: left
+
+Unlike some other languages, Java does not have first class support for http://json.org/[JSON] so we provide
+two classes to make handling JSON in your Vert.x applications a bit easier.
+
+=== JSON objects
+
+The `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` class represents JSON objects.
+
+A JSON object is basically just a map which has string keys and values can be of one of the JSON supported types
+(string, number, boolean).
+
+JSON objects also support null values.
+
+==== Creating JSON objects
+
+Empty JSON objects can be created with the default constructor.
+
+You can create a JSON object from a string JSON representation as follows:
+
+[source,java]
+----
+String jsonString = "{\"foo\":\"bar\"}";
+JsonObject object = new JsonObject(jsonString);
+----
+
+You can create a JSON object from a map as follows:
+
+[source,java]
+----
+Map<String, Object> map = new HashMap<>();
+map.put("foo", "bar");
+map.put("xyz", 3);
+JsonObject object = new JsonObject(map);
+----
+
+==== Putting entries into a JSON object
+
+Use the `link:../../apidocs/io/vertx/core/json/JsonObject.html#put-java.lang.String-java.lang.Object-[put]` methods to put values into the JSON object.
+
+The method invocations can be chained because of the fluent API:
+
+[source,java]
+----
+JsonObject object = new JsonObject();
+object.put("foo", "bar").put("num", 123).put("mybool", true);
+----
+
+==== Getting values from a JSON object
+
+You get values from a JSON object using the `getXXX` methods, for example:
+
+[source,java]
+----
+String val = jsonObject.getString("some-key");
+int intVal = jsonObject.getInteger("some-other-key");
+----
+
+==== Mapping between JSON objects and Java objects
+
+You can create a JSON object from the fields of a Java object as follows:
+
+You can instantiate a Java object and populate its fields from a JSON object as follows:
+
+[source,java]
+----
+request.bodyHandler(buff -> {
+  JsonObject jsonObject = buff.toJsonObject();
+  User javaObject = jsonObject.mapTo(User.class);
+});
+----
+
+Note that both of the above mapping directions use Jackson's `ObjectMapper#convertValue()` to perform the
+mapping. See the Jackson documentation for information on the impact of field and constructor visibility, caveats
+on serialization and deserialization across object references, etc.
+
+However, in the simplest case, both `mapFrom` and `mapTo` should succeed if all fields of the Java class are
+public (or have public getters/setters), and if there is a public default constructor (or no defined constructors).
+
+Referenced objects will be transitively serialized/deserialized to/from nested JSON objects as
+long as the object graph is acyclic.
+
+==== Encoding a JSON object to a String
+
+You use `link:../../apidocs/io/vertx/core/json/JsonObject.html#encode--[encode]` to encode the object to a String form.
+
+=== JSON arrays
+
+The `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` class represents JSON arrays.
+
+A JSON array is a sequence of values (string, number, boolean).
+
+JSON arrays can also contain null values.
+
+==== Creating JSON arrays
+
+Empty JSON arrays can be created with the default constructor.
+
+You can create a JSON array from a string JSON representation as follows:
+
+[source,java]
+----
+String jsonString = "[\"foo\",\"bar\"]";
+JsonArray array = new JsonArray(jsonString);
+----
+
+==== Adding entries into a JSON array
+
+You add entries to a JSON array using the `link:../../apidocs/io/vertx/core/json/JsonArray.html#add-java.lang.Object-[add]` methods.
+
+[source,java]
+----
+JsonArray array = new JsonArray();
+array.add("foo").add(123).add(false);
+----
+
+==== Getting values from a JSON array
+
+You get values from a JSON array using the `getXXX` methods, for example:
+
+[source,java]
+----
+String val = array.getString(0);
+Integer intVal = array.getInteger(1);
+Boolean boolVal = array.getBoolean(2);
+----
+
+==== Encoding a JSON array to a String
+
+You use `link:../../apidocs/io/vertx/core/json/JsonArray.html#encode--[encode]` to encode the array to a String form.
+
+==== Creating arbitrary JSON
+
+Creating JSON object and array assumes you are using valid string representation.
+
+When you are unsure of the string validity then you should use instead ``link:../../apidocs/io/vertx/core/json/Json.html#decodeValue-java.lang.String-[Json.decodeValue]``
+
+[source,java]
+----
+Object object = Json.decodeValue(arbitraryJson);
+if (object instanceof JsonObject) {
+  // That's a valid json object
+} else if (object instanceof JsonArray) {
+  // That's a valid json array
+} else if (object instanceof String) {
+  // That's valid string
+} else {
+  // etc...
+}
+----=== Passing configuration to a verticle
+
+Configuration in the form of JSON can be passed to a verticle at deployment time:
+
+[source,java]
+----
+JsonObject config = new JsonObject().put("name", "tim").put("directory", "/blah");
+DeploymentOptions options = new DeploymentOptions().setConfig(config);
+vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
+----
+
+This configuration is then available via the `link:../../apidocs/io/vertx/core/Context.html[Context]` object or directly using the
+`link:../../apidocs/io/vertx/core/AbstractVerticle.html#config--[config]` method. The configuration is returned as a JSON object so you
+can retrieve data as follows:
+
+[source,java]
+----
+System.out.println("Configuration: " + config().getString("name"));
+----
+
+=== Accessing environment variables in a Verticle
+
+Environment variables and system properties are accessible using the Java API:
+
+[source,java]
+----
+System.getProperty("prop");
+System.getenv("HOME");
+----=== Writing Verticles
+
+Verticle classes must implement the `link:../../apidocs/io/vertx/core/Verticle.html[Verticle]` interface.
+
+They can implement it directly if you like but usually it's simpler to extend
+the abstract class `link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]`.
+
+Here's an example verticle:
+
+----
+public class MyVerticle extends AbstractVerticle {
+
+ // Called when verticle is deployed
+ public void start() {
+ }
+
+ // Optional - called when verticle is undeployed
+ public void stop() {
+ }
+
+}
+----
+
+Normally you would override the start method like in the example above.
+
+When Vert.x deploys the verticle it will call the start method, and when the method has completed the verticle will
+be considered started.
+
+You can also optionally override the stop method. This will be called by Vert.x when the verticle is undeployed and when
+the method has completed the verticle will be considered stopped.
+
+=== Asynchronous Verticle start and stop
+
+Sometimes you want to do something in your verticle start-up which takes some time and you don't want the verticle to
+be considered deployed until that happens. For example you might want to start an HTTP server in the start method and
+propagate the asynchronous result of the server `listen` method.
+
+You can't block waiting for the HTTP server to bind in your start method as that would break the <<golden_rule, Golden Rule>>.
+
+So how can you do this?
+
+The way to do it is to implement the *asynchronous* start method. This version of the method takes a Future as a parameter.
+When the method returns the verticle will *not* be considered deployed.
+
+Some time later, after you've done everything you need to do (e.g. start the HTTP server), you can call complete
+on the Future (or fail) to signal that you're done.
+
+Here's an example:
+
+----
+public class MyVerticle extends AbstractVerticle {
+
+ private HttpServer server;
+
+ public void start(Future<Void> startFuture) {
+   server = vertx.createHttpServer().requestHandler(req -> {
+     req.response()
+       .putHeader("content-type", "text/plain")
+       .end("Hello from Vert.x!");
+     });
+
+   // Now bind the server:
+   server.listen(8080, res -> {
+     if (res.succeeded()) {
+       startFuture.complete();
+     } else {
+       startFuture.fail(res.cause());
+     }
+   });
+ }
+}
+----
+
+Similarly, there is an asynchronous version of the stop method too. You use this if you want to do some verticle
+cleanup that takes some time.
+
+----
+public class MyVerticle extends AbstractVerticle {
+
+ public void start() {
+   // Do something
+ }
+
+ public void stop(Future<Void> stopFuture) {
+   obj.doSomethingThatTakesTime(res -> {
+     if (res.succeeded()) {
+       stopFuture.complete();
+     } else {
+       stopFuture.fail();
+     }
+   });
+ }
+}
+----
+
+INFO: You don't need to manually stop the HTTP server started by a verticle, in the verticle's stop method. Vert.x
+will automatically stop any running server when the verticle is undeployed.

@@ -1,0 +1,67 @@
+== RxJava 2 API
+
+The RxJava `link:../../apidocs/io/vertx/reactivex/ext/web/client/HttpRequest.html[HttpRequest]` provides an rx-ified version of the original API,
+the `link:../../apidocs/io/vertx/reactivex/ext/web/client/HttpRequest.html#rxSend--[rxSend]` method returns a `Single<HttpResponse<Buffer>>` that
+makes the HTTP request upon subscription, as consequence, the `Single` can be subscribed many times.
+
+[source,java]
+----
+Single<HttpResponse<Buffer>> single = client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .rxSend();
+
+// Send a request upon subscription of the Single
+single.subscribe(response -> System.out.println("Received 1st response with status code" + response.statusCode()), error -> System.out.println("Something went wrong " + error.getMessage()));
+
+// Send another request
+single.subscribe(response -> System.out.println("Received 2nd response with status code" + response.statusCode()), error -> System.out.println("Something went wrong " + error.getMessage()));
+----
+
+The obtained `Single` can be composed and chained naturally with the RxJava API
+
+[source,java]
+----
+Single<String> url = client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .rxSend()
+  .map(HttpResponse::bodyAsString);
+
+// Use the flatMap operator to make a request on the URL Single
+url
+  .flatMap(u -> client.getAbs(u).rxSend())
+  .subscribe(response -> System.out.println("Received response with status code" + response.statusCode()), error -> System.out.println("Something went wrong " + error.getMessage()));
+----
+
+The same APIs is available
+
+[source,java]
+----
+Single<HttpResponse<JsonObject>> single = client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .putHeader("some-header", "header-value")
+  .addQueryParam("some-param", "param value")
+  .as(BodyCodec.jsonObject())
+  .rxSend();
+single.subscribe(resp -> {
+  System.out.println(resp.statusCode());
+  System.out.println(resp.body());
+});
+----
+
+The `link:../../apidocs/io/vertx/reactivex/ext/web/client/HttpRequest.html#sendStream-io.reactivex.Flowable-io.vertx.core.Handler-[sendStream]` shall
+be preferred for sending bodies `Flowable<Buffer>`.
+
+[source,java]
+----
+Flowable<Buffer> body = getPayload();
+
+Single<HttpResponse<Buffer>> single = client
+  .post(8080, "myserver.mycompany.com", "/some-uri")
+  .rxSendStream(body);
+single.subscribe(resp -> {
+  System.out.println(resp.statusCode());
+  System.out.println(resp.body());
+});
+----
+
+Upon subscription, the `body` will be subscribed and its content used for the request.

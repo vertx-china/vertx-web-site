@@ -1,0 +1,917 @@
+= Reactive PostgreSQL Client
+:PREPARED_PARAMS: `$1`, `$2`, etc…​
+
+The Reactive PostgreSQL Client is a client for PostgreSQL with a straightforward API focusing on
+scalability and low overhead.
+
+The client is reactive and non blocking, allowing to handle many database connections with a single thread.
+
+* Event driven
+* Lightweight
+* Built-in connection pooling
+* Prepared queries caching
+* Publish / subscribe using PostgreSQL `NOTIFY/LISTEN`
+* Batch and cursor
+* Row streaming
+* Command pipeling
+* RxJava 1 and RxJava 2
+* Direct memory to object without unnecessary copies
+* Java 8 Date and Time
+* SSL/TLS
+* Unix domain socket
+* HTTP/1.x CONNECT, SOCKS4a or SOCKS5 proxy support
+
+== Usage
+
+To use the Reactive PostgreSQL Client add the following dependency to the _dependencies_ section of your build descriptor:
+
+* Maven (in your `pom.xml`):
+
+[source,xml]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-pg-client</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+* Gradle (in your `build.gradle` file):
+
+[source,groovy]
+----
+dependencies {
+ compile 'io.vertx:vertx-pg-client:4.0.0'
+}
+----
+
+== Getting started
+
+Here is the simplest way to connect, query and disconnect
+
+[source,java]
+----
+PgConnectOptions connectOptions = new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret");
+
+// Pool options
+PoolOptions poolOptions = new PoolOptions()
+  .setMaxSize(5);
+
+// Create the client pool
+PgPool client = PgPool.pool(connectOptions, poolOptions);
+
+// A simple query
+client
+  .query("SELECT * FROM users WHERE id='julien'")
+  .execute(ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> result = ar.result();
+    System.out.println("Got " + result.size() + " rows ");
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+
+  // Now close the pool
+  client.close();
+});
+----
+
+== Connecting to PostgreSQL
+
+Most of the time you will use a pool to connect to PostgreSQL:
+
+[source,java]
+----
+PgConnectOptions connectOptions = new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret");
+
+// Pool options
+PoolOptions poolOptions = new PoolOptions()
+  .setMaxSize(5);
+
+// Create the pooled client
+PgPool client = PgPool.pool(connectOptions, poolOptions);
+----
+
+The pooled client uses a connection pool and any operation will borrow a connection from the pool
+to execute the operation and release it to the pool.
+
+If you are running with Vert.x you can pass it your Vertx instance:
+
+[source,java]
+----
+PgConnectOptions connectOptions = new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret");
+
+// Pool options
+PoolOptions poolOptions = new PoolOptions()
+  .setMaxSize(5);
+
+// Create the pooled client
+PgPool client = PgPool.pool(vertx, connectOptions, poolOptions);
+----
+
+You need to release the pool when you don't need it anymore:
+
+[source,java]
+----
+pool.close();
+----
+
+When you need to execute several operations on the same connection, you need to use a client
+`link:../../apidocs/io/vertx/pgclient/PgConnection.html[connection]`.
+
+You can easily get one from the pool:
+
+[source,java]
+----
+PgConnectOptions connectOptions = new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret");
+
+// Pool options
+PoolOptions poolOptions = new PoolOptions()
+  .setMaxSize(5);
+
+// Create the pooled client
+PgPool client = PgPool.pool(vertx, connectOptions, poolOptions);
+
+// Get a connection from the pool
+client.getConnection().compose(conn -> {
+  System.out.println("Got a connection from the pool");
+
+  // All operations execute on the same connection
+  return conn
+    .query("SELECT * FROM users WHERE id='julien'")
+    .execute()
+    .compose(res -> conn
+      .query("SELECT * FROM users WHERE id='emad'")
+      .execute())
+    .onComplete(ar -> {
+      // Release the connection to the pool
+      conn.close();
+    });
+}).onComplete(ar -> {
+  if (ar.succeeded()) {
+
+    System.out.println("Done");
+  } else {
+    System.out.println("Something went wrong " + ar.cause().getMessage());
+  }
+});
+----
+
+Once you are done with the connection you must close it to release it to the pool, so it can be reused.
+
+Sometimes you want to improve performance via Unix domain socket connection, we achieve this with Vert.x Native transports.
+
+Make sure you have added the required `netty-transport-native` dependency in your classpath and enabled the Unix domain socket option.
+
+[source,java]
+----
+PgConnectOptions connectOptions = new PgConnectOptions()
+  .setHost("/var/run/postgresql")
+  .setPort(5432)
+  .setDatabase("the-db");
+
+// Pool options
+PoolOptions poolOptions = new PoolOptions()
+  .setMaxSize(5);
+
+// Create the pooled client
+PgPool client = PgPool.pool(connectOptions, poolOptions);
+
+// Create the pooled client with a vertx instance
+// Make sure the vertx instance has enabled native transports
+PgPool client2 = PgPool.pool(vertx, connectOptions, poolOptions);
+----
+
+More information can be found in the [Vert.x documentation](https://vertx.io/docs/vertx-core/java/#_native_transports).
+
+== Connect retries
+
+You can configure the client to retry when a connection fails to be established.
+
+[source,java]
+----
+options
+  .setReconnectAttempts(2)
+  .setReconnectInterval(1000);
+----
+
+== Configuration
+
+There are several alternatives for you to configure the client.
+
+=== data object
+
+A simple way to configure the client is to specify a `PgConnectOptions` data object.
+
+[source,java]
+----
+PgConnectOptions connectOptions = new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret");
+
+// Pool Options
+PoolOptions poolOptions = new PoolOptions().setMaxSize(5);
+
+// Create the pool from the data object
+PgPool pool = PgPool.pool(vertx, connectOptions, poolOptions);
+
+pool.getConnection(ar -> {
+  // Handling your connection
+});
+----
+
+You can also configure the generic properties with the `setProperties` or `addProperty` methods. Note `setProperties` will override the default client properties.
+
+For example, you can set a default schema for the connection with adding a `search_path` property.
+
+[source,java]
+----
+PgConnectOptions connectOptions = new PgConnectOptions();
+
+// Set the default schema
+Map<String, String> props = new HashMap<>();
+props.put("search_path", "myschema");
+connectOptions.setProperties(props);
+----
+
+More information about the available properties can be found in the https://www.postgresql.org/docs/current/runtime-config-client.html[PostgreSQL Manuals].
+
+=== connection uri
+
+Apart from configuring with a `PgConnectOptions` data object, We also provide you an alternative way to connect when you want to configure with a connection URI:
+
+[source,java]
+----
+String connectionUri = "postgresql://dbuser:secretpassword@database.server.com:3211/mydb";
+
+// Create the pool from the connection URI
+PgPool pool = PgPool.pool(connectionUri);
+
+// Create the connection from the connection URI
+PgConnection.connect(vertx, connectionUri, res -> {
+  // Handling your connection
+});
+----
+
+More information about connection string formats can be found in the https://www.postgresql.org/docs/9.6/static/libpq-connect.html#LIBPQ-CONNSTRING[PostgreSQL Manuals].
+
+Currently the client supports the following parameter key words in connection uri
+
+* host
+* hostaddr
+* port
+* user
+* password
+* dbname
+* sslmode
+* properties including(application_name, fallback_application_name, search_path)
+
+Note: configuring properties in connection URI will override the default properties.
+
+=== environment variables
+
+You can also use environment variables to set default connection setting values, this is useful
+when you want to avoid hard-coding database connection information. You can refer to the https://www.postgresql.org/docs/9.6/static/libpq-envars.html[official documentation]
+for more details. The following parameters are supported:
+
+* `PGHOST`
+* `PGHOSTADDR`
+* `PGPORT`
+* `PGDATABASE`
+* `PGUSER`
+* `PGPASSWORD`
+* `PGSSLMODE`
+
+If you don't specify a data object or a connection URI string to connect, environment variables will take precedence over them.
+
+[source,java]
+----
+$ PGUSER=user \
+ PGHOST=the-host \
+ PGPASSWORD=secret \
+ PGDATABASE=the-db \
+ PGPORT=5432 \
+ PGSSLMODE=DISABLE
+----
+
+[source,java]
+----
+PgPool pool = PgPool.pool();
+
+// Create the connection from the environment variables
+PgConnection.connect(vertx, res -> {
+  // Handling your connection
+});
+----
+
+=== SASL SCRAM-SHA-256 authentication mechanism.
+
+To use the sasl SCRAM-SHA-256 authentication add the following dependency to the _dependencies_ section of your build descriptor:
+
+* Maven (in your `pom.xml`):
+
+[source,xml]
+----
+<dependency>
+ <groupId>com.ongres.scram</groupId>
+ <artifactId>client</artifactId>
+ <version>2.1</version>
+</dependency>
+----
+* Gradle (in your `build.gradle` file):
+
+[source,groovy]
+----
+dependencies {
+ compile 'com.ongres.scram:client:2.1'
+}
+----
+
+Note that SCRAM-SHA-256-PLUS (added in Postgresql 11) is not supported.
+
+
+include::queries.adoc[]
+
+You can fetch generated keys with a 'RETURNING' clause in your query:
+
+[source,java]
+----
+client
+  .preparedQuery("INSERT INTO color (color_name) VALUES ($1), ($2), ($3) RETURNING color_id")
+  .execute(Tuple.of("white", "red", "blue"), ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> rows = ar.result();
+    System.out.println(rows.rowCount());
+    for (Row row : rows) {
+      System.out.println("generated key: " + row.getInteger("color_id"));
+    }
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+include::connections.adoc[]
+
+include::transactions.adoc[]
+
+include::cursor.adoc[]
+
+Note: PostreSQL destroys cursors at the end of a transaction, so the cursor API shall be used
+within a transaction, otherwise you will likely get the `34000` PostgreSQL error.
+
+== Tracing queries
+
+include::tracing.adoc[]
+
+== PostgreSQL type mapping
+
+Currently the client supports the following PostgreSQL types
+
+* BOOLEAN (`java.lang.Boolean`)
+* INT2 (`java.lang.Short`)
+* INT4 (`java.lang.Integer`)
+* INT8 (`java.lang.Long`)
+* FLOAT4 (`java.lang.Float`)
+* FLOAT8 (`java.lang.Double`)
+* CHAR (`java.lang.String`)
+* VARCHAR (`java.lang.String`)
+* TEXT (`java.lang.String`)
+* ENUM (`java.lang.String`)
+* NAME (`java.lang.String`)
+* SERIAL2 (`java.lang.Short`)
+* SERIAL4 (`java.lang.Integer`)
+* SERIAL8 (`java.lang.Long`)
+* NUMERIC (`io.vertx.sqlclient.data.Numeric`)
+* UUID (`java.util.UUID`)
+* DATE (`java.time.LocalDate`)
+* TIME (`java.time.LocalTime`)
+* TIMETZ (`java.time.OffsetTime`)
+* TIMESTAMP (`java.time.LocalDateTime`)
+* TIMESTAMPTZ (`java.time.OffsetDateTime`)
+* INTERVAL (`io.vertx.pgclient.data.Interval`)
+* BYTEA (`io.vertx.core.buffer.Buffer`)
+* JSON (`io.vertx.core.json.JsonObject`, `io.vertx.core.json.JsonArray`, `Number`, `Boolean`, `String`, `io.vertx.sqlclient.Tuple#JSON_NULL`)
+* JSONB (`io.vertx.core.json.JsonObject`, `io.vertx.core.json.JsonArray`, `Number`, `Boolean`, `String`, `io.vertx.sqlclient.Tuple#JSON_NULL`)
+* POINT (`io.vertx.pgclient.data.Point`)
+* LINE (`io.vertx.pgclient.data.Line`)
+* LSEG (`io.vertx.pgclient.data.LineSegment`)
+* BOX (`io.vertx.pgclient.data.Box`)
+* PATH (`io.vertx.pgclient.data.Path`)
+* POLYGON (`io.vertx.pgclient.data.Polygon`)
+* CIRCLE (`io.vertx.pgclient.data.Circle`)
+* TSVECTOR (`java.lang.String`)
+* TSQUERY (`java.lang.String`)
+
+Tuple decoding uses the above types when storing values, it also performs on the flu conversion the actual value when possible:
+
+[source,java]
+----
+pool
+  .query("SELECT 1::BIGINT \"VAL\"")
+  .execute(ar -> {
+  RowSet<Row> rowSet = ar.result();
+  Row row = rowSet.iterator().next();
+
+  // Stored as java.lang.Long
+  Object value = row.getValue(0);
+
+  // Convert to java.lang.Integer
+  Integer intValue = row.getInteger(0);
+});
+----
+
+Tuple encoding uses the above type mapping for encoding, unless the type is numeric in which case `java.lang.Number` is used instead:
+
+[source,java]
+----
+pool
+  .query("SELECT 1::BIGINT \"VAL\"")
+  .execute(ar -> {
+  RowSet<Row> rowSet = ar.result();
+  Row row = rowSet.iterator().next();
+
+  // Stored as java.lang.Long
+  Object value = row.getValue(0);
+
+  // Convert to java.lang.Integer
+  Integer intValue = row.getInteger(0);
+});
+----
+
+Arrays of these types are supported.
+
+=== Handling JSON
+
+PostgreSQL `JSON` and `JSONB` types are represented by the following Java types:
+
+- `String`
+- `Number`
+- `Boolean`
+- `io.vertx.core.json.JsonObject`
+- `io.vertx.core.json.JsonArray`
+- `io.vertx.sqlclient.Tuple#JSON_NULL` for representing the JSON null literal
+
+[source,java]
+----
+Tuple tuple = Tuple.of(
+  Tuple.JSON_NULL,
+  new JsonObject().put("foo", "bar"),
+  3);
+
+// Retrieving json
+Object value = tuple.getValue(0); // Expect JSON_NULL
+
+//
+value = tuple.get(JsonObject.class, 1); // Expect JSON object
+
+//
+value = tuple.get(Integer.class, 2); // Expect 3
+value = tuple.getInteger(2); // Expect 3
+----
+
+=== Handling NUMERIC
+
+The `link:../../apidocs/io/vertx/sqlclient/data/Numeric.html[Numeric]` Java type is used to represent the PostgreSQL `NUMERIC` type.
+
+[source,java]
+----
+Numeric numeric = row.get(Numeric.class, 0);
+if (numeric.isNaN()) {
+  // Handle NaN
+} else {
+  BigDecimal value = numeric.bigDecimalValue();
+}
+----
+
+== Handling arrays
+
+Arrays are available on `link:../../apidocs/io/vertx/sqlclient/Tuple.html[Tuple]` and `link:../../apidocs/io/vertx/sqlclient/Row.html[Row]`:
+
+[source,java]
+----
+Tuple tuple = Tuple.of(new String[]{ "a", "tuple", "with", "arrays" });
+
+// Add a string array to the tuple
+tuple.addArrayOfString(new String[]{"another", "array"});
+
+// Get the first array of string
+String[] array = tuple.getArrayOfStrings(0);
+----
+
+== Handling Date/Time infinity
+
+PostgreSQL defines special values to represent infinity.
+
+The max/min constants of the corresponding type represents https://www.postgresql.org/docs/9.0/datatype-datetime.html[special value].
+
+- `OffsetDateTime.MAX`/OffsetDateTime.MIN`
+- `LocalDateTime.MAX`/LocalDateTime.MIN`
+- `LocalDate.MAX`/LocalDate.MIN`
+
+[source,java]
+----
+client
+  .query("SELECT 'infinity'::DATE \"LocalDate\"")
+  .execute(ar -> {
+    if (ar.succeeded()) {
+      Row row = ar.result().iterator().next();
+      System.out.println(row.getLocalDate("LocalDate").equals(LocalDate.MAX));
+    } else {
+      System.out.println("Failure: " + ar.cause().getMessage());
+    }
+  });
+----
+
+== Handling custom types
+
+Strings are used to represent custom types, both sent to and returned from Postgres.
+
+You can read from PostgreSQL and get the custom type as a string
+
+[source,java]
+----
+client
+  .preparedQuery("SELECT address, (address).city FROM address_book WHERE id=$1")
+  .execute(Tuple.of(3),  ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> rows = ar.result();
+    for (Row row : rows) {
+      System.out.println("Full Address " + row.getString(0) + ", City " + row.getString(1));
+    }
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+You can also write to PostgreSQL by providing a string
+
+[source,java]
+----
+client
+  .preparedQuery("INSERT INTO address_book (id, address) VALUES ($1, $2)")
+  .execute(Tuple.of(3, "('Anytown', 'Second Ave', false)"),  ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> rows = ar.result();
+    System.out.println(rows.rowCount());
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+== Handling text search
+
+Text search is handling using java `String`
+
+[source,java]
+----
+client
+  .preparedQuery("SELECT to_tsvector( $1 ) @@ to_tsquery( $2 )")
+  .execute(Tuple.of("fat cats ate fat rats", "fat & rat"),  ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> rows = ar.result();
+    for (Row row : rows) {
+      System.out.println("Match : " + row.getBoolean(0));
+    }
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+`tsvector` and `tsquery` can be fetched from db using java `String`
+
+[source,java]
+----
+client
+  .preparedQuery("SELECT to_tsvector( $1 ), to_tsquery( $2 )")
+  .execute(Tuple.of("fat cats ate fat rats", "fat & rat"),  ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> rows = ar.result();
+    for (Row row : rows) {
+      System.out.println("Vector : " + row.getString(0) + ", query : "+row.getString(1));
+    }
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+== Handling enumerated types
+
+PostgreSQL https://www.postgresql.org/docs/9.1/datatype-enum.html[enumerated types] are mapped to java strings.
+
+[source,java]
+----
+client
+  .preparedQuery("INSERT INTO colors VALUES ($2)")
+  .execute(Tuple.of("red"),  res -> {
+    // ...
+  });
+----
+
+== Using Java enum types
+
+You can map Java https://docs.oracle.com/javase/tutorial/java/javaOO/enum.html[enum types] to these column
+types:
+
+- Strings (VARCHAR, TEXT)
+- PosgreSQL enumerated types
+- Numbers (INT2, INT4, INT8)
+
+[source,java]
+----
+client
+  .preparedQuery("INSERT INTO colors VALUES ($1)")
+  .execute(Tuple.of(Color.red))
+  .flatMap(res ->
+    client
+      .preparedQuery("SELECT color FROM colors")
+      .execute()
+  ).onComplete(res -> {
+    if (res.succeeded()) {
+      RowSet<Row> rows = res.result();
+      for (Row row : rows) {
+        System.out.println(row.get(Color.class, "color"));
+      }
+    }
+});
+----
+
+String and PostgreSQL enumerated types are matched with the Java enum's name returned by the `name()` method.
+
+Numbers types are matched with the Java enum's ordinal returned by the `ordinal()` method.
+
+== Collector queries
+
+You can use Java collectors with the query API:
+
+[source,java]
+----
+Collector<Row, ?, Map<Long, String>> collector = Collectors.toMap(
+  row -> row.getLong("id"),
+  row -> row.getString("last_name"));
+
+// Run the query with the collector
+client.query("SELECT * FROM users")
+  .collecting(collector)
+  .execute(ar -> {
+  if (ar.succeeded()) {
+    SqlResult<Map<Long, String>> result = ar.result();
+
+    // Get the map created by the collector
+    Map<Long, String> map = result.value();
+    System.out.println("Got " + map);
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+The collector processing must not keep a reference on the `link:../../apidocs/io/vertx/sqlclient/Row.html[Row]` as
+there is a single row used for processing the entire set.
+
+The Java `Collectors` provides many interesting predefined collectors, for example you can
+create easily create a string directly from the row set:
+
+[source,java]
+----
+Collector<Row, ?, String> collector = Collectors.mapping(
+  row -> row.getString("last_name"),
+  Collectors.joining(",", "(", ")")
+);
+
+// Run the query with the collector
+client.query("SELECT * FROM users").collecting(collector).execute(ar -> {
+    if (ar.succeeded()) {
+      SqlResult<String> result = ar.result();
+
+      // Get the string created by the collector
+      String list = result.value();
+      System.out.println("Got " + list);
+    } else {
+      System.out.println("Failure: " + ar.cause().getMessage());
+    }
+  });
+----
+
+== Pub/sub
+
+PostgreSQL supports pub/sub communication channels.
+
+You can set a `link:../../apidocs/io/vertx/pgclient/PgConnection.html#notificationHandler-io.vertx.core.Handler-[notificationHandler]` to receive
+PostgreSQL notifications:
+
+[source,java]
+----
+connection.notificationHandler(notification -> {
+  System.out.println("Received " + notification.getPayload() + " on channel " + notification.getChannel());
+});
+
+connection
+  .query("LISTEN some-channel")
+  .execute(ar -> {
+  System.out.println("Subscribed to channel");
+});
+----
+
+The `link:../../apidocs/io/vertx/pgclient/pubsub/PgSubscriber.html[PgSubscriber]` is a channel manager managing a single connection that
+provides per channel subscription:
+
+[source,java]
+----
+PgSubscriber subscriber = PgSubscriber.subscriber(vertx, new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret")
+);
+
+// You can set the channel before connect
+subscriber.channel("channel1").handler(payload -> {
+  System.out.println("Received " + payload);
+});
+
+subscriber.connect(ar -> {
+  if (ar.succeeded()) {
+
+    // Or you can set the channel after connect
+    subscriber.channel("channel2").handler(payload -> {
+      System.out.println("Received " + payload);
+    });
+  }
+});
+----
+
+The channel name that is given to the channel method will be the exact name of the channel as held by PostgreSQL for sending
+notifications.  Note this is different than the representation of the channel name in SQL, and
+internally `link:../../apidocs/io/vertx/pgclient/pubsub/PgSubscriber.html[PgSubscriber]` will prepare the submitted channel name as a quoted identifier:
+
+[source,java]
+----
+PgSubscriber subscriber = PgSubscriber.subscriber(vertx, new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret")
+);
+
+subscriber.connect(ar -> {
+    if (ar.succeeded()) {
+      // Complex channel name - name in PostgreSQL requires a quoted ID
+      subscriber.channel("Complex.Channel.Name").handler(payload -> {
+        System.out.println("Received " + payload);
+      });
+      subscriber.channel("Complex.Channel.Name").subscribeHandler(subscribed -> {
+        subscriber.actualConnection()
+          .query("NOTIFY \"Complex.Channel.Name\", 'msg'")
+          .execute(notified -> {
+            System.out.println("Notified \"Complex.Channel.Name\"");
+          });
+      });
+
+      // PostgreSQL simple ID's are forced lower-case
+      subscriber.channel("simple_channel").handler(payload -> {
+          System.out.println("Received " + payload);
+      });
+      subscriber.channel("simple_channel").subscribeHandler(subscribed -> {
+        // The following simple channel identifier is forced to lower case
+        subscriber.actualConnection()
+          .query("NOTIFY Simple_CHANNEL, 'msg'")
+          .execute(notified -> {
+            System.out.println("Notified simple_channel");
+          });
+      });
+
+      // The following channel name is longer than the current
+      // (NAMEDATALEN = 64) - 1 == 63 character limit and will be truncated
+      subscriber.channel("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbb")
+        .handler(payload -> {
+        System.out.println("Received " + payload);
+      });
+    }
+  });
+----
+You can provide a reconnect policy as a function that takes the number of `retries` as argument and returns an `amountOfTime`
+value:
+
+* when `amountOfTime < 0`: the subscriber is closed and there is no retry
+* when `amountOfTime = 0`: the subscriber retries to connect immediately
+* when `amountOfTime > 0`: the subscriber retries after `amountOfTime` milliseconds
+
+[source,java]
+----
+PgSubscriber subscriber = PgSubscriber.subscriber(vertx, new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret")
+);
+
+// Reconnect at most 10 times after 100 ms each
+subscriber.reconnectPolicy(retries -> {
+  if (retries < 10) {
+    return 100L;
+  } else {
+    return -1L;
+  }
+});
+----
+
+The default policy is to not reconnect.
+
+== Cancelling Request
+
+PostgreSQL supports cancellation of requests in progress. You can cancel inflight requests using `link:../../apidocs/io/vertx/pgclient/PgConnection.html#cancelRequest-io.vertx.core.Handler-[cancelRequest]`. Cancelling a request opens a new connection to the server and cancels the request and then close the connection.
+
+[source,java]
+----
+connection
+  .query("SELECT pg_sleep(20)")
+  .execute(ar -> {
+  if (ar.succeeded()) {
+    // imagine this is a long query and is still running
+    System.out.println("Query success");
+  } else {
+    // the server will abort the current query after cancelling request
+    System.out.println("Failed to query due to " + ar.cause().getMessage());
+  }
+});
+connection.cancelRequest(ar -> {
+  if (ar.succeeded()) {
+    System.out.println("Cancelling request has been sent");
+  } else {
+    System.out.println("Failed to send cancelling request");
+  }
+});
+----
+
+> The cancellation signal might or might not have any effect — for example, if it arrives after the backend has finished processing the query, then it will have no effect. If the cancellation is effective, it results in the current command being terminated early with an error message.
+
+More information can be found in the https://www.postgresql.org/docs/11/protocol-flow.html#id-1.10.5.7.9[official documentation].
+
+== Using SSL/TLS
+
+To configure the client to use SSL connection, you can configure the `link:../../apidocs/io/vertx/pgclient/PgConnectOptions.html[PgConnectOptions]`
+like a Vert.x `NetClient`.
+All https://www.postgresql.org/docs/current/libpq-ssl.html#LIBPQ-SSL-PROTECTION[SSL modes] are supported and you are able to configure `sslmode`. The client is in `DISABLE` SSL mode by default.
+`ssl` parameter is kept as a mere shortcut for setting `sslmode`. `setSsl(true)` is equivalent to `setSslMode(VERIFY_CA)` and `setSsl(false)` is equivalent to `setSslMode(DISABLE)`.
+
+[source,java]
+----
+PgConnectOptions options = new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret")
+  .setSslMode(SslMode.VERIFY_CA)
+  .setPemTrustOptions(new PemTrustOptions().addCertPath("/path/to/cert.pem"));
+
+PgConnection.connect(vertx, options, res -> {
+  if (res.succeeded()) {
+    // Connected with SSL
+  } else {
+    System.out.println("Could not connect " + res.cause());
+  }
+});
+----
+
+More information can be found in the http://vertx.io/docs/vertx-core/java/#ssl[Vert.x documentation].
+
+== Using a proxy
+
+You can also configure the client to use an HTTP/1.x CONNECT, SOCKS4a or SOCKS5 proxy.
+
+More information can be found in the http://vertx.io/docs/vertx-core/java/#_using_a_proxy_for_client_connections[Vert.x documentation].
+
+ifeval::["java" == "java"]
+include::override/rxjava2.adoc[]
+endif::[]

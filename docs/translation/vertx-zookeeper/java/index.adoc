@@ -1,0 +1,152 @@
+= Zookeeper Cluster Manager
+
+This is a cluster manager implementation for Vert.x that uses http://zookeeper.apache.org/[Zookeeper].
+
+It implements interfaces of vert.x cluster totally. So you can using it to instead of vertx-hazelcast if you want.
+This implementation is packaged inside:
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+<groupId>io.vertx</groupId>
+<artifactId>vertx-zookeeper</artifactId>
+<version>4.0.0</version>
+</dependency>
+----
+
+In Vert.x a cluster manager is used for various functions including:
+
+* Discovery and group membership of Vert.x nodes in a cluster
+* Maintaining cluster wide topic subscriber lists (so we know which nodes are interested in which event busaddresses)
+* Distributed Map support
+* Distributed Locks
+* Distributed Counters
+
+Cluster managersdo not* handle the event bus inter-node transport, this is done directly by Vert.x with TCP connections.
+
+== How to work
+We are using http://curator.apache.org/[Apache Curator] framework rather than zookeeper client directly, so
+we have a dependency for libraries used in Curator such as `guava`, `slf4j` and of course `zookeeper`.
+
+Since ZK using tree dictionary to store data, we can take root path as namespace default root path is `io.vertx` which in default-zookeeper.json.
+and there are another 5 sub path to record other information for functions in vert.x cluster manager, all you can change the path is `root path`.
+
+you can find all the vert.x node information in path of `/io.vertx/cluster/nodes/`,
+`/io.vertx/asyncMap/$name/` record all the `AsyncMap` you created with `io.vertx.core.shareddata.AsyncMap` interface.
+`/io.vertx/asyncMultiMap/$name/` record all the `AsyncMultiMap` you created with `io.vertx.core.spi.cluster.AsyncMultiMap` interface.
+`/io.vertx/locks/` record distributed Locks information.
+`/io.vertx/counters/` record distributed Count information.
+
+== Using this cluster manager
+
+If you are using Vert.x from the command line, the jar corresponding to this cluster manager (it will be named `vertx-zookeeper-4.0.0`.jar`
+should be in the `lib` directory of the Vert.x installation.
+
+If you want clustering with this cluster manager in your Vert.x Maven or Gradle project then just add a dependency to
+the artifact: `io.vertx:vertx-zookeeper:${version}` in your project.
+
+If the jar is on your classpath as above then Vert.x will automatically detect this and use it as the cluster manager.
+Please make sure you don't have any other cluster managers on your classpath or Vert.x might
+choose the wrong one.
+
+You can also specify the cluster manager programmatically if you are embedding Vert.x by specifying it on the options
+when you are creating your Vert.x instance, for example:
+
+[source, java]
+----
+ClusterManager mgr = new ZookeeperClusterManager();
+VertxOptions options = new VertxOptions().setClusterManager(mgr);
+Vertx.clusteredVertx(options, res -> {
+  if (res.succeeded()) {
+    Vertx vertx = res.result();
+  } else {
+    // failed!
+  }
+});
+----
+
+== Configuring this cluster manager
+
+Usually the cluster manager is configured by a file
+https://github.com/vert-x3/vertx-zookeeper/blob/master/src/main/resources/default-zookeeper.json[`default-zookeeper.json`]
+which is packaged inside the jar.
+
+If you want to override this configuration you can provide a file called `zookeeper.json` on your classpath and this
+will be used instead. If you want to embed the `zookeeper.json` file in a fat jar, it must be located at the root of the
+fat jar. If it's an external file, the*directory** containing the file must be added to the classpath. For
+example, if you are using the _launcher_ class from Vert.x, the classpath enhancement can be done as follows:
+
+[source]
+----
+# If the zookeeper.json is in the current directory:
+java -jar ... -cp . -cluster
+vertx run MyVerticle -cp . -cluster
+
+# If the zookeeper.json is in the conf directory
+java -jar ... -cp conf -cluster
+----
+
+Another way to override the configuration is by providing the system property `vertx.zookeeper.conf` with a
+location:
+
+[source]
+----
+# Use a cluster configuration located in an external file
+java -Dvertx.zookeeper.config=./config/my-zookeeper-conf.json -jar ... -cluster
+
+# Or use a custom configuration from the classpath
+java -Dvertx.zookeeper.config=classpath:my/package/config/my-cluster-config.json -jar ... -cluster
+----
+
+The `vertx.zookeeper.config` system property, when present, overrides any `zookeeper.json` from the classpath, but if
+loading
+from this system property fails, then loading falls back to either `zookeeper.json` or the Zookeeper default configuration.
+
+The configuration file is described in detail in `default-zookeeper.json`'s comment.
+
+You can also specify configuration programmatically if embedding:
+
+[source,java]
+----
+JsonObject zkConfig = new JsonObject();
+zkConfig.put("zookeeperHosts", "127.0.0.1");
+zkConfig.put("rootPath", "io.vertx");
+zkConfig.put("retry", new JsonObject()
+    .put("initialSleepTime", 3000)
+    .put("maxTimes", 3));
+
+
+ClusterManager mgr = new ZookeeperClusterManager(zkConfig);
+VertxOptions options = new VertxOptions().setClusterManager(mgr);
+
+Vertx.clusteredVertx(options, res -> {
+  if (res.succeeded()) {
+    Vertx vertx = res.result();
+  } else {
+    // failed!
+  }
+});
+----
+
+IMPORTANT: You can also configure the zookeeper hosts using the `vertx.zookeeper.hosts` system property.
+
+=== Enabling logging
+
+When trouble-shooting clustering issues with Zookeeper it's often useful to get some logging output from Zookeeper
+to see if it's forming a cluster properly. You can do this (when using the default JUL logging) by adding a file
+called `vertx-default-jul-logging.properties` on your classpath. This is a standard java.util.logging (JUL)
+configuration file. Inside it set:
+
+----
+org.apache.zookeeper.level=INFO
+----
+
+and also
+
+----
+java.util.logging.ConsoleHandler.level=INFO
+java.util.logging.FileHandler.level=INFO
+----
+
+== About Zookeeper version
+We use Curator 4.3.0, as Zookeeper latest stable is 3.4.8 so we do not support any features of 3.5.x

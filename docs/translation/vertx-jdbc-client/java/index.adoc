@@ -1,0 +1,817 @@
+= Vert.x JDBC client
+
+This client allows you to interact with any JDBC compliant database using an asynchronous API from your Vert.x
+application.
+
+The client API is represented with the interface `link:../../apidocs/io/vertx/ext/jdbc/JDBCClient.html[JDBCClient]`.
+
+To use this project, add the following dependency to the _dependencies_ section of your build descriptor:
+
+* Maven (in your `pom.xml`):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-jdbc-client</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+* Gradle (in your `build.gradle` file):
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-jdbc-client:4.0.0'
+----
+
+== Using the Sql Client API
+
+Sql Client is the vert.x reactive API to communicate with SQL databases. There are already several implementations of the
+API for popular engines such as `MySQL`, `PostgreSQL`, `MSSQL` and `IBM DB2`. However as there are still many other
+engines that have no asynchronous drivers, the JDBC Client also implements the same API to allow the usage of JDBC
+drivers until such asynchronous support is implemented (eventually).
+
+=== Creating a DB Pool
+
+It all starts with a pool. Creating a pool is simple. The shortest example would be:
+
+[source,java]
+----
+JDBCPool pool = JDBCPool.pool(vertx, config);
+----
+
+In this case we are reusing the JDBC client API to create the pool. The configuration is free form and users need to
+look up the properties required for the underlying connection pool of choice.
+
+For a type safe alternative, a second factory method is present. This second factory method ensures that the config is
+correct (as it's properties and type is validated by the compiler) but currently only works with the `Agroal` connection
+pool.
+
+[source,java]
+----
+JDBCPool pool = JDBCPool.pool(
+  vertx,
+  // configure the connection
+  new JDBCConnectOptions()
+    // H2 connection string
+    .setJdbcUrl("jdbc:h2:~/test")
+    // username
+    .setUser("sa")
+    // password
+    .setPassword(""),
+  // configure the pool
+  new PoolOptions()
+    .setMaxSize(16)
+);
+----
+
+==== Using the Pool
+
+Once you have a pool, you can start using your database, the pool operates in 2 modes:
+
+1. Managed connection mode
+2. Manual connection mode
+
+When working in managed connection mode, as a user, you don't need to worry to fetch and return connections to the pool.
+Queries can be run directly against the pool and the pool ensures that a connection is acquired and returned after the
+query is terminated.
+
+[source,java]
+----
+pool
+  .query("SELECT * FROM user")
+  .execute()
+  .onFailure(e -> {
+    // handle the failure
+  })
+  .onSuccess(rows -> {
+    for (Row row : rows) {
+      System.out.println(row.getString("FIRST_NAME"));
+    }
+  });
+----
+
+This is also applicable for prepared statements:
+
+[source,java]
+----
+pool
+  .preparedQuery("SELECT * FROM user WHERE emp_id > ?")
+  // the emp id to look up
+  .execute(Tuple.of(1000))
+  .onFailure(e -> {
+    // handle the failure
+  })
+  .onSuccess(rows -> {
+    for (Row row : rows) {
+      System.out.println(row.getString("FIRST_NAME"));
+    }
+  });
+----
+
+Using this mode is quite convenient as it allows you to focus on the business logic, not on the connection management.
+There are times when order and causality may need to be preserved. In this case we need to execute queries on a manual
+connection mode:
+
+[source,java]
+----
+pool
+  .getConnection()
+  .onFailure(e -> {
+    // failed to get a connection
+  })
+  .onSuccess(conn -> {
+    conn
+      .query("SELECT * FROM user")
+      .execute()
+      .onFailure(e -> {
+        // handle the failure
+
+        // very important! don't forget to return the connection
+        conn.close();
+      })
+      .onSuccess(rows -> {
+        for (Row row : rows) {
+          System.out.println(row.getString("FIRST_NAME"));
+        }
+
+        // very important! don't forget to return the connection
+        conn.close();
+      });
+  });
+----
+
+Of course same is to say that prepared statements are also applicable to this mode:
+
+[source,java]
+----
+pool
+  .getConnection()
+  .onFailure(e -> {
+    // failed to get a connection
+  })
+  .onSuccess(conn -> {
+    conn
+      .preparedQuery("SELECT * FROM user WHERE emp_id > ?")
+      // the emp_id to look up
+      .execute(Tuple.of(1000))
+      .onFailure(e -> {
+        // handle the failure
+
+        // very important! don't forget to return the connection
+        conn.close();
+      })
+      .onSuccess(rows -> {
+        for (Row row : rows) {
+          System.out.println(row.getString("FIRST_NAME"));
+        }
+
+        // very important! don't forget to return the connection
+        conn.close();
+      });
+  });
+----
+
+== Legacy JDBC Client API
+
+The JDBC Client API created in Vert.x 3 is now deprecated and instead the new SQL Client API should be used.
+
+It will remain supported for the life time of Vert.x 4 to allow applications to be migrated to the new SQL
+Client API.
+
+=== Getting a connection
+
+Once you've created a client you use `link:../../apidocs/io/vertx/ext/sql/SQLClient.html#getConnection-io.vertx.core.Handler-[getConnection]` to get
+a connection.
+
+This will return the connection in the handler when one is ready from the pool.
+
+[source,java]
+----
+client.getConnection(res -> {
+  if (res.succeeded()) {
+
+    SQLConnection connection = res.result();
+
+    connection.query("SELECT * FROM some_table", res2 -> {
+      if (res2.succeeded()) {
+
+        ResultSet rs = res2.result();
+        // Do something with results
+      }
+    });
+  } else {
+    // Failed to get connection - deal with it
+  }
+});
+----
+
+The connection is an instance of `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html[SQLConnection]` which is a common interface not only used by
+the Vert.x JDBC Client.
+
+You can learn how to use it in the http://vertx.io/docs/vertx-sql-common/java/[common sql interface] documentation.
+
+=== Simple SQL Operations
+
+There are times when you will want to run a single SQL operation, e.g.: a single select of a row, or a update to a
+set of rows which do not require to be part of a transaction or have dependencies on the previous or next operation.
+
+For these cases, clients provide a boilerplate-less API `link:../../apidocs/io/vertx/ext/sql/SQLOperations.html[SQLOperations]`. This interface will
+perform the following steps for you:
+
+1. acquire a connection from the connection pool
+2. perform your action
+3. close and return the connection to the connection pool
+
+An example where users get loaded from the `USERS` table could be:
+
+[source,java]
+----
+client.query("SELECT * FROM USERS", ar -> {
+  if (ar.succeeded()) {
+    if (ar.succeeded()) {
+      ResultSet result = ar.result();
+    } else {
+      // Failed!
+    }
+    // NOTE that you don't need to worry about
+    // the connection management (e.g.: close)
+  }
+});
+----
+
+You can perform the following operations as a simple one "shot" method call:
+
+* `link:../../apidocs/io/vertx/ext/sql/SQLClient.html#query-java.lang.String-io.vertx.core.Handler-[query]`
+* `link:../../apidocs/io/vertx/ext/sql/SQLClient.html#queryWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-[queryWithParams]`
+* `link:../../apidocs/io/vertx/ext/sql/SQLOperations.html#querySingle-java.lang.String-io.vertx.core.Handler-[querySingle]`
+* `link:../../apidocs/io/vertx/ext/sql/SQLOperations.html#querySingleWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-[querySingleWithParams]`
+* `link:../../apidocs/io/vertx/ext/sql/SQLClient.html#update-java.lang.String-io.vertx.core.Handler-[update]`
+* `link:../../apidocs/io/vertx/ext/sql/SQLClient.html#updateWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-[updateWithParams]`
+* `link:../../apidocs/io/vertx/ext/sql/SQLClient.html#call-java.lang.String-io.vertx.core.Handler-[call]`
+* `link:../../apidocs/io/vertx/ext/sql/SQLClient.html#callWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.json.JsonArray-io.vertx.core.Handler-[callWithParams]`
+
+For further details on these API please refer to the `link:../../apidocs/io/vertx/ext/sql/SQLOperations.html[SQLOperations]` interface.
+
+=== Creating a the client
+
+There are several ways to create a client. Let's go through them all.
+
+==== Using default shared data source
+
+In most cases you will want to share a data source between different client instances.
+
+E.g. you scale your application by deploying multiple instances of your verticle and you want each verticle instance
+to share the same datasource so you don't end up with multiple pools
+
+You do this as follows:
+
+[source,java]
+----
+SQLClient client = JDBCClient.createShared(vertx, config);
+----
+
+The first call to `link:../../apidocs/io/vertx/ext/jdbc/JDBCClient.html#createShared-io.vertx.core.Vertx-io.vertx.core.json.JsonObject-[JDBCClient.createShared]`
+will actually create the data source, and the specified config will be used.
+
+Subsequent calls will return a new client instance that uses the same data source, so the configuration won't be used.
+
+==== Specifying a data source name
+
+You can create a client specifying a data source name as follows
+
+[source,java]
+----
+SQLClient client = JDBCClient.createShared(vertx, config, "MyDataSource");
+----
+
+If different clients are created using the same Vert.x instance and specifying the same data source name, they will
+share the same data source.
+
+The first call to `link:../../apidocs/io/vertx/ext/jdbc/JDBCClient.html#createShared-io.vertx.core.Vertx-io.vertx.core.json.JsonObject-[JDBCClient.createShared]`
+will actually create the data source, and the specified config will be used.
+
+Subsequent calls will return a new client instance that uses the same data source, so the configuration won't be used.
+
+Use this way of creating if you wish different groups of clients to have different data sources, e.g. they're
+interacting with different databases.
+
+==== Creating a client with a non shared data source
+
+In most cases you will want to share a data source between different client instances.
+However, it's possible you want to create a client instance that doesn't share its data source with any other client.
+
+In that case you can use `link:../../apidocs/io/vertx/ext/jdbc/JDBCClient.html#create-io.vertx.core.Vertx-io.vertx.core.json.JsonObject-[JDBCClient.create]`.
+
+[source,java]
+----
+SQLClient client = JDBCClient.create(vertx, config);
+----
+
+This is equivalent to calling `link:../../apidocs/io/vertx/ext/jdbc/JDBCClient.html#createShared-io.vertx.core.Vertx-io.vertx.core.json.JsonObject-java.lang.String-[JDBCClient.createShared]`
+with a unique data source name each time.
+
+==== Specifying a data source
+
+If you already have a pre-existing data source, you can also create the client directly specifying that:
+
+[source,java]
+----
+SQLClient client = JDBCClient.create(vertx, dataSource);
+----
+
+=== Closing the client
+
+It's fine to keep hold of the client for a long time (e.g. the lifetime of your verticle), but once you're
+done with it you should close it.
+
+Clients that share a data source with other client instances are reference counted. Once the last one that references
+the same data source is closed, the data source will be closed.
+
+==== Automatic clean-up in verticles
+
+If you're creating clients from inside verticles, the clients will be automatically closed when the verticle is undeployed.
+
+=== The SQL Connection
+
+A connection to the database is represented by `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html[SQLConnection]`.
+
+==== Auto-commit
+
+When you obtain a connection auto commit is set to `true`. This means that each operation you perform will effectively
+execute in its own transaction.
+
+If you wish to perform multiple operations in a single transaction you should set auto commit to false with
+`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#setAutoCommit-boolean-io.vertx.core.Handler-[setAutoCommit]`.
+
+When the operation is complete, the handler will be called:
+
+[source,java]
+----
+connection.setAutoCommit(false, res -> {
+  if (res.succeeded()) {
+    // OK!
+  } else {
+    // Failed!
+  }
+});
+----
+
+==== Executing queries
+
+To execute a query use `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#query-java.lang.String-io.vertx.core.Handler-[query]`
+
+The query string is raw SQL that is passed through without changes to the actual database.
+
+The handler will be called with the results, represented by `link:../../apidocs/io/vertx/ext/sql/ResultSet.html[ResultSet]` when the query has
+been run.
+
+[source,java]
+----
+connection.query("SELECT ID, FNAME, LNAME, SHOE_SIZE from PEOPLE", res -> {
+  if (res.succeeded()) {
+    // Get the result set
+    ResultSet resultSet = res.result();
+  } else {
+    // Failed!
+  }
+});
+----
+
+The `link:../../apidocs/io/vertx/ext/sql/ResultSet.html[ResultSet]` instance represents the results of a query.
+
+The list of column names are available with `link:../../apidocs/io/vertx/ext/sql/ResultSet.html#getColumnNames--[getColumnNames]`, and the actual results
+available with `link:../../apidocs/io/vertx/ext/sql/ResultSet.html#getResults--[getResults]`
+
+The results are a list of `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` instances, one for each row of the results.
+
+[source,java]
+----
+List<String> columnNames = resultSet.getColumnNames();
+
+List<JsonArray> results = resultSet.getResults();
+
+for (JsonArray row : results) {
+
+  String id = row.getString(0);
+  String fName = row.getString(1);
+  String lName = row.getString(2);
+  int shoeSize = row.getInteger(3);
+
+}
+----
+
+You can also retrieve the rows as a list of Json object instances with `link:../../apidocs/io/vertx/ext/sql/ResultSet.html#getRows--[getRows]` -
+this can give you a somewhat simpler API to work with, but please be aware that SQL results can contain duplicate
+column names - if that's the case you should use `link:../../apidocs/io/vertx/ext/sql/ResultSet.html#getResults--[getResults]` instead.
+
+Here's an example of iterating through the results as Json object instances:
+
+[source,java]
+----
+List<JsonObject> rows = resultSet.getRows();
+
+for (JsonObject row : rows) {
+
+  String id = row.getString("ID");
+  String fName = row.getString("FNAME");
+  String lName = row.getString("LNAME");
+  int shoeSize = row.getInteger("SHOE_SIZE");
+
+}
+----
+
+==== Prepared statement queries
+
+To execute a prepared statement query you can use
+`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#queryWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-[queryWithParams]`.
+
+This takes the query, containing the parameter place holders, and a `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` or parameter
+values.
+
+[source,java]
+----
+String query = "SELECT ID, FNAME, LNAME, SHOE_SIZE from PEOPLE WHERE LNAME=? AND SHOE_SIZE > ?";
+JsonArray params = new JsonArray().add("Fox").add(9);
+
+connection.queryWithParams(query, params, res -> {
+
+  if (res.succeeded()) {
+    // Get the result set
+    ResultSet resultSet = res.result();
+  } else {
+    // Failed!
+  }
+});
+----
+
+==== Executing INSERT, UPDATE or DELETE
+
+To execute an operation which updates the database use `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#update-java.lang.String-io.vertx.core.Handler-[update]`.
+
+The update string is raw SQL that is passed through without changes to the actual database.
+
+The handler will be called with the results, represented by `link:../../apidocs/io/vertx/ext/sql/UpdateResult.html[UpdateResult]` when the update has
+been run.
+
+The update result holds the number of rows updated with `link:../../apidocs/io/vertx/ext/sql/UpdateResult.html#getUpdated--[getUpdated]`, and
+if the update generated keys, they are available with `link:../../apidocs/io/vertx/ext/sql/UpdateResult.html#getKeys--[getKeys]`.
+
+[source,java]
+----
+connection.update("INSERT INTO PEOPLE VALUES (null, 'john', 'smith', 9)", res -> {
+  if (res.succeeded()) {
+
+    UpdateResult result = res.result();
+    System.out.println("Updated no. of rows: " + result.getUpdated());
+    System.out.println("Generated keys: " + result.getKeys());
+
+  } else {
+    // Failed!
+  }
+});
+----
+
+==== Prepared statement updates
+
+To execute a prepared statement update you can use
+`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#updateWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-[updateWithParams]`.
+
+This takes the update, containing the parameter place holders, and a `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` or parameter
+values.
+
+[source,java]
+----
+String update = "UPDATE PEOPLE SET SHOE_SIZE = 10 WHERE LNAME=?";
+JsonArray params = new JsonArray().add("Fox");
+
+connection.updateWithParams(update, params, res -> {
+
+  if (res.succeeded()) {
+
+    UpdateResult updateResult = res.result();
+
+    System.out.println("No. of rows updated: " + updateResult.getUpdated());
+
+  } else {
+
+    // Failed!
+
+  }
+});
+----
+
+==== Callable statements
+
+To execute a callable statement (either SQL functions or SQL procedures) you can use
+`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#callWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.json.JsonArray-io.vertx.core.Handler-[callWithParams]`.
+
+This takes the callable statement using the standard JDBC format `{ call func_proc_name() }`, optionally including
+parameter place holders e.g.: `{ call func_proc_name(?, ?) }`, a `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` containing the
+parameter values and finally a `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` containing the
+output types e.g.: `[null, 'VARCHAR']`.
+
+Note that the index of the output type is as important as the params array. If the return value is the second
+argument then the output array must contain a null value as the first element.
+
+A SQL function returns some output using the `return` keyword, and in this case one can call it like this:
+
+[source,java]
+----
+String func = "{ call one_hour_ago() }";
+
+connection.call(func, res -> {
+
+  if (res.succeeded()) {
+    ResultSet result = res.result();
+  } else {
+    // Failed!
+  }
+});
+----
+
+When working with Procedures you and still return values from your procedures via its arguments, in the case you do
+not return anything the usage is as follows:
+
+[source,java]
+----
+String func = "{ call new_customer(?, ?) }";
+
+connection.callWithParams(func, new JsonArray().add("John").add("Doe"), null, res -> {
+
+  if (res.succeeded()) {
+    // Success!
+  } else {
+    // Failed!
+  }
+});
+----
+
+However you can also return values like this:
+
+[source,java]
+----
+String func = "{ call customer_lastname(?, ?) }";
+
+connection.callWithParams(func, new JsonArray().add("John"), new JsonArray().addNull().add("VARCHAR"), res -> {
+
+  if (res.succeeded()) {
+    ResultSet result = res.result();
+  } else {
+    // Failed!
+  }
+});
+----
+
+Note that the index of the arguments matches the index of the `?` and that the output parameters expect to be a
+String describing the type you want to receive.
+
+To avoid ambiguation the implementations are expected to follow the following rules:
+
+* When a place holder in the `IN` array is `NOT NULL` it will be taken
+* When the `IN` value is NULL a check is performed on the OUT
+When the `OUT` value is not null it will be registered as a output parameter
+When the `OUT` is also null it is expected that the IN value is the `NULL` value.
+
+The registered `OUT` parameters will be available as an array in the result set under the output property.
+
+==== Batch operations
+
+The SQL common interface also defines how to execute batch operations. There are 3 types of batch operations:
+
+* Batched statements `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#batch-java.util.List-io.vertx.core.Handler-[batch]`
+* Batched prepared statements `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#batchWithParams-java.lang.String-java.util.List-io.vertx.core.Handler-[batchWithParams]`
+* Batched callable statements `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#batchCallableWithParams-java.lang.String-java.util.List-java.util.List-io.vertx.core.Handler-[batchCallableWithParams]`
+
+A batches statement will exeucte a list of sql statements as for example:
+
+[source,java]
+----
+List<String> batch = new ArrayList<>();
+batch.add("INSERT INTO emp (NAME) VALUES ('JOE')");
+batch.add("INSERT INTO emp (NAME) VALUES ('JANE')");
+
+connection.batch(batch, res -> {
+  if (res.succeeded()) {
+    List<Integer> result = res.result();
+  } else {
+    // Failed!
+  }
+});
+----
+
+While a prepared or callable statement batch will reuse the sql statement and take an list of arguments as for example:
+
+[source,java]
+----
+List<JsonArray> batch = new ArrayList<>();
+batch.add(new JsonArray().add("joe"));
+batch.add(new JsonArray().add("jane"));
+
+connection.batchWithParams("INSERT INTO emp (name) VALUES (?)", batch, res -> {
+  if (res.succeeded()) {
+    List<Integer> result = res.result();
+  } else {
+    // Failed!
+  }
+});
+----
+
+==== Executing other operations
+
+To execute any other database operation, e.g. a `CREATE TABLE` you can use
+`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#execute-java.lang.String-io.vertx.core.Handler-[execute]`.
+
+The string is passed through without changes to the actual database. The handler is called when the operation
+is complete
+
+[source,java]
+----
+String sql = "CREATE TABLE PEOPLE (ID int generated by default as identity (start with 1 increment by 1) not null," +
+  "FNAME varchar(255), LNAME varchar(255), SHOE_SIZE int);";
+
+connection.execute(sql, execute -> {
+  if (execute.succeeded()) {
+    System.out.println("Table created !");
+  } else {
+    // Failed!
+  }
+});
+----
+
+==== Multiple ResultSet responses
+
+In some cases your query might return more than one result set, in this case and to preserve the compatibility when
+the returned result set object is converted to pure json, the next result sets are chained to the current result set
+under the property `next`. A simple walk of all result sets can be achieved like this:
+
+[source,java]
+----
+while (rs != null) {
+  // do something with the result set...
+
+  // next step
+  rs = rs.getNext();
+}
+----
+
+==== Streaming
+
+When dealing with large data sets, it is not advised to use API just described but to stream data since it avoids
+inflating the whole response into memory and JSON and data is just processed on a row by row basis, for example:
+
+[source,java]
+----
+connection.queryStream("SELECT * FROM large_table", stream -> {
+  if (stream.succeeded()) {
+    stream.result().handler(row -> {
+      // do something with the row...
+    });
+  }
+});
+----
+
+You still have full control on when the stream is pauses, resumed and ended. For cases where your query returns
+multiple result sets you should use the result set ended event to fetch the next one if available. If there is more
+data the stream handler will receive the new data, otherwise the end handler is invoked.
+
+[source,java]
+----
+connection.queryStream("SELECT * FROM large_table; SELECT * FROM other_table", stream -> {
+  if (stream.succeeded()) {
+    SQLRowStream sqlRowStream = stream.result();
+
+    sqlRowStream
+      .resultSetClosedHandler(v -> {
+        // will ask to restart the stream with the new result set if any
+        sqlRowStream.moreResults();
+      })
+      .handler(row -> {
+        // do something with the row...
+      })
+      .endHandler(v -> {
+        // no more data available...
+      });
+  }
+});
+----
+
+==== Using transactions
+
+To use transactions first set auto-commit to false with `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#setAutoCommit-boolean-io.vertx.core.Handler-[setAutoCommit]`.
+
+You then do your transactional operations and when you want to commit or rollback use
+`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#commit-io.vertx.core.Handler-[commit]` or
+`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#rollback-io.vertx.core.Handler-[rollback]`.
+
+Once the commit/rollback is complete the handler will be called and the next transaction will be automatically started.
+
+[source,java]
+----
+connection.commit(res -> {
+  if (res.succeeded()) {
+    // Committed OK!
+  } else {
+    // Failed!
+  }
+});
+----
+
+==== Closing connections
+
+When you've done with the connection you should return it to the pool with `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#close-io.vertx.core.Handler-[close]`.
+
+ifeval::["java" == "java"]
+include::override/rxjava2.adoc[]
+endif::[]
+
+=== Configuration
+
+Configuration is passed to the client when creating or deploying it.
+
+The following configuration properties generally apply:
+
+`provider_class`:: The class name of the class actually used to manage the database connections. By default this is
+`io.vertx.ext.jdbc.spi.impl.C3P0DataSourceProvider` but if you want to use a different provider you can override
+this property and provide your implementation.
+`row_stream_fetch_size`:: The size of `SQLRowStream` internal cache which used to better performance. By default
+it equals to `128`
+
+Assuming the C3P0 implementation is being used (the default), the following extra configuration properties apply:
+
+`url`:: the JDBC connection URL for the database
+`driver_class`:: the class of the JDBC driver
+`user`:: the username for the database
+`password`:: the password for the database
+`max_pool_size`:: the maximum number of connections to pool - default is `15`
+`initial_pool_size`:: the number of connections to initialise the pool with - default is `3`
+`min_pool_size`:: the minimum number of connections to pool
+`max_statements`:: the maximum number of prepared statements to cache - default is `0`.
+`max_statements_per_connection`:: the maximum number of prepared statements to cache per connection - default is `0`.
+`max_idle_time`:: number of seconds after which an idle connection will be closed - default is `0` (never expire).
+
+Other Connection Pool providers are:
+
+* Hikari
+* Agroal
+
+Similar to C3P0 they can be configured by passing the configuration values on the JSON config object. For the special
+case where you do not want to deploy your app as a fat jar but run with a vert.x distribution, then it is recommented
+to use Agroal if you have no write permissions to add the JDBC driver to the vert.x lib directory and are passing it
+using the `-cp` command line flag.
+
+If you want to configure any other C3P0 properties, you can add a file `c3p0.properties` to the classpath.
+
+Here's an example of configuring a service:
+
+[source,java]
+----
+JsonObject config = new JsonObject()
+  .put("url", "jdbc:hsqldb:mem:test?shutdown=true")
+  .put("driver_class", "org.hsqldb.jdbcDriver")
+  .put("max_pool_size", 30);
+
+SQLClient client = JDBCClient.createShared(vertx, config);
+----
+
+Hikari uses a different set of properties:
+
+* `jdbcUrl` for the JDBC URL
+* `driverClassName` for the JDBC driven class name
+* `maximumPoolSize` for the pool size
+* `username` for the login (`password` for the password)
+
+Refer to the https://github.com/brettwooldridge/HikariCP#configuration-knobs-baby[Hikari documentation]
+for further details. Also refer to the https://agroal.github.io/[Agroal documentation]
+to configure Agroal.
+
+=== JDBC Drivers
+
+If you are using the default `DataSourceProvider` (relying on c3p0), you would need to copy the JDBC driver class
+in your _classpath_.
+
+If your application is packaged as a _fat jar_, be sure to embed the jdbc driver. If your application is launched
+with the `vertx` command line, copy the JDBC driver to `${VERTX_HOME}/lib`.
+
+The behavior may be different when using a different connection pool.
+
+=== Data types
+
+Due to the fact that Vert.x uses JSON as its standard message format there will be many limitations to the data types
+accepted by the client. You will get out of the box the standard:
+
+* null
+* boolean
+* number
+* string
+
+There is also an optimistic cast for temporal types (TIME, DATE, TIMESTAMP) and optionally disabled for UUID. UUIDs
+are supported by many databases but not all. For example MySQL does not support it so the recommended way is to use
+a VARCHAR(36) column. For other engines UUID optimistic casting can be enabled using the client config json as:
+
+----
+{ "castUUID": true }
+----
+
+When this config is present UUIDs will be handled as a native type.

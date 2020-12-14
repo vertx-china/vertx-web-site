@@ -1,0 +1,38 @@
+== RxJava 2 API
+
+The Web API Contract provides an rxified version of APIs
+
+Here is a complete example:
+
+[source,java]
+----
+OpenAPI3RouterFactory
+  .rxCreate(vertx, "src/main/resources/petstore.yaml")
+  .flatMap(routerFactory -> {
+    // Spec loaded with success. router factory contains OpenAPI3RouterFactory
+    // Set router factory options.
+    RouterFactoryOptions options = new RouterFactoryOptions().setOperationModelKey("openapi_model");
+    // Mount the options
+    routerFactory.setOptions(options);
+    // Add an handler with operationId
+    routerFactory.addHandlerByOperationId("listPets", routingContext -> {
+      // Handle listPets operation
+      routingContext.response().setStatusMessage("Called listPets").end();
+    });
+
+    // Add a security handler
+    routerFactory.addSecurityHandler("api_key", JWTAuthHandler.create(jwtAuth));
+
+    // Now you have to generate the router
+    Router router = routerFactory.getRouter();
+
+    // Now you can use your Router instance
+    HttpServer server = vertx.createHttpServer(new HttpServerOptions().setPort(8080).setHost("localhost"));
+    return server.requestHandler(router).rxListen();
+  })
+  .subscribe(httpServer -> {
+    // Server up and running
+  }, throwable -> {
+    // Error during router factory instantiation or http server start
+  });
+----

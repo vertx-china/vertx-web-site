@@ -1,0 +1,78 @@
+== Using connections
+
+=== Getting a connection
+
+When you need to execute sequential queries (without a transaction), you can create a new connection
+or borrow one from the pool:
+
+[source,java]
+----
+pool.getConnection(ar1 -> {
+  if (ar1.succeeded()) {
+    SqlConnection connection = ar1.result();
+
+    connection
+      .query("SELECT * FROM users WHERE id='julien'")
+      .execute(ar2 -> {
+      if (ar1.succeeded()) {
+        connection
+          .query("SELECT * FROM users WHERE id='paulo'")
+          .execute(ar3 -> {
+          // Do something with rows and return the connection to the pool
+          connection.close();
+        });
+      } else {
+        // Return the connection to the pool
+        connection.close();
+      }
+    });
+  }
+});
+----
+
+Prepared queries can be created:
+
+[source,java]
+----
+connection.prepare("SELECT * FROM users WHERE first_name LIKE $1", ar1 -> {
+  if (ar1.succeeded()) {
+    PreparedStatement pq = ar1.result();
+    pq.query().execute(Tuple.of("julien"), ar2 -> {
+      if (ar2.succeeded()) {
+        // All rows
+        RowSet<Row> rows = ar2.result();
+      }
+    });
+  }
+});
+----
+
+=== Simplified transaction API
+
+When you use a pool, you can call `link:../../apidocs/io/vertx/sqlclient/Pool.html#withConnection-java.util.function.Function-io.vertx.core.Handler-[withConnection]` to pass it a function executed
+within a connection.
+
+It borrows a connection from the pool and calls the function with this connection.
+
+The function must return a future of an arbitrary result.
+
+After the future completes, the connection is returned to the pool and the overall result is provided.
+
+[source,java]
+----
+Future<Integer> future = pool.withConnection(conn -> conn
+  .query("SELECT id FROM USERS WHERE name = 'Julien'")
+  .execute()
+  .flatMap(rowSet -> {
+    Iterator<Row> rows = rowSet.iterator();
+    if (rows.hasNext()) {
+      Row row = rows.next();
+      return Future.succeededFuture(row.getInteger("id"));
+    } else {
+      return Future.failedFuture("No results");
+    }
+  }));
+future.onSuccess(id -> {
+  System.out.println("User id: " + id);
+});
+----

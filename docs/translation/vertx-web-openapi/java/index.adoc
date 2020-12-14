@@ -1,0 +1,264 @@
+= Vert.x OpenAPI
+:toc: left
+
+Vert.x OpenAPI extends Vert.x Web to support https://www.openapis.org/[OpenAPI 3], bringing to you a simple interface to build a Vert.x Web Router conforming your API contract.
+
+Vert.x OpenAPI can:
+
+* Parse and validate the your OpenAPI 3 contract
+* Generate a router according to your spec, with correct path & methods
+* Provide request parsing and validation based on your contract using https://vertx.io/docs/vertx-web-validation/java/[Vert.x Web Validation]
+* Mount required security handlers
+* Path conversion between OpenAPI style and Vert.x style
+* Route requests to event bus using https://vertx.io/docs/vertx-web-api-service/java/[Vert.x Web API Service]
+
+== Using Vert.x OpenAPI
+
+To use Vert.x OpenAPI, add the following dependency to the _dependencies_ section of your build descriptor:
+
+* Maven (in your `pom.xml`):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-web-openapi</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+* Gradle (in your `build.gradle` file):
+
+[source,groovy,subs="+attributes"]
+----
+dependencies {
+ compile 'io.vertx:vertx-web-openapi:4.0.0'
+}
+----
+
+== `RouterBuilder`
+
+`link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html[RouterBuilder]` is the main element of this module: It provides the interface to mount request handlers and generates the final `link:../../apidocs/io/vertx/ext/web/Router.html[Router]`
+
+To start using Vert.x Web OpenAPI, you must instantiate `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html[RouterBuilder]` with your contract using
+`link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html#create-io.vertx.core.Vertx-java.lang.String-io.vertx.core.Handler-[RouterBuilder.create]`
+
+For example to load a spec from the local filesystem:
+
+[source,java]
+----
+RouterBuilder.create(vertx, "src/main/resources/petstore.yaml").onComplete(ar -> {
+  if (ar.succeeded()) {
+    // Spec loaded with success
+    RouterBuilder routerBuilder = ar.result();
+  } else {
+    // Something went wrong during router builder initialization
+    Throwable exception = ar.cause();
+  }
+});
+----
+
+You can construct a router builder from a remote spec:
+
+[source,java]
+----
+RouterBuilder.create(
+  vertx,
+  "https://raw.githubusercontent" +
+    ".com/OAI/OpenAPI-Specification/master/examples/v3.0/petstore.yaml"
+).onComplete(ar -> {
+  if (ar.succeeded()) {
+    // Spec loaded with success
+    RouterBuilder routerBuilder = ar.result();
+  } else {
+    // Something went wrong during router builder initialization
+    Throwable exception = ar.cause();
+  }
+});
+----
+
+You can access a private remote spec configuring `link:../../apidocs/io/vertx/ext/web/openapi/OpenAPILoaderOptions.html[OpenAPILoaderOptions]`:
+
+[source,java]
+----
+OpenAPILoaderOptions loaderOptions = new OpenAPILoaderOptions()
+  .putAuthHeader("Authorization", "Bearer xx.yy.zz");
+RouterBuilder.create(
+  vertx,
+  "https://raw.githubusercontent" +
+    ".com/OAI/OpenAPI-Specification/master/examples/v3.0/petstore.yaml",
+  loaderOptions
+).onComplete(ar -> {
+  if (ar.succeeded()) {
+    // Spec loaded with success
+    RouterBuilder routerBuilder = ar.result();
+  } else {
+    // Something went wrong during router builder initialization
+    Throwable exception = ar.cause();
+  }
+});
+----
+
+You can modify different behaviours of the router builder with `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilderOptions.html[RouterBuilderOptions]`:
+
+[source,java]
+----
+routerBuilder.setOptions(new RouterBuilderOptions());
+----
+
+== Access to operations
+
+To access to an https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#operationObject[Operation] defined in contract, use `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html#operation-java.lang.String-[operation]`.
+This method returns an `link:../../apidocs/io/vertx/ext/web/openapi/Operation.html[Operation]` instance that you can use to both access the model and assign handlers
+
+To mount an handler to an operation use `link:../../apidocs/io/vertx/ext/web/openapi/Operation.html#handler-io.vertx.core.Handler-[handler]`,
+to mount a failure handler use `link:../../apidocs/io/vertx/ext/web/openapi/Operation.html#failureHandler-io.vertx.core.Handler-[failureHandler]`
+
+You can **add multiple handlers to same operation**, without overwrite the existing ones.
+
+For example:
+
+[source,java]
+----
+routerBuilder
+  .operation("awesomeOperation")
+  .handler(routingContext -> {
+    RequestParameters params =
+      routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+    RequestParameter body = params.body();
+    JsonObject jsonBody = body.getJsonObject();
+    // Do something with body
+  }).failureHandler(routingContext -> {
+  // Handle failure
+});
+----
+
+[IMPORTANT]
+====
+You can't access to contract operations without `operationId`. The operations without `operationId` are ignored by the `RouterBuilder`
+====
+
+Vert.x OpenAPI mounts the correct `link:../../apidocs/io/vertx/ext/web/validation/ValidationHandler.html[ValidationHandler]` for you, so you can access to request parameters and request body.
+Refer to https://vertx.io/docs/vertx-web-validation/java/[Vert.x Web Validation documentation] to learn how to get request parameters & request body and how to manage validation failures
+
+== Map `AuthenticationHandler` to OpenAPI security schemes
+
+You can map an `link:../../apidocs/io/vertx/ext/web/handler/AuthenticationHandler.html[AuthenticationHandler]` to a security schema defined in the contract.
+
+For example, given your contract has a security schema named `security_scheme_name`:
+
+[source,java]
+----
+routerBuilder.securityHandler("security_scheme_name", authenticationHandler);
+----
+
+You can mount `link:../../apidocs/io/vertx/ext/web/handler/AuthenticationHandler.html[AuthenticationHandler]` included in Vert.x Web, for example:
+
+[source,java]
+----
+routerBuilder.securityHandler("jwt_auth",
+  JWTAuthHandler.create(jwtAuthProvider));
+----
+
+When you generate the `link:../../apidocs/io/vertx/ext/web/Router.html[Router]` the router builder will solve the security schemes required for an operation.
+It fails if there is a missing `AuthenticationHandler` required by a configured operation.
+
+For debugging/testing purpose you can disable this check with `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilderOptions.html#setRequireSecurityHandlers-boolean-[setRequireSecurityHandlers]`
+
+== Not Implemented Error
+
+Router builder automatically mounts a default handler for operations without a specified handler.
+This default handler fails the routing context with 405 `Method Not Allowed`/501 `Not Implemented` error.
+You can enable/disable it with `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilderOptions.html#setMountNotImplementedHandler-boolean-[setMountNotImplementedHandler]`
+and you can customize this error handling with `link:../../apidocs/io/vertx/ext/web/Router.html#errorHandler-int-io.vertx.core.Handler-[errorHandler]`
+
+== Response Content Type Handler
+
+Router builder automatically mounts a `link:../../apidocs/io/vertx/ext/web/handler/ResponseContentTypeHandler.html[ResponseContentTypeHandler]` handler when contract requires it.
+You can disable this feature with `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilderOptions.html#setMountResponseContentTypeHandler-boolean-[setMountResponseContentTypeHandler]`
+
+== Operation model
+
+If you need to access to your operation model while handling the request,
+you can configure the router builder to push it inside the `RoutingContext` with `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilderOptions.html#setOperationModelKey-java.lang.String-[setOperationModelKey]`:
+
+[source,java]
+----
+options.setOperationModelKey("operationModel");
+routerBuilder.setOptions(options);
+
+// Add an handler that uses the operation model
+routerBuilder
+  .operation("listPets")
+  .handler(
+    routingContext -> {
+      JsonObject operation = routingContext.get("operationModel");
+
+      routingContext
+        .response()
+        .setStatusCode(200)
+        .setStatusMessage("OK")
+        // Write the response with operation id "listPets"
+        .end(operation.getString("operationId"));
+    });
+----
+
+== Body Handler
+
+Router builder automatically mounts a `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]` to manage request bodies.
+You can configure the instance of `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]` (e.g. to change upload directory) with `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html#bodyHandler-io.vertx.ext.web.handler.BodyHandler-[bodyHandler]`.
+
+== `multipart/form-data` validation
+
+The validation handler separates file uploads and form attributes as explained:
+
+* If the parameter doesn't have an encoding associated field:
+ - If the parameter has `type: string` and `format: base64` or `format: binary` is a file upload with content-type `application/octet-stream`
+ - Otherwise is a form attribute
+* If the parameter has the encoding associated field is a file upload
+
+The form attributes are parsed, converted in json and validated,
+while for file uploads the validation handler just checks the existence and the content type.
+
+== Custom global handlers
+
+If you need to mount handlers that must be executed for each operation in your router before the operation specific handlers, you can use `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html#rootHandler-io.vertx.core.Handler-[rootHandler]`
+
+== Router builder handlers mount order
+
+Handlers are loaded by the router builder in this order:
+
+1. Body handler
+2. Custom global handlers
+4. Configured `link:../../apidocs/io/vertx/ext/web/handler/AuthenticationHandler.html[AuthenticationHandler]`s
+5. Generated `link:../../apidocs/io/vertx/ext/web/validation/ValidationHandler.html[ValidationHandler]`
+6. User handlers or "Not implemented" handler (if enabled)
+
+== Generate the router
+
+When you are ready, generate the router and use it:
+
+[source,java]
+----
+Router router = routerBuilder.createRouter();
+
+HttpServer server =
+  vertx.createHttpServer(new HttpServerOptions().setPort(8080).setHost(
+    "localhost"));
+server.requestHandler(router).listen();
+----
+
+This method can fail with a `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilderException.html[RouterBuilderException]`.
+
+[TIP]
+====
+If you need to mount all the router generated by router builder under the same parent path, you can use `link:../../apidocs/io/vertx/ext/web/Router.html#mountSubRouter-java.lang.String-io.vertx.ext.web.Router-[mountSubRouter]`:
+
+[source,java]
+----
+Router global = Router.router(vertx);
+
+Router generated = routerBuilder.createRouter();
+global.mountSubRouter("/v1", generated);
+----
+====

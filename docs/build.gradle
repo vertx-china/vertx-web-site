@@ -101,6 +101,16 @@ task copyApidocs(type: Sync) {
     include ".gitkeep"
   }
 }
+// 用来拷贝英文文档到translation目录的，主要是在english分支使用
+task copyEnglish(type: Copy) {
+  dependsOn extractDocs
+  from "$projectDir/extracted"
+  into "$projectDir/translation"
+  include "**/*.adoc"
+  exclude "**/dataobjects.adoc"
+  exclude "**/enums.adoc"
+  includeEmptyDirs false
+}
 
 clean {
   delete "$projectDir/extracted"

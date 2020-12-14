@@ -1,0 +1,354 @@
+= Vert.x JUnit 5 integration
+
+This module offers integration and support for writing Vert.x tests with JUnit 5.
+
+== Use it in your build
+
+* `groupId`: `io.vertx`
+* `artifactId`: `vertx-junit5`
+* `version`: (current Vert.x release or SNAPSHOT)
+
+== Why testing asynchronous code is different
+
+Testing asynchronous operations requires more tools than what a test harness like JUnit provides.
+Let us consider a typical Vert.x creation of a HTTP server, and put it into a JUnit test:
+
+[source,java]
+----
+@ExtendWith(VertxExtension.class)
+class ATest {
+  Vertx vertx = Vertx.vertx();
+
+  @Test
+  void start_server() {
+    vertx.createHttpServer()
+      .requestHandler(req -> req.response().end("Ok"))
+      .listen(16969, ar -> {
+        // (we can check here if the server started or not)
+      });
+  }
+}
+----
+
+There are issues here since `listen` does not block as it tries to start a HTTP server asynchronously.
+We cannot simply assume that the server has properly started upon a `listen` invocation return.
+Also:
+
+1. the callback passed to `listen` will be executed from a Vert.x event loop thread, which is different from the thread that runs the JUnit test, and
+2. right after calling `listen`, the test exits and is being considered to be passed, while the HTTP server may not even have finished starting, and
+3. since the `listen` callback executes on a different thread than the one executing the test, then any exception such as one thrown by a failed assertion cannot be capture by the JUnit runner.
+
+== A test context for asynchronous executions
+
+The first contribution of this module is a `link:../../apidocs/io/vertx/junit5/VertxTestContext.html[VertxTestContext]` object that:
+
+1. allows waiting for operations in other threads to notify of completion, and
+2. supports assertion failures to be received to mark a test as failed.
+
+Here is a very basic usage:
+
+[source,java]
+----
+@ExtendWith(VertxExtension.class)
+class BTest {
+  Vertx vertx = Vertx.vertx();
+
+  @Test
+  void start_http_server() throws Throwable {
+    VertxTestContext testContext = new VertxTestContext();
+
+    vertx.createHttpServer()
+      .requestHandler(req -> req.response().end())
+      .listen(16969)
+      .onComplete(testContext.succeedingThenComplete()); // <1>
+
+    assertThat(testContext.awaitCompletion(5, TimeUnit.SECONDS)).isTrue(); // <2>
+    if (testContext.failed()) {  // <3>
+      throw testContext.causeOfFailure();
+    }
+  }
+}
+----
+<1> `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#succeedingThenComplete--[succeedingThenComplete]` returns an asynchronous result handler that is expected to succeed and then make the test context pass.
+<2> `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#awaitCompletion-long-java.util.concurrent.TimeUnit-[awaitCompletion]` has the semantics of a `java.util.concurrent.CountDownLatch`, and returns `false` if the waiting delay expired before the test passed.
+<3> If the context captures a (potentially asynchronous) error, then after completion we must throw the failure exception to make the test fail.
+
+== Use any assertion library
+
+This module does not make any assumption on the assertion library that you should be using.
+You can use plain JUnit assertions, http://joel-costigliola.github.io/assertj/[AssertJ], etc.
+
+To make assertions in asynchronous code and make sure that `link:../../apidocs/io/vertx/junit5/VertxTestContext.html[VertxTestContext]` is notified of potential failures, you need to wrap them with a call to `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#verify-io.vertx.junit5.VertxTestContext.ExecutionBlock-[verify]`, `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#succeeding-io.vertx.core.Handler-[succeeding]`, or `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#failing-io.vertx.core.Handler-[failing]`:
+
+[source,java]
+----
+HttpClient client = vertx.createHttpClient();
+
+client.request(HttpMethod.GET, 8080, "localhost", "/")
+  .compose(req -> req.send().compose(HttpClientResponse::body))
+  .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
+    assertThat(buffer.toString()).isEqualTo("Plop");
+    testContext.completeNow();
+  })));
+----
+
+The useful methods in `link:../../apidocs/io/vertx/junit5/VertxTestContext.html[VertxTestContext]` are the following:
+
+* `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#completeNow--[completeNow]` and `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#failNow-java.lang.Throwable-[failNow]` to notify of a success or failure
+* `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#succeedingThenComplete--[succeedingThenComplete]` to provide `Handler<AsyncResult<T>>` handlers that expect a success and then completes the test context
+* `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#failingThenComplete--[failingThenComplete]` to provide `Handler<AsyncResult<T>>` handlers that expect a failure and then completes the test context
+* `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#succeeding--[succeeding]` to provide `Handler<AsyncResult<T>>` handlers that expect a success and pass the result to another callback, any exception thrown from the callback is considered as a test failure
+* `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#failing--[failing]` to provide `Handler<AsyncResult<T>>` handlers that expect a failure and pass the exception to another callback, any exception thrown from the callback is considered as a test failure
+* `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#verify-io.vertx.junit5.VertxTestContext.ExecutionBlock-[verify]` to perform assertions, any exception thrown from the code block is considered as a test failure.
+
+WARNING: Unlike `succeedingThenComplete` and `failingThenComplete`, calling `succeeding` and `failing` methods can only make a test fail (e.g., `succeeding` gets a failed asynchronous result).
+To make a test pass you still need to call `completeNow`, or use checkpoints as explained below.
+
+== Checkpoint when there are multiple success conditions
+
+Many tests can be marked as passed by simply calling `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#completeNow--[completeNow]` at some point of the execution.
+That being said there are also many cases where the success of a test depends on different asynchronous parts to be validated.
+
+You can use checkpoints to flag some execution points to be passed.
+A `link:../../apidocs/io/vertx/junit5/Checkpoint.html[Checkpoint]` can require a single flagging, or multiple flags.
+When all checkpoints have been flagged, then the corresponding `link:../../apidocs/io/vertx/junit5/VertxTestContext.html[VertxTestContext]` makes the test pass.
+
+Here is an example with checkpoints on the HTTP server being started, 10 HTTP requests having being responded, and 10 HTTP client requests having been made:
+
+[source,java]
+----
+Checkpoint serverStarted = testContext.checkpoint();
+Checkpoint requestsServed = testContext.checkpoint(10);
+Checkpoint responsesReceived = testContext.checkpoint(10);
+
+vertx.createHttpServer()
+  .requestHandler(req -> {
+    req.response().end("Ok");
+    requestsServed.flag();
+  })
+  .listen(8888)
+  .onComplete(testContext.succeeding(httpServer -> serverStarted.flag()));
+
+HttpClient client = vertx.createHttpClient();
+for (int i = 0; i < 10; i++) {
+  client.request(HttpMethod.GET, 8888, "localhost", "/")
+    .compose(req -> req.send().compose(HttpClientResponse::body))
+    .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
+      assertThat(buffer.toString()).isEqualTo("Ok");
+      responsesReceived.flag();
+    })));
+}
+----
+
+TIP: Checkpoints should be created only from the test case main thread, not from Vert.x asynchronous event callbacks.
+
+== Integration with JUnit 5
+
+JUnit 5 provides a different model compared to the previous versions.
+
+=== Test methods
+
+The Vert.x integration is primarily done using the `link:../../apidocs/io/vertx/junit5/VertxExtension.html[VertxExtension]` class, and using test parameter injection of `Vertx` and `VertxTestContext` instances:
+
+[source,java]
+----
+@ExtendWith(VertxExtension.class)
+class SomeTest {
+
+  @Test
+  void some_test(Vertx vertx, VertxTestContext testContext) {
+    // (...)
+  }
+}
+----
+
+NOTE: The `Vertx` instance is not clustered and has the default configuration. If you need something else then just don't use injection on that parameter and prepare a `Vertx` object by yourself.
+
+The test is automatically wrapped around the `link:../../apidocs/io/vertx/junit5/VertxTestContext.html[VertxTestContext]` instance lifecycle, so you don't need to insert `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#awaitCompletion-long-java.util.concurrent.TimeUnit-[awaitCompletion]` calls yourself:
+
+[source,java]
+----
+@ExtendWith(VertxExtension.class)
+class SomeTest {
+
+  @Test
+  void http_server_check_response(Vertx vertx, VertxTestContext testContext) {
+    vertx.deployVerticle(new HttpServerVerticle(), testContext.succeeding(id -> {
+      HttpClient client = vertx.createHttpClient();
+      client.request(HttpMethod.GET, 8080, "localhost", "/")
+        .compose(req -> req.send().compose(HttpClientResponse::body))
+        .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
+          assertThat(buffer.toString()).isEqualTo("Plop");
+          testContext.completeNow();
+        })));
+    }));
+  }
+}
+----
+
+You can use it with standard JUnit annotations such as `@RepeatedTest` or lifecycle callbacks annotations:
+
+[source,java]
+----
+@ExtendWith(VertxExtension.class)
+class SomeTest {
+
+  // Deploy the verticle and execute the test methods when the verticle
+  // is successfully deployed
+  @BeforeEach
+  void deploy_verticle(Vertx vertx, VertxTestContext testContext) {
+    vertx.deployVerticle(new HttpServerVerticle(), testContext.succeedingThenComplete());
+  }
+
+  // Repeat this test 3 times
+  @RepeatedTest(3)
+  void http_server_check_response(Vertx vertx, VertxTestContext testContext) {
+    HttpClient client = vertx.createHttpClient();
+    client.request(HttpMethod.GET, 8080, "localhost", "/")
+      .compose(req -> req.send().compose(HttpClientResponse::body))
+      .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
+        assertThat(buffer.toString()).isEqualTo("Plop");
+        testContext.completeNow();
+      })));
+  }
+}
+----
+
+It is also possible to customize the default `link:../../apidocs/io/vertx/junit5/VertxTestContext.html[VertxTestContext]` timeout using the `link:../../apidocs/io/vertx/junit5/Timeout.html[@Timeout]` annotation either on test classes or methods:
+
+[source,java]
+----
+@ExtendWith(VertxExtension.class)
+class SomeTest {
+
+  @Test
+  @Timeout(value = 10, timeUnit = TimeUnit.SECONDS)
+  void some_test(Vertx vertx, VertxTestContext context) {
+    // (...)
+  }
+}
+----
+
+=== Lifecycle methods
+
+JUnit 5 provides several user-defined lifecycle methods annotated with `@BeforeAll`, `@BeforeEach`, `@AfterEach` and `@AfterAll`.
+
+These methods can request the injection of `Vertx` instances.
+By doing so, they are likely to perform asynchronous operations with the `Vertx` instance, so they can request the injection of a `VertxTestContext` instance to ensure that the JUnit runner waits for them to complete, and report possible errors.
+
+Here is an example:
+
+[source,java]
+----
+@ExtendWith(VertxExtension.class)
+class LifecycleExampleTest {
+
+  @BeforeEach
+  @DisplayName("Deploy a verticle")
+  void prepare(Vertx vertx, VertxTestContext testContext) {
+    vertx.deployVerticle(new SomeVerticle(), testContext.succeedingThenComplete());
+  }
+
+  @Test
+  @DisplayName("A first test")
+  void foo(Vertx vertx, VertxTestContext testContext) {
+    // (...)
+    testContext.completeNow();
+  }
+
+  @Test
+  @DisplayName("A second test")
+  void bar(Vertx vertx, VertxTestContext testContext) {
+    // (...)
+    testContext.completeNow();
+  }
+
+  @AfterEach
+  @DisplayName("Check that the verticle is still there")
+  void lastChecks(Vertx vertx) {
+    assertThat(vertx.deploymentIDs())
+      .isNotEmpty()
+      .hasSize(1);
+  }
+}
+----
+
+==== Scope of `VertxTestContext` objects
+
+Since these objects help waiting for asynchronous operations to complete, a new instance is created for any `@Test`, `@BeforeAll`, `@BeforeEach`, `@AfterEach` and `@AfterAll` method.
+
+==== Scope of `Vertx` objects
+
+The scope of a `Vertx` object depends on which lifecycle method in the http://junit.org/junit5/docs/current/user-guide/#extensions-execution-order[JUnit relative execution order] first required a new instance to be created.
+Generally-speaking, we respect the JUnit extension scoping rules, but here are the specifications.
+
+1. If a parent test context already had a `Vertx` instance, it is being reused in children extension test contexts.
+2. Injecting in a `@BeforeAll` method creates a new instance that is being shared for injection in all subsequent test and lifecycle methods.
+3. Injecting in a `@BeforeEach` with no parent context or previous `@BeforeAll` injection creates a new instance shared with the corresponding test and `AfterEach` method(s).
+4. When no instance exists before running a test method, an instance is created for that test (and only for that test).
+
+==== Closing and removal of `Vertx` objects
+
+Injected `Vertx` objects are being automatically closed and removed from their corresponding scopes.
+
+For instance if a `Vertx` object is created for the scope of a test method, it is being closed after the test completes.
+Similarly, when it is being created by a `@BeforeEach` method, it is being closed after possible `@AfterEach` methods have completed.
+
+==== Warning on multiple methods for the same lifecycle events
+
+JUnit 5 allows multiple methods to exist for the same lifecycle events.
+
+As an example, it is possible to define 3 `@BeforeEach` methods on the same test.
+Because of asynchronous operations it is possible that the effects of these methods happen concurrently rather than sequentially, which may lead to inconsistent states.
+
+This is a problem of JUnit 5 rather than this module. In case of doubt you may always wonder why a single method can't be better than many.
+
+== Support for additional parameter types
+
+The Vert.x JUnit 5 extension is extensible: you can add more types through the
+`link:../../apidocs/io/vertx/junit5/VertxExtensionParameterProvider.html[VertxExtensionParameterProvider]` service provider interface.
+
+If you use RxJava 2, you can inject a `io.vertx.reactivex.core.Vertx` (rather than `io.vertx.core.Vertx`) just adding the dependency `io.vertx:vertx-junit5-rx-java2`.
+The same applies for RxJava 1.x with the dependency `io.vertx:vertx-junit5-rx-java2`.
+
+On Reactiverse you can find a growing collection of extensions for `vertx-junit5` that integrates with Vert.x stack in the `reactiverse-junit5-extensions` project:
+https://github.com/reactiverse/reactiverse-junit5-extensions.
+
+== Parameter ordering
+
+It may be the case that a parameter type has to be placed before another parameter.
+For instance the Web Client support in the `vertx-junit5-extensions` project requires that the `Vertx` argument is before the `WebClient` argument.
+This is because the `Vertx` instance needs to exist to create the `WebClient`.
+
+It is expected that parameter providers throw meaningful exceptions to let users know of possible ordering constraints.
+
+In any case it is a good idea to have the `Vertx` parameter first, and the next parameters in the order of what you'd need to create them manually.
+
+== Parameterized tests with `@MethodSource`
+
+You can use parameterized tests with `@MethodSource` with vertx-junit5. Therefore you need to declare the method source parameters before the vertx test parameters in
+the method definition.
+
+[source,java]
+----
+@ExtendWith(VertxExtension.class)
+static class SomeTest {
+
+  static Stream<Arguments> testData() {
+    return Stream.of(
+      Arguments.of("complex object1", 4),
+      Arguments.of("complex object2", 0)
+    );
+  }
+
+  @ParameterizedTest
+  @MethodSource("testData")
+   void test2(String obj, int count, Vertx vertx, VertxTestContext testContext) {
+    // your test code
+    testContext.completeNow();
+  }
+}
+----
+
+The same holds for the other `ArgumentSources`. See the section `Formal Parameter List` in the API doc of
+https://junit.org/junit5/docs/current/api/org.junit.jupiter.params/org/junit/jupiter/params/ParameterizedTest.html[ParameterizedTest]
