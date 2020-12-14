@@ -21,12 +21,12 @@ jobs:
         with:
           java-version: "11"
 
-      - uses: actions/cache@v2
-        with:
-          path: .cache
-          key: ${{ runner.os }}-build-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-build-
+#      - uses: actions/cache@v2
+#        with:
+#          path: .cache
+#          key: ${{ runner.os }}-build-${{ github.sha }}
+#          restore-keys: |
+#            ${{ runner.os }}-build-
 
       - name: Get basePath from branch
         id: basePath
