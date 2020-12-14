@@ -86,6 +86,6 @@ jobs:
         with:
           deploy_key: ${{ secrets.DEPLOY_KEY }}
           external_repository: vertx-china/vertx-china.github.io
-          publish_branch: master
+          publish_branch: gh-pages
           publish_dir: vertx-china.github.io
           cname: vertx.io
