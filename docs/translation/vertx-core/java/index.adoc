@@ -1,36 +1,36 @@
-= Vert.x Core Manual
+= Vert.x Core 文档手册
 :toc: left
 
-At the heart of Vert.x is a set of Java APIs that we call *Vert.x Core*
+Vert.x 的核心 Java API 被我们称为 *Vert.x Core*
 
-https://github.com/eclipse/vert.x[Repository].
+https://github.com/eclipse/vert.x[Github仓库].
 
-Vert.x core provides functionality for things like:
+Vert.x Core 提供了下列功能：
 
-* Writing TCP clients and servers
-* Writing HTTP clients and servers including support for WebSockets
-* The Event bus
-* Shared data - local maps and clustered distributed maps
-* Periodic and delayed actions
-* Deploying and undeploying Verticles
-* Datagram Sockets
-* DNS client
-* File system access
-* High availability
-* Native transports
-* Clustering
+* 编写 TCP 客户端和服务端
+* 编写支持 WebSocket 的 HTTP 客户端和服务端
+* 事件总线
+* 共享数据 —— 本地的Map和分布式集群Map
+* 周期性、延迟性动作
+* 部署和撤销 Verticle 实例
+* 数据报套接字
+* DNS客户端
+* 文件系统访问
+* 高可用性
+* 本地传输
+* 集群
 
-The functionality in core is fairly low level - you won't find stuff like database access, authorisation or high level
-web functionality here - that kind of stuff you'll find in *Vert.x ext* (extensions).
+Vert.x Core中的功能相当底层，不包含诸如数据库访问、授权或高层Web应用的功能。
+您可以在 *Vert.x ext* （扩展包）（译者注：Vert.x的扩展包是Vert.x的子项目集合，类似[Web](https://vertx.io/docs/vertx-web/java/)、[Web Client](https://vertx.io/docs/vertx-web-client/java/)、[Databases](https://vertx.io/docs/#databases)等）中找到这些功能。
 
-Vert.x core is small and lightweight. You just use the parts you want. It's also entirely embeddable in your
-existing applications - we don't force you to structure your applications in a special way just so you can use
-Vert.x.
+*Vert.x Core* 小而轻，您可以只使用您需要的部分，它可
+整体嵌入现存应用中。Vert.x没有强制要求使用特定的方式构
+造应用。
 
-You can use core from any of the other languages that Vert.x supports. But here'a a cool bit - we don't force
-you to use the Java API directly from, say, JavaScript or Ruby - after all, different languages have different conventions
-and idioms, and it would be odd to force Java idioms on Ruby developers (for example).
-Instead, we automatically generate an *idiomatic* equivalent of the core Java APIs for each language.
+Vert.x也支持在其他语言中使用Vert.x Core，
+而且在使用诸如 JavaScript 或 Ruby 等语言编写Vert.x代码时，无需直接调用 Java的API；毕竟不同的语言有不同的代码风格，
+若强行让 Ruby 开发人员遵循 Java 的代码风格会很怪异，
+所以我们根据 Java API 自动生成了适应不同语言代码风格的 API。
 
 From now on we'll just use the word *core* to refer to Vert.x core.
 
@@ -1175,9 +1175,9 @@ examples:
 
 [source]
 ----
-vertx run MyVerticle.groovy --redeploy="**&#47;*.groovy" --launcher-class=io.vertx.core.Launcher
-vertx run MyVerticle.groovy --redeploy="**&#47;*.groovy,**&#47;*.rb"  --launcher-class=io.vertx.core.Launcher
-java io.vertx.core.Launcher run org.acme.MyVerticle --redeploy="**&#47;*.class"  --launcher-class=io.vertx.core
+vertx run MyVerticle.groovy --redeploy="**/*.groovy" --launcher-class=io.vertx.core.Launcher
+vertx run MyVerticle.groovy --redeploy="**/*.groovy,**/*.rb"  --launcher-class=io.vertx.core.Launcher
+java io.vertx.core.Launcher run org.acme.MyVerticle --redeploy="**/*.class"  --launcher-class=io.vertx.core
 .Launcher -cp ...
 ----
 
@@ -1199,11 +1199,11 @@ The `--launcher-class` option determine with with _main_ class the application i
 The redeploy feature can be used in your IDE:
 
 * Eclipse - create a _Run_ configuration, using the `io.vertx.core.Launcher` class a _main class_. In the _Program
-arguments_ area (in the _Arguments_ tab), write `run your-verticle-fully-qualified-name --redeploy=\**&#47;*.java
+arguments_ area (in the _Arguments_ tab), write `run your-verticle-fully-qualified-name --redeploy=\**/*.java
 --launcher-class=io.vertx.core.Launcher`. You can also add other parameters. The redeployment works smoothly as
 Eclipse incrementally compiles your files on save.
 * IntelliJ - create a _Run_ configuration (_Application_), set the _Main class_ to `io.vertx.core.Launcher`. In
-the Program arguments write: `run your-verticle-fully-qualified-name --redeploy=\**&#47;*.class
+the Program arguments write: `run your-verticle-fully-qualified-name --redeploy=\**/*.class
 --launcher-class=io.vertx.core.Launcher`. To trigger the redeployment, you need to _make_ the project or
 the module explicitly (_Build_ menu -> _Make project_).
 
@@ -1215,8 +1215,8 @@ You can also hook your build process in the redeploy cycle:
 
 [source]
 ----
-java -jar target/my-fat-jar.jar --redeploy="**&#47;*.java" --on-redeploy="mvn package"
-java -jar build/libs/my-fat-jar.jar --redeploy="src&#47;**&#47;*.java" --on-redeploy='./gradlew shadowJar'
+java -jar target/my-fat-jar.jar --redeploy="**/*.java" --on-redeploy="mvn package"
+java -jar build/libs/my-fat-jar.jar --redeploy="src/**/*.java" --on-redeploy='./gradlew shadowJar'
 ----
 
 The "on-redeploy" option specifies a command invoked after the shutdown of the application and before the
@@ -1226,8 +1226,8 @@ or `grunt` to update your resources. Don't forget that passing parameters to you
 
 [source]
 ----
-java -jar target/my-fat-jar.jar --redeploy="**&#47;*.java" --on-redeploy="mvn package" --java-opts="-Dkey=val"
-java -jar build/libs/my-fat-jar.jar --redeploy="src&#47;**&#47;*.java" --on-redeploy='./gradlew shadowJar' --java-opts="-Dkey=val"
+java -jar target/my-fat-jar.jar --redeploy="**/*.java" --on-redeploy="mvn package" --java-opts="-Dkey=val"
+java -jar build/libs/my-fat-jar.jar --redeploy="src/**/*.java" --on-redeploy='./gradlew shadowJar' --java-opts="-Dkey=val"
 ----
 
 The redeploy feature also supports the following settings:
@@ -1677,18 +1677,18 @@ You can extend the set of command by implementing your own `link:../../apidocs/i
 
 [source, java]
 ----
-&#64;Name("my-command")
-&#64;Summary("A simple hello command.")
+@Name("my-command")
+@Summary("A simple hello command.")
 public class MyCommand extends DefaultCommand {
 
  private String name;
 
- &#64;Option(longName = "name", required = true)
+ @Option(longName = "name", required = true)
  public void setName(String n) {
    this.name = n;
  }
 
- &#64;Override
+ @Override
  public void run() throws CLIException {
    System.out.println("Hello " + name);
  }
