@@ -27,7 +27,7 @@ const config = {
   env: {
     basePath,
     // URL to the website. MUST NOT end with a slash.
-    baseUrl: isProd ? `https://vertx.io${basePath}` : `http://localhost:3000${basePath}`
+    baseUrl: isProd ? `https://vertx-china.github.io${basePath}` : `http://localhost:3000${basePath}`
   },
 
   // also render markdown pages

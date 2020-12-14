@@ -52,40 +52,40 @@ jobs:
           VERTX_WEBSITE_BASEPATH: ${{ steps.basePath.outputs.basePath }}
 
       - name: Clone current GitHub Pages repo
-        run: git clone --depth 1 https://github.com/vertx-web-site/vertx-web-site.github.io.git
+        run: git clone --depth 1 https://github.com/vertx-china/vertx-china.github.io.git
 
       - name: Clean output directory
         run: |
-          rm -rf vertx-web-site.github.io/.git
-          rm vertx-web-site.github.io/.nojekyll
+          rm -rf vertx-china.github.io/.git
+          rm vertx-china.github.io/.nojekyll
 
       - name: Clean preview directory
-        run: rm -rf vertx-web-site.github.io/${{ steps.basePath.outputs.basePath }}
+        run: rm -rf vertx-china.github.io/${{ steps.basePath.outputs.basePath }}
         if: ${{ github.ref != 'refs/heads/master' }}
 
       - name: Copy build to preview directory
         run: |
-          mkdir -p vertx-web-site.github.io/${{ steps.basePath.outputs.basePath }}
-          mv out/* vertx-web-site.github.io/${{ steps.basePath.outputs.basePath }}
+          mkdir -p vertx-china.github.io/${{ steps.basePath.outputs.basePath }}
+          mv out/* vertx-china.github.io/${{ steps.basePath.outputs.basePath }}
         if: ${{ github.ref != 'refs/heads/master' }}
 
       - name: Clean output directory (except preview directory)
         run: |
-          mkdir -p vertx-web-site.github.io.tmp
-          mv vertx-web-site.github.io/_preview vertx-web-site.github.io.tmp/_preview || true
-          rm -rf vertx-web-site.github.io
-          mv vertx-web-site.github.io.tmp vertx-web-site.github.io
+          mkdir -p vertx-china.github.io.tmp
+          mv vertx-china.github.io/_preview vertx-china.github.io.tmp/_preview || true
+          rm -rf vertx-china.github.io
+          mv vertx-china.github.io.tmp vertx-china.github.io
         if: ${{ github.ref == 'refs/heads/master' }}
 
       - name: Copy build to output directory
-        run: mv out/* vertx-web-site.github.io
+        run: mv out/* vertx-china.github.io
         if: ${{ github.ref == 'refs/heads/master' }}
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           deploy_key: ${{ secrets.DEPLOY_KEY }}
-          external_repository: vertx-web-site/vertx-web-site.github.io
+          external_repository: vertx-china/vertx-china.github.io
           publish_branch: master
-          publish_dir: vertx-web-site.github.io
+          publish_dir: vertx-china.github.io
           cname: vertx.io
