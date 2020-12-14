@@ -1,5 +1,7 @@
 # Vert.x Website ![Node.js CI](https://github.com/vertx-web-site/vertx-web-site/workflows/Node.js%20CI/badge.svg)
 
+[翻译说明](./README.zh-CN.md)
+
 This repository contains the source of the Vert.x website (https://vertx.io).
 
 ## Quickstart
