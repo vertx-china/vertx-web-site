@@ -1,7 +1,7 @@
-If you are using Maven or Gradle, add the following dependency to the _dependencies_ section of your
-project descriptor to access the Vert.x Core API:
+如果您在使用 Maven 或 Gradle（译者注：两种常用的项目构建工具），
+将以下依赖项添加到项目描述文件的 _dependencies_ 节点即可使用 *Vert.x Core* 的API：
 
-* Maven (in your `pom.xml`):
+* Maven （您的 `pom.xml` 中）
 
 [source,xml,subs="+attributes"]
 ----
@@ -12,7 +12,7 @@ project descriptor to access the Vert.x Core API:
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle （您的 `build.gradle` 中）
 
 [source,groovy,subs="+attributes"]
 ----

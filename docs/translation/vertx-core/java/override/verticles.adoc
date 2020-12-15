@@ -1,51 +1,50 @@
-=== Writing Verticles
+=== 编写 Verticle
 
-Verticle classes must implement the `link:../../apidocs/io/vertx/core/Verticle.html[Verticle]` interface.
+Verticle 的实现类必须实现 `link:../../apidocs/io/vertx/core/Verticle.html[Verticle]` 接口。
 
-They can implement it directly if you like but usually it's simpler to extend
-the abstract class `link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]`.
+如果您喜欢的话，可以直接实现该接口，但是通常直接从
+抽象类 `link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]` 继承更简单。
 
-Here's an example verticle:
+这儿有一个例子：
 
 ----
 public class MyVerticle extends AbstractVerticle {
 
- // Called when verticle is deployed
+ // Verticle部署时调用
  public void start() {
  }
 
- // Optional - called when verticle is undeployed
+ // 可选 - Verticle撤销时调用
  public void stop() {
  }
 
 }
 ----
 
-Normally you would override the start method like in the example above.
+通常您需要像上边例子一样重写 `start` 方法。
 
-When Vert.x deploys the verticle it will call the start method, and when the method has completed the verticle will
-be considered started.
+当 Vert.x 部署 Verticle 时，它的 `start` 方法将被调用，这个方法执行完成后 Verticle 就
+变成已启动状态。
 
-You can also optionally override the stop method. This will be called by Vert.x when the verticle is undeployed and when
-the method has completed the verticle will be considered stopped.
+您同样可以重写 `stop` 方法，当Vert.x 撤销一个 Verticle 时它会被调用，这个
+方法执行完成后 Verticle 就变成已停止状态了。
 
-=== Asynchronous Verticle start and stop
+=== Verticle 异步启动和停止
 
-Sometimes you want to do something in your verticle start-up which takes some time and you don't want the verticle to
-be considered deployed until that happens. For example you might want to start an HTTP server in the start method and
-propagate the asynchronous result of the server `listen` method.
+有些时候您的 Verticle 启动会耗费一些时间，您想要在这个过程做一些事，并且您做的这些事并不想等到Verticle
+部署完成过后再发生。如：您想在 `start` 方法中部署其他的 Verticle。
 
-You can't block waiting for the HTTP server to bind in your start method as that would break the <<golden_rule, Golden Rule>>.
+您不能在您的 `start` 方法中阻塞等待其他的 Verticle 部署完成，这样做会破坏 <<golden_rule, Golden Rule>>。
 
-So how can you do this?
+所以您要怎么做？
 
-The way to do it is to implement the *asynchronous* start method. This version of the method takes a Future as a parameter.
-When the method returns the verticle will *not* be considered deployed.
+您可以实现 *异步版本* 的 `start` 方法来实现，它接收一个 `Promise` 参数。
+方法执行完时，Verticle 实例**并没有**部署好（状态不是 deployed）。
 
-Some time later, after you've done everything you need to do (e.g. start the HTTP server), you can call complete
-on the Future (or fail) to signal that you're done.
+当所有您需要做的事（如：启动HTTP服务）完成后，就可以调用 `Future` 的 `complete`（或 `fail` ）
+方法来标记启动完成或失败了。
 
-Here's an example:
+这儿有一个例子：
 
 ----
 public class MyVerticle extends AbstractVerticle {
@@ -71,14 +70,14 @@ public class MyVerticle extends AbstractVerticle {
 }
 ----
 
-Similarly, there is an asynchronous version of the stop method too. You use this if you want to do some verticle
-cleanup that takes some time.
+同样的，这儿也有一个异步版本的 `stop` 方法，如果您想做一些耗时的 Verticle
+清理工作，您可以使用它。
 
 ----
 public class MyVerticle extends AbstractVerticle {
 
  public void start() {
-   // Do something
+   // 做一些事
  }
 
  public void stop(Future<Void> stopFuture) {
@@ -93,5 +92,5 @@ public class MyVerticle extends AbstractVerticle {
 }
 ----
 
-INFO: You don't need to manually stop the HTTP server started by a verticle, in the verticle's stop method. Vert.x
-will automatically stop any running server when the verticle is undeployed.
+INFO: 在Verticle中启动的HTTP服务，无需在`stop`方法中手动停止；
+Vert.x在撤销Verticle时会自动停止运行中的服务。

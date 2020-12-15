@@ -1,6 +1,6 @@
-=== Passing configuration to a verticle
+=== 向 Verticle 传入配置
 
-Configuration in the form of JSON can be passed to a verticle at deployment time:
+可在部署时传给 Verticle 一个 JSON 格式的配置
 
 [source,java]
 ----
@@ -9,18 +9,18 @@ DeploymentOptions options = new DeploymentOptions().setConfig(config);
 vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
 ----
 
-This configuration is then available via the `link:../../apidocs/io/vertx/core/Context.html[Context]` object or directly using the
-`link:../../apidocs/io/vertx/core/AbstractVerticle.html#config--[config]` method. The configuration is returned as a JSON object so you
-can retrieve data as follows:
+传入之后，这个配置可以通过 `link:../../apidocs/io/vertx/core/Context.html[Context]` 对象或使用
+`link:../../apidocs/io/vertx/core/AbstractVerticle.html#config--[config]` 方法访问。这个配置会以 JSON 对象（`JsonObject`）的形式返回，
+因此您可以用下边代码读取数据：
 
 [source,java]
 ----
 System.out.println("Configuration: " + config().getString("name"));
 ----
 
-=== Accessing environment variables in a Verticle
+=== 在 Verticle 中访问环境变量
 
-Environment variables and system properties are accessible using the Java API:
+环境变量和系统属性可以直接通过 Java API 访问：
 
 [source,java]
 ----
