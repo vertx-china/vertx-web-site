@@ -30,3 +30,12 @@ english分支与master分支的区别是：`english分支` 的 translation目录
 2. 英文增加。因为没有翻译，所以保留英文部分，或者可以安排人立即翻译
 3. 英文修改。TODO 此处需要讨论之后定
 
+english分支更新文档可合并 https://github.com/vertx-web-site/vertx-web-site 项目后，执行下面脚本来更新。
+
+```shell
+# 非win 系统
+cd docs && ./gradlew copyEnglish
+# win 系统
+cd docs && gradlew.bat copyEnglish
+```
+
