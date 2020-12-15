@@ -15,6 +15,8 @@ windows系统需要修改package.json里的 `update-docs` 的命令为 `cd docs 
 
 翻译原则上，建议中文段落和英文段落行数一致，这样在合并英文版本时，可以更清晰的发现文档中的冲突并解决。
 
+> 翻译完成后，需要执行 `npm run update-docs` 更新翻译文档。也可以手动将翻译的文件复制到 `docs/extracted` 目录
+
 ## 分支说明
 
 english分支与master分支的区别是：`english分支` 的 translation目录为当前版本的英文文档。
