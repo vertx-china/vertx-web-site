@@ -173,7 +173,7 @@ const Docs = ({ metadata, allVersions, fallbackGitHubStars, toc, contents }) => 
   }
   let edit
   if (metadata.edit) {
-    edit = <a href={metadata.edit}><Edit className="feather" /> Edit</a>
+    edit = <a href={metadata.edit}><Edit className="feather" /> 改进翻译</a>
   }
 
   return (

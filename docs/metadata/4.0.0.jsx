@@ -240,6 +240,7 @@ for (let entry of docs.entries) {
     entry.examples = entry.examples
       .replace(/3\.x/, "4.x")
       .replace("reactive-sql-client-examples", "sql-client-examples")
+    entry.edit = `https://github.com/vertx-china/vertx-web-site/tree/master/docs/translation/${entry.id}/java`
   }
 }
 
