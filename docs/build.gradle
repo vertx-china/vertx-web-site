@@ -109,6 +109,9 @@ task copyEnglish(type: Copy) {
   include "**/*.adoc"
   exclude "**/dataobjects.adoc"
   exclude "**/enums.adoc"
+  exclude {
+      return it.path.matches("\\d+\\.\\d+\\.\\d+/.*")
+  }
   includeEmptyDirs false
 }
 
