@@ -1,0 +1,430 @@
+= Vert.x for Groovy
+
+If you are using Maven or Gradle, add the following dependency to the _dependencies_ section of your
+project descriptor to access the Vert.x Core API and enable the Groovy support:
+
+* Maven (in your `pom.xml`):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+<groupId>io.vertx</groupId>
+<artifactId>vertx-core</artifactId>
+<version>4.0.0</version>
+</dependency>
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-lang-groovy</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+* Gradle (in your `build.gradle` file):
+
+[source,groovy,subs="+attributes"]
+----
+compile "io.vertx:vertx-core:4.0.0"
+compile "io.vertx:vertx-lang-groovy:4.0.0"
+----
+
+== Verticles
+
+=== Writing Verticles
+
+There are two alternatives to create Verticles in Groovy:
+
+a plain Groovy script
+a Groovy class implementing the `link:../../apidocs/io/vertx/core/Verticle.html[Verticle]` interface or extending the `link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]` class
+
+For example, the next snippet is a valid Groovy verticle:
+
+[source, groovy]
+----
+println "Hello from vertx"
+----
+
+On deployment, by default, Vert.x executes the script. Optionally, your script can provide the `startVertx` and
+`stopVertx` methods. Theses methods are called respectively when the verticle starts and stops:
+
+[source, groovy]
+----
+void vertxStart() {
+println "starting"
+}
+
+void vertxStop() {
+println "stopping"
+}
+----
+
+Such methods are synchronous, after the method is called the verticle is considered started or stopped.
+
+Alternatively, you can extend the `link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]` class and implement the `start` and
+`stop` methods:
+
+[source, groovy]
+----
+import io.vertx.core.AbstractVerticle;
+
+class HelloWorldHttpVerticle extends AbstractVerticle {
+
+void start() {
+ println("Starting")
+}
+
+void stop() {
+  println("Stopping")
+}
+}
+----
+
+When Vert.x deploys the verticle it will call the `start` method, and when the method has completed the
+verticle will be considered started.
+
+You can also optionally override the `stop` method. This will be called by Vert.x when the verticle is undeployed
+and when the method has completed the verticle will be considered stopped.
+
+Like before such methods are synchronous, after the method is called the verticle is considered started or stopped.
+
+=== Accessing the vertx instance from a verticle
+
+Regardless the way you use to implement your verticle, you access the vert.x instance using the `vertx` variable /
+field.
+
+.Access to the vert.x instance in a Groovy script
+[source, groovy]
+----
+vertx.deployVerticle("another_verticle.groovy")
+----
+
+.Access to the vert.x instance in a Groovy class
+[source, groovy]
+----
+import io.vertx.core.AbstractVerticle;
+
+class HelloWorldHttpVerticle extends AbstractVerticle {
+
+  void start() {
+    vertx.deployVerticle("another_verticle.groovy")
+  }
+}
+----
+
+=== Asynchronous Verticle start and stop
+
+Sometimes you want to do something in your verticle start-up which takes some time and you don't want the verticle to
+be considered deployed until that happens. For example you might want to deploy other verticles in the start method.
+
+You can't block waiting for the other verticles to deploy in your start method as that would break the Golden Rule.
+
+So how can you do this?
+
+The way to do it is to implement the *asynchronous* start method. This version of the method takes
+a `link:../../apidocs/io/vertx/core/Promise.html[Promise]` as a parameter. When the method returns the verticle will *not* be considered deployed.
+
+Some time later, after you've done everything you need to do (e.g. start other verticles), you can call complete
+on the Promise (or fail) to signal that you're done. Similarly, there is an asynchronous version of the stop method too.
+
+You use this if you want to do some verticle cleanup that takes some time.
+
+When your Verticle is implemented as a script, asynchronous start and stop are implemented as follows:
+
+[source, groovy]
+----
+import io.vertx.core.Promise
+
+void vertxStart(Promise<Void> promise) {
+println "starting"
+vertx.deployVerticle("v.rb", { res ->
+  if (res.succeeded()) {
+    promise.complete()
+  } else {
+    promise.fail(res.cause())
+  }
+})
+}
+
+void vertxStop(Promise<Void> future) {
+println "stopping"
+promise.complete()
+}
+----
+
+If your verticle extends `link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]`, you override the
+`link:../../apidocs/io/vertx/core/AbstractVerticle.html#start-io.vertx.core.Promise-[start]` and
+`link:../../apidocs/io/vertx/core/AbstractVerticle.html#stop-io.vertx.core.Promise-[stop]` methods:
+
+[source, groovy]
+----
+import io.vertx.core.Future
+import io.vertx.core.AbstractVerticle
+
+class HelloWorldHttpVerticle extends AbstractVerticle {
+void start(Promise<Void> future) {
+  println "starting"
+  vertx.deployVerticle("v.rb",
+  { res ->
+    if (res.succeeded()) {
+      future.complete()
+    } else {
+      future.fail(res.cause())
+    }
+  })
+ }
+
+void stop(Promise<Void> future) {
+ println("stopping")
+ future.complete()
+}
+}
+----
+
+NOTE: You don't need to manually undeploy child verticles started by a verticle, in the verticle's stop method.
+Vert.x will automatically undeploy any child verticles when the parent is undeployed.
+
+=== Passing configuration to a verticle
+
+Configuration in the form of Map can be passed to a verticle at deployment time:
+
+[source,Groovy]
+----
+def config = [
+name:"tim",
+directory:"/blah"
+]
+def options = [ "config" : config ];
+vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
+----
+
+This configuration is then available via the `link:../../apidocs/io/vertx/core/Context.html[Context]`, The configuration is returned as a Map
+object so you can retrieve data as follows:
+
+[source,Groovy]
+----
+println vertx.getOrCreateContext().config()["name"]
+----
+
+NOTE: The configuration can also be a `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` object.
+
+=== Accessing environment variables in a Verticle
+
+Environment variables and system properties are accessible using the Java API:
+
+[source,Groovy]
+----
+println System.getProperty("foo")
+println System.getenv("HOME")
+----
+
+== JSON
+
+To manipulate JSON object, Vert.x proposes its own implementation of `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` and
+`link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]`. This is because, unlike some other languages, Java does not have first class
+support for http://json.org/[JSON].
+
+When developping a vert.x application with Groovy, you can rely on these two classes, or use the
+(http://www.groovy-lang.org/json.html)[JSON support from Groovy]. This section explains how to use the Vert.x
+classes.
+
+NOTE: Most vert.x methods taking a JSON object as argument in their Java version, take a map instead.
+
+=== Data object conversion
+
+Class annotated with `@DataObject` used in Vert.x API can be converted back and forth to maps thanks to the
+Groovy `as` operator.
+
+[source,Groovy]
+----
+import io.vertx.core.http.HttpServerOptions
+import io.vertx.core.net.PemKeyCertOptions
+
+// Instead of this
+def server = vertx.createHttpServer(new HttpServerOptions()
+   .setUseAlpn(true)
+   .setSsl(true)
+   .setKeyStoreOptions(new JksOptions().setPath("/path/to/my/keystore")))
+
+// You can convert a map literal to HttpServerOptions
+server = vertx.createHttpServer([
+   "userAlpn":        true,
+   "ssl":             true,
+   "keyStoreOptions": ["path":"/path/to/my/keystore"]
+   ] as HttpServerOptions)
+----
+
+=== JSON objects
+
+The `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` class represents JSON objects.
+
+A JSON object is basically just a map which has string keys and values can be of one of the JSON supported types
+(string, number, boolean).
+
+JSON objects also support `null` values.
+
+==== Creating JSON objects
+
+Empty JSON objects can be created with the default constructor.
+
+You can create a JSON object from a string or g-string JSON representation as follows:
+
+[source,groovy]
+----
+def object = new JsonObject("{\"foo\":\"bar\"}")
+def object2 = new JsonObject("""
+{
+"foo": "bar"
+}
+""")
+----
+
+In Groovy it's also convenient to create a JSON object from a map:
+
+[source, groovy]
+----
+def map = [ "foo" : "bar" ]
+def json = new JsonObject(map)
+----
+
+Nested maps are transformed to nested JSON objects.
+
+It can be achieved using a Groovy cast as well:
+
+[source, groovy]
+----
+def map = [ "foo" : "bar" ]
+def json = map as JsonObject
+----
+
+==== Putting entries into a JSON object
+
+Use the `link:../../apidocs/io/vertx/core/json/JsonObject.html#put-java.lang.String-java.lang.Object-[put]` methods to put values into the JSON object.
+
+The method invocations can be chained because of the fluent API:
+
+[source,groovy]
+----
+def object = new JsonObject()
+object.put("foo", "bar").put("num", 123).put("mybool", true)
+----
+
+The Groovy subscript operator works too:
+
+[source,groovy]
+----
+def object = new JsonObject()
+object["foo"] = "bar"
+object["num"] = 123
+object["mybool"] = true
+----
+
+==== Getting values from a JSON object
+
+You get values from a JSON object using the `getXXX` methods, for example:
+
+[source,java]
+----
+def val1 = jsonObject.getString("some-key")
+def val2 = jsonObject.getInteger("some-other-key")
+----
+
+The Groovy subscript operator works too:
+
+[source,groovy]
+----
+def val1 = jsonObject["some-key"]
+def val2 = jsonObject["some-other-key"]
+----
+
+==== Encoding the JSON object to a String
+
+You use `link:../../apidocs/io/vertx/core/json/JsonObject.html#encode--[encode]` to encode the object to a String form. There is also a
+`link:../../apidocs/io/vertx/core/json/JsonObject.html#encodePrettily--[encodePrettily]` that makes the output pretty (understand multi-line and
+indented).
+
+=== JSON arrays
+
+The `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` class represents JSON arrays.
+
+A JSON array is a sequence of values (string, number, boolean).
+
+JSON arrays can also contain `null` values.
+
+==== Creating JSON arrays
+
+Empty JSON arrays can be created with the default constructor.
+
+You can create a JSON array from a string JSON representation or a list as follows:
+
+[source,groovy]
+----
+def object = new JsonArray("[\"foo\", \"bar\"]")
+def object2 = new JsonObject("""
+[
+"foo", "bar"
+]
+""")
+----
+
+In Groovy it's also convenient to create a JSON array from a list:
+
+[source, groovy]
+----
+def list = [ "foo", "bar" ]
+def json = new JsonArray(list)
+----
+
+Nested maps are transformed to nested JSON objects.
+
+It can be achieved using a Groovy cast as well:
+
+[source, groovy]
+----
+def list = [ "foo", "bar" ]
+def json = map as JsonArray
+----
+
+==== Adding entries into a JSON array
+
+You add entries to a JSON array using the `link:../../apidocs/io/vertx/core/json/JsonArray.html#add-java.lang.Object-[add]` methods.
+
+[source,groovy]
+----
+def array = new JsonArray()
+array.add("foo").add(123).add(false)
+----
+
+The left shift operator can be used as well:
+
+[source,groovy]
+----
+def array = new JsonArray()
+array << "foo"
+array << 123
+array << false
+----
+
+==== Getting values from a JSON array
+
+You get values from a JSON array using the `getXXX` methods, for example:
+
+[source,groovy]
+----
+def val = array.getString(0)
+def intVal = array.getInteger(1)
+def boolVal = array.getBoolean(2)
+----
+
+The Groovy subscript operator works too:
+
+[source,groovy]
+----
+def val = array[0]
+def intVal = array[1]
+def boolVal = array[2]
+----
+
+==== Encoding the JSON array to a String
+
+You use `link:../../apidocs/io/vertx/core/json/JsonArray.html#encode--[encode]` to encode the array to a String form. There is also a
+`link:../../apidocs/io/vertx/core/json/JsonObject.html#encodePrettily--[encodePrettily]` that makes the output pretty (understand multi-line and
+indented).
