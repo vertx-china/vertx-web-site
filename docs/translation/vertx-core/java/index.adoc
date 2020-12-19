@@ -608,67 +608,66 @@ vertx run my-verticle.js -ha
 
 === 从命令行运行Verticle
 
-You can use Vert.x directly in your Maven or Gradle projects in the normal way by adding a dependency to the Vert.x
-core library and hacking from there.
+您可以在 Maven 或 Gradle 项目中以正常方式添加 Vert.x 
+Core 为依赖，在项目中直接使用 Vert.x。
 
-However you can also run Vert.x verticles directly from the command line if you wish.
+您也可以从命令行直接运行 Vert.x 的 Verticle。
 
-To do this you need to download and install a Vert.x distribution, and add the `bin` directory of the installation
-to your `PATH` environment variable. Also make sure you have a Java 8 JDK on your `PATH`.
+为此，您需要下载并安装 Vert.x 的发行版，并且将安装的 `bin` 目录添加到
+您的 `PATH` 环境变量中，并确保您的 `PATH` 中设置了Java 8的JDK环境。
 
-NOTE: The JDK is required to support on the fly compilation of Java code.
+NOTE: 在`PATH`设置JDK是为了支持Java代码的运行时编译（on the fly compilation）。
 
-You can now run verticles by using the `vertx run` command. Here are some examples:
+现在您可以使用 `vertx run` 命令运行Verticle了，下面是一些例子：
 
 ----
-# Run a JavaScript verticle
+# 运行JavaScript的Verticle
 vertx run my_verticle.js
 
-# Run a Ruby verticle
+# 运行Ruby的Verticle
 vertx run a_n_other_verticle.rb
 
-# Run a Groovy script verticle, clustered
+# 使用集群模式运行Groovy的Verticle
 vertx run FooVerticle.groovy -cluster
 ----
 
-You can even run Java source verticles without compiling them first!
+您甚至可以不必编译 Java 源代码，直接运行它：
 
 ----
 vertx run SomeJavaSourceFile.java
 ----
 
-Vert.x will compile the Java source file on the fly before running it. This is really useful for quickly
-prototyping verticles and great for demos. No need to set-up a Maven or Gradle build first to get going!
+Vert.x 在运行Java 源代码文件之前将执行运行时编译，这对于快速
+原型制作和演示很有用，而且不需要配置 Maven 或 Gradle 就能跑起来！
 
-For full information on the various options available when executing `vertx` on the command line,
-type `vertx` at the command line.
+欲了解有关在命令行执行 `vertx` 可用的各种选项完整信息，
+可以直接在命令行键入 `vertx` 查看帮助。
 
-=== Causing Vert.x to exit
+=== 退出 Vert.x 环境
 
-Threads maintained by Vert.x instances are not daemon threads so they will prevent the JVM from exiting.
+Vert.x 实例维护的线程不是守护线程，因此它们会阻止JVM退出。
 
-If you are embedding Vert.x and you have finished with it, you can call `link:../../apidocs/io/vertx/core/Vertx.html#close--[close]` to close it
-down.
+如果您通过嵌入式的方式使用 Vert.x 并且完成了操作，您可以调用 `link:../../apidocs/io/vertx/core/Vertx.html#close--[close]` 
+方法关闭它。
 
-This will shut-down all internal thread pools and close other resources, and will allow the JVM to exit.
+这将关闭所有内部线程池并关闭其他资源，允许JVM退出。
 
-=== The Context object
+=== Context 对象
 
-When Vert.x provides an event to a handler or calls the start or stop methods of a
-`link:../../apidocs/io/vertx/core/Verticle.html[Verticle]`, the execution is associated with a `Context`. Usually a context is an
-*event-loop context* and is tied to a specific event loop thread. So executions for that context always occur
-on that exact same event loop thread. In the case of worker verticles and running inline blocking code a
-worker context will be associated with the execution which will use a thread from the worker thread pool.
+当 Vert.x 传递一个事件给处理器或者调用 `link:../../apidocs/io/vertx/core/Verticle.html[Verticle]` 的 start 或 stop 方法时，它会关联一个 `Context` 对象来执行。通常来说这个context会是一个 
+**event-loop context**，它绑定到了一个特定的 Event Loop 线程上。所以在该context上执行的操作总是
+在同一个 Event Loop 线程中。对于运行内联的阻塞代码的 Worker Verticle 来说，会关联
+一个 Worker Context，并且所有的操作运都会运行在 Worker 线程池的线程上。（译者注：每个 `Verticle` 在部署的时候都会被分配一个 `Context`（根据配置不同，可以是Event Loop Context 或者 Worker Context），之后此 `Verticle` 上所有的普通代码都会在此 `Context` 上执行（即对应的 Event Loop 或Worker 线程）。一个 `Context` 对应一个 Event Loop 线程（或 Worker 线程），但一个 Event Loop 可能对应多个 `Context`。）
 
-To retrieve the context, use the `link:../../apidocs/io/vertx/core/Vertx.html#getOrCreateContext--[getOrCreateContext]` method:
+您可以通过 `link:../../apidocs/io/vertx/core/Vertx.html#getOrCreateContext--[getOrCreateContext]` 方法获取 `Context` 实例：
 
 [source, java]
 ----
 Context context = vertx.getOrCreateContext();
 ----
 
-If the current thread has a context associated with it, it reuses the context object. If not a new instance of
-context is created. You can test the _type_ of context you have retrieved:
+若已经有一个context和当前线程关联，那么它直接重用这个context对象，如果没有
+则创建一个新的。您可以检查获取的context的 _类型_ ：
 
 [source, java]
 ----
@@ -682,8 +681,8 @@ if (context.isEventLoopContext()) {
 }
 ----
 
-When you have retrieved the context object, you can run code in this context asynchronously. In other words,
-you submit a task that will be eventually run in the same context, but later:
+当您获取了这个context对象，您就可以在context中异步执行代码了。换句话说，
+您提交的任务将会在同一个context中运行：
 
 [source, java]
 ----
@@ -692,9 +691,9 @@ vertx.getOrCreateContext().runOnContext( (v) -> {
 });
 ----
 
-When several handlers run in the same context, they may want to share data. The context object offers methods to
-store and retrieve data shared in the context. For instance, it lets you pass data to some action run with
-`link:../../apidocs/io/vertx/core/Context.html#runOnContext-io.vertx.core.Handler-[runOnContext]`:
+当在同一个context中运行了多个处理函数时，可能需要在它们之间共享数据。context对象提供了
+存储和读取共享数据的方法。举例来说，它允许您将数据传递到
+ `link:../../apidocs/io/vertx/core/Context.html#runOnContext-io.vertx.core.Handler-[runOnContext]` 方法运行的某些操作中：
 
 [source, java]
 ----
@@ -705,22 +704,22 @@ context.runOnContext((v) -> {
 });
 ----
 
-The context object also let you access verticle configuration using the `link:../../apidocs/io/vertx/core/Context.html#config--[config]`
-method. Check the <<Passing configuration to a verticle>> section for more details about this configuration.
+您还可以通过 `link:../../apidocs/io/vertx/core/Context.html#config--[config]` 方法
+访问 Verticle 的配置信息。查看 <<Passing configuration to a verticle, 向 Verticle 传入配置>> 章节了解更多配置信息。
 
-=== Executing periodic and delayed actions
+=== 执行周期性/延迟性操作
 
-It's very common in Vert.x to want to perform an action after a delay, or periodically.
+在 Vert.x 中，延迟执行或定期执行操作很常见。
 
-In standard verticles you can't just make the thread sleep to introduce a delay, as that will block the event loop thread.
+在 Standard Verticle 中您不能直接让线程休眠以引入延迟，因为它会阻塞 Event Loop 线程。
 
-Instead you use Vert.x timers. Timers can be *one-shot* or *periodic*. We'll discuss both
+取而代之是使用 Vert.x 定时器。定时器可以是 *一次性* 或 *周期性* 的，两者我们都会讨论到。
 
-==== One-shot Timers
+==== 一次性计时器
 
-A one shot timer calls an event handler after a certain delay, expressed in milliseconds.
+一次性计时器会在一定延迟后调用一个 Event Handler，以毫秒为单位计时。
 
-To set a timer to fire once you use `link:../../apidocs/io/vertx/core/Vertx.html#setTimer-long-io.vertx.core.Handler-[setTimer]` method passing in the delay and a handler
+您可以通过 `link:../../apidocs/io/vertx/core/Vertx.html#setTimer-long-io.vertx.core.Handler-[setTimer]` 方法传递延迟时间和一个处理器来设置计时器的触发。
 
 [source,java]
 ----
@@ -731,23 +730,23 @@ long timerID = vertx.setTimer(1000, id -> {
 System.out.println("First this is printed");
 ----
 
-The return value is a unique timer id which can later be used to cancel the timer. The handler is also passed the timer id.
+返回值是一个唯一的计时器id，该id可用于之后取消该计时器，这个计时器id会传入给处理器。
 
-==== Periodic Timers
+==== 周期性计时器
 
-You can also set a timer to fire periodically by using `link:../../apidocs/io/vertx/core/Vertx.html#setPeriodic-long-io.vertx.core.Handler-[setPeriodic]`.
+您同样可以使用 `link:../../apidocs/io/vertx/core/Vertx.html#setPeriodic-long-io.vertx.core.Handler-[setPeriodic]` 方法设置一个周期性触发的计时器。
 
-There will be an initial delay equal to the period.
+第一次触发之前同样会有一段设置的延时时间。
 
-The return value of `setPeriodic` is a unique timer id (long). This can be later used if the timer needs to be cancelled.
+`setPeriodic` 方法的返回值也是一个唯一的计时器id，若之后该计时器需要取消则使用该id。
 
-The argument passed into the timer event handler is also the unique timer id:
+传给处理器的参数也是这个唯一的计时器id。
 
-Keep in mind that the timer will fire on a periodic basis. If your periodic treatment takes a long amount of time to proceed,
-your timer events could run continuously or even worse : stack up.
+请记住这个计时器将会定期触发。如果您的定时任务会花费大量的时间，则您的计时器事件可能会连续执行,
+甚至发生更坏的情况：重叠。
 
-In this case, you should consider using `link:../../apidocs/io/vertx/core/Vertx.html#setTimer-long-io.vertx.core.Handler-[setTimer]` instead. Once your treatment has
-finished, you can set the next timer.
+这种情况，您应考虑使用 `link:../../apidocs/io/vertx/core/Vertx.html#setTimer-long-io.vertx.core.Handler-[setTimer]` 方法，当任务执行完成时
+设置下一个计时器。
 
 [source,java]
 ----
@@ -758,26 +757,25 @@ long timerID = vertx.setPeriodic(1000, id -> {
 System.out.println("First this is printed");
 ----
 
-==== Cancelling timers
+==== 取消计时器
 
-To cancel a periodic timer, call `link:../../apidocs/io/vertx/core/Vertx.html#cancelTimer-long-[cancelTimer]` specifying the timer id. For example:
+指定一个计时器id并调用 `link:../../apidocs/io/vertx/core/Vertx.html#cancelTimer-long-[cancelTimer]` 方法来取消一个周期性计时器。如：
 
 [source,java]
 ----
 vertx.cancelTimer(timerID);
 ----
 
-==== Automatic clean-up in verticles
+==== Verticle 中自动清除定时器
 
-If you're creating timers from inside verticles, those timers will be automatically closed
-when the verticle is undeployed.
+如果您在 Verticle 中创建了计时器，当这个 Verticle 被撤销时这个计时器会被自动关闭。
 
 === Verticle worker pool
 
-Verticles use the Vert.x worker pool for executing blocking actions, i.e `link:../../apidocs/io/vertx/core/Context.html#executeBlocking-io.vertx.core.Handler-boolean-io.vertx.core.Handler-[executeBlocking]` or
-worker verticle.
+Verticle 使用 Vert.x 中的 Worker Pool 来执行阻塞式行为，例如 `link:../../apidocs/io/vertx/core/Context.html#executeBlocking-io.vertx.core.Handler-boolean-io.vertx.core.Handler-[executeBlocking]` 或 
+Worker Verticle。
 
-A different worker pool can be specified in deployment options:
+可以在部署配置项中指定不同的 Worker 线程池：
 
 [source,java]
 ----

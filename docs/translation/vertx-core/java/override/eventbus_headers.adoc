@@ -1,7 +1,7 @@
-==== Setting headers on messages
+==== 设置消息头
 
-Messages sent over the event bus can also contain headers. This can be specified by providing a
-`link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]` when sending or publishing:
+在 Event Bus 上发送的消息可包含头信息。您可以在发送或发布(publish)时提供一个
+ `link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]` 来指定头信息。例如：
 
 [source,java]
 ----
