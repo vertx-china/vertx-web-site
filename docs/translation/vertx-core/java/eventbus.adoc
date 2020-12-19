@@ -158,7 +158,7 @@ consumer.completionHandler(res -> {
 您可以通过 `link:../../apidocs/io/vertx/core/eventbus/MessageConsumer.html#unregister--[unregister]` 方法来注销处理器。
 
 若您在使用集群模式的 Event Bus，注销处理器的动作会花费一些时间在节点中传播。若您想
-在完成后收到通知，可以使用`link:../../apidocs/io/vertx/core/eventbus/MessageConsumer.html#unregister-io.vertx.core.Handler-[unregister]` 方法注册回调：
+在完成后收到通知，可以使用 `link:../../apidocs/io/vertx/core/eventbus/MessageConsumer.html#unregister-io.vertx.core.Handler-[unregister]` 方法注册回调：
 
 [source,java]
 ----
@@ -262,17 +262,11 @@ eventBus.request("news.uk.sport", "Yay! Someone kicked a ball across a patch of 
 
 ==== 带超时的发送
 
-当发送带有应答处理器的消息时，可以在 [`DeliveryOptions`](https://vertx.io/docs/apidocs/io/vertx/core/eventbus/DeliveryOptions.html) 中指定一个超时时间。
+当发送带有应答处理器的消息时，可以在 `link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]` 中指定一个超时时间。
 
 如果在这个时间之内没有收到应答，则会以“失败的结果”为参数调用应答处理器。
 
-默认超时是 **30 秒**。
-
-When sending a message with a reply handler, you can specify a timeout in the `link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]`.
-
-If a reply is not received within that time, the reply handler will be called with a failure.
-
-The default timeout is 30 seconds.
+默认超时是 *30 秒*。
 
 ==== 发送失败
 
@@ -284,11 +278,6 @@ The default timeout is 30 seconds.
 发生这些情况时，应答处理器将会以这些异常失败结果为参数进行调用。
 
 include::override/eventbus.adoc[]
-
-==== Clustered Event Bus
-
-The event bus doesn't just exist in a single Vert.x instance. By clustering different Vert.x instances together on
-your network they can form a single, distributed event bus.
 
 ==== 集群模式的 Event Bus
 

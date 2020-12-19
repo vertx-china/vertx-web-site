@@ -295,7 +295,7 @@ CompositeFuture.all(httpServerFuture, netServerFuture).onComplete(ar -> {
 });
 ----
 
-所有被合并的 `Future` 中的操作同时运行。当组合的处理操作完成时，该方法返回的 `Future` 上绑定的处理器（[`Handler`](https://vertx.io/docs/apidocs/io/vertx/core/Handler.html)）会被调用。
+所有被合并的 `Future` 中的操作同时运行。当组合的处理操作完成时，该方法返回的 `Future` 上绑定的处理器（`link:../../apidocs/io/vertx/core/Handler.html[Handler]`）会被调用。
 只要有一个操作失败（其中的某一个 `Future` 的状态被标记成失败），
 则返回的 `Future` 会被标记为失败。如果所有的操作都成功，
 则返回的 `Future` 将会成功完成。
@@ -457,7 +457,7 @@ Worker Verticle 设计用于调用阻塞式代码，它不会阻塞任何 Event 
 如果您不想使用 Worker Verticle 来运行阻塞式代码，您还可以在一个
 Event Loop中直接使用 <<blocking_code, 内联阻塞式代码>>
 
-您需要通过 `link:../../apidocs/io/vertx/core/DeploymentOptions.html#setWorker-boolean-[setWorker] 方法来将 Verticle 部署成一个 Worker Verticle：
+您需要通过 `link:../../apidocs/io/vertx/core/DeploymentOptions.html#setWorker-boolean-[setWorker]` 方法来将 Verticle 部署成一个 Worker Verticle：
 
 [source,java]
 ----
