@@ -654,7 +654,8 @@ Vert.x 实例维护的线程不是守护线程，因此它们会阻止JVM退出�
 
 === Context 对象
 
-当 Vert.x 传递一个事件给处理器或者调用 `link:../../apidocs/io/vertx/core/Verticle.html[Verticle]` 的 start 或 stop 方法时，它会关联一个 `Context` 对象来执行。通常来说这个context会是一个 
+当 Vert.x 传递一个事件给处理器或者调用 `link:../../apidocs/io/vertx/core/Verticle.html[Verticle]` 的 start 或 stop 方法时，
+它会关联一个 `Context` 对象来执行。通常来说这个context会是一个 
 **event-loop context**，它绑定到了一个特定的 Event Loop 线程上。所以在该context上执行的操作总是
 在同一个 Event Loop 线程中。对于运行内联的阻塞代码的 Worker Verticle 来说，会关联
 一个 Worker Context，并且所有的操作运都会运行在 Worker 线程池的线程上。（译者注：每个 `Verticle` 在部署的时候都会被分配一个 `Context`（根据配置不同，可以是Event Loop Context 或者 Worker Context），之后此 `Verticle` 上所有的普通代码都会在此 `Context` 上执行（即对应的 Event Loop 或Worker 线程）。一个 `Context` 对应一个 Event Loop 线程（或 Worker 线程），但一个 Event Loop 可能对应多个 `Context`。）
