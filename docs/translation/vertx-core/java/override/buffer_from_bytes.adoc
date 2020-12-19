@@ -1,4 +1,4 @@
-Create a buffer from a byte[]
+从字节数组 `byte[]` 创建Buffer：
 
 [source,java]
 ----

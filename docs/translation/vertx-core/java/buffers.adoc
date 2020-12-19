@@ -1,34 +1,34 @@
 == Buffers
 :toc: left
 
-Most data is shuffled around inside Vert.x using buffers.
+在 Vert.x 内部，大部分数据被重新组织（shuffle，表意为洗牌）成 `Buffer` 格式。
 
-A buffer is a sequence of zero or more bytes that can read from or written to and which expands automatically as
-necessary to accommodate any bytes written to it. You can perhaps think of a buffer as smart byte array.
+`Buffer` 是一个可以被读取或写入的，包含0个或多个字节的序列，并且能够根据写入的字节自动扩容。
+您也可以将 `Buffer` 想象成一个智能的字节数组。
 
-=== Creating buffers
+=== 创建 Buffer
 
-Buffers can create by using one of the static `link:../../apidocs/io/vertx/core/buffer/Buffer.html#buffer--[Buffer.buffer]` methods.
+可以使用静态方法 `link:../../apidocs/io/vertx/core/buffer/Buffer.html#buffer--[Buffer.buffer]` 来创建 Buffer。
 
-Buffers can be initialised from strings or byte arrays, or empty buffers can be created.
+Buffer可以从字符串或字节数组初始化，或者直接创建空的Buffer。
 
-Here are some examples of creating buffers:
+这儿有一些创建Buffer的例子。
 
-Create a new empty buffer:
+创建一个空的Buffer：
 
 [source,java]
 ----
 Buffer buff = Buffer.buffer();
 ----
 
-Create a buffer from a String. The String will be encoded in the buffer using UTF-8.
+从字符串创建一个Buffer，这个Buffer中的字符会以 UTF-8 格式编码：
 
 [source,java]
 ----
 Buffer buff = Buffer.buffer("some string");
 ----
 
-Create a buffer from a String: The String will be encoded using the specified encoding, e.g:
+从字符串创建一个Buffer，这个字符串会以指定的编码方式编码，例如：
 
 [source,java]
 ----
@@ -37,29 +37,29 @@ Buffer buff = Buffer.buffer("some string", "UTF-16");
 
 include::override/buffer_from_bytes.adoc[]
 
-Create a buffer with an initial size hint. If you know your buffer will have a certain amount of data written to it
-you can create the buffer and specify this size. This makes the buffer initially allocate that much memory and is
-more efficient than the buffer automatically resizing multiple times as data is written to it.
+创建一个指定初始大小的Buffer。若您知道您的 Buffer会写入一定量的数据，
+您可以在创建Buffer时指定它的大小，使这个Buffer在初始化时就分配了更多的内存，
+比数据写入时重新调整大小效率更高。
 
-Note that buffers created this way *are empty*. It does not create a buffer filled with zeros up to the specified size.
+注意以这种方式创建的Buffer是 *空的*。它不会创建一个填满了0的Buffer。代码如下：（译者注：这里说的“空的”、“不会填满0”，指的是buffer内部的游标会从头开始，并不是在说内存布局。这种实现方式和使用直觉是一致的，只不过明确通过文档进行描述有点奇怪。）
 
 [source,java]
 ----
 Buffer buff = Buffer.buffer(10000);
 ----
 
-=== Writing to a Buffer
+=== 向Buffer写入数据
 
-There are two ways to write to a buffer: appending, and random access.
-In either case buffers will always expand automatically to encompass the bytes. It's not possible to get
-an `IndexOutOfBoundsException` with a buffer.
+向Buffer写入数据的方式有两种：追加和随机访问。
+任何一种情况下 Buffer都会自动进行扩容，所以你不会
+在使用Buffer时遇到 `IndexOutOfBoundsException`。
 
-==== Appending to a Buffer
+==== 追加到Buffer
 
-To append to a buffer, you use the `appendXXX` methods.
-Append methods exist for appending various different types.
+您可以使用 `appendXXX` 方法追加数据到Buffer。
+Buffer类提供了追加各种不同类型数据的追加写入方法。
 
-The return value of the `appendXXX` methods is the buffer itself, so these can be chained:
+因为 `appendXXX` 方法的返回值就是 Buffer 自身，所以它可以链式地调用:
 
 [source,java]
 ----
@@ -70,13 +70,13 @@ buff.appendInt(123).appendString("hello\n");
 socket.write(buff);
 ----
 
-==== Random access buffer writes
+==== 随机访问写Buffer
 
-You can also write into the buffer at a specific index, by using the `setXXX` methods.
-Set methods exist for various different data types. All the set methods take an index as the first argument - this
-represents the position in the buffer where to start writing the data.
+您还可以指定一个索引值，通过 `setXXX` 方法写入数据到 `Buffer`。
+`setXXX` 也为各种不同数据类型提供了对应的方法。所有的 set 方法都会将索引值作为第一个参数 —— 
+这表示Buffer中开始写入数据的位置。
 
-The buffer will always expand as necessary to accommodate the data.
+Buffer始终根据需要进行自动扩容。
 
 [source,java]
 ----
@@ -86,10 +86,10 @@ buff.setInt(1000, 123);
 buff.setString(0, "hello");
 ----
 
-=== Reading from a Buffer
+=== 从Buffer中读取
 
-Data is read from a buffer using the `getXXX` methods. Get methods exist for various datatypes.
-The first argument to these methods is an index in the buffer from where to get the data.
+可使用 `getXXX` 方法从 Buffer 中读取数据，`getXXX` 为各种不同数据类型提供了对应的方法，
+这些方法的第一个参数是Buffer中待获取的数据的索引位置。
 
 [source,java]
 ----
@@ -99,13 +99,13 @@ for (int i = 0; i < buff.length(); i += 4) {
 }
 ----
 
-=== Working with unsigned numbers
+=== 使用无符号数
 
-Unsigned numbers can be read from or appended/set to a buffer with the `getUnsignedXXX`,
-`appendUnsignedXXX` and `setUnsignedXXX` methods. This is useful when implementing a codec for a
-network protocol optimized to minimize bandwidth consumption.
+可使用 `getUnsignedXXX`、
+`appendUnsignedXXX` 和 `setUnsignedXXX` 方法将无符号数从Buffer中读取或追加/设置到Buffer里。这对于实现一个
+致力于优化带宽占用的网络协议的编解码器是非常有用的。
 
-In the following example, value 200 is set at specified position with just one byte:
+下边例子中，值 200 被设置到了仅占用一个字节的特定位置：
 
 [source,java]
 ----
@@ -115,22 +115,22 @@ buff.setUnsignedByte(pos, (short) 200);
 System.out.println(buff.getUnsignedByte(pos));
 ----
 
-The console shows '200'.
+控制台中显示 "200"。
 
-=== Buffer length
+=== Buffer长度
 
-Use `link:../../apidocs/io/vertx/core/buffer/Buffer.html#length--[length]` to obtain the length of the buffer.
-The length of a buffer is the index of the byte in the buffer with the largest index + 1.
+可使用 `link:../../apidocs/io/vertx/core/buffer/Buffer.html#length--[length]` 方法获取Buffer长度，
+Buffer的长度值是Buffer中包含的字节的最大索引 + 1。
 
-=== Copying buffers
+=== 拷贝Buffer
 
-Use `link:../../apidocs/io/vertx/core/buffer/Buffer.html#copy--[copy]` to make a copy of the buffer
+可使用 `link:../../apidocs/io/vertx/core/buffer/Buffer.html#copy--[copy]` 方法创建一个Buffer的副本。
 
-=== Slicing buffers
+=== 裁剪Buffer
 
-A sliced buffer is a new buffer which backs onto the original buffer, i.e. it does not copy the underlying data.
-Use `link:../../apidocs/io/vertx/core/buffer/Buffer.html#slice--[slice]` to create a sliced buffers
+裁剪得到的Buffer是完全依赖于原始Buffer的一个新的Buffer，换句话说，它不会对Buffer中的数据做拷贝。
+使用 `link:../../apidocs/io/vertx/core/buffer/Buffer.html#slice--[slice]` 方法裁剪一个Buffer。
 
-=== Buffer re-use
+=== Buffer 重用
 
-After writing a buffer to a socket or other similar place, they cannot be re-used.
+将Buffer写入到一个Socket或其他类似位置后，Buffer就不可被重用了。

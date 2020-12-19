@@ -1,23 +1,23 @@
 == JSON
 :toc: left
 
-Unlike some other languages, Java does not have first class support for http://json.org/[JSON] so we provide
-two classes to make handling JSON in your Vert.x applications a bit easier.
+和其他一些语言不同，Java 没有对 http://json.org/[JSON] 做原生支持（first class support），因此我们提供了
+两个类，以便在 Vert.x 应用中更方便地处理 JSON。
 
 === JSON objects
 
-The `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` class represents JSON objects.
+`link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` 类用来描述JSON对象。
 
-A JSON object is basically just a map which has string keys and values can be of one of the JSON supported types
-(string, number, boolean).
+一个JSON 对象基本上只是一个 Map 结构。它具有字符串的键，值可以是任意一种JSON 支持的类型
+（如 string, number, boolean）。
 
-JSON objects also support null values.
+JSON 对象也支持 null 值。
 
-==== Creating JSON objects
+==== 创建 JSON 对象
 
-Empty JSON objects can be created with the default constructor.
+可以使用默认构造函数创建空的JSON对象。
 
-You can create a JSON object from a string JSON representation as follows:
+您可以通过一个 JSON 格式的字符串创建JSON对象：
 
 [source,java]
 ----
@@ -25,7 +25,7 @@ String jsonString = "{\"foo\":\"bar\"}";
 JsonObject object = new JsonObject(jsonString);
 ----
 
-You can create a JSON object from a map as follows:
+您可以根据Map创建JSON对象：
 
 [source,java]
 ----
@@ -35,11 +35,11 @@ map.put("xyz", 3);
 JsonObject object = new JsonObject(map);
 ----
 
-==== Putting entries into a JSON object
+==== 将键值对放入 JSON 对象
 
-Use the `link:../../apidocs/io/vertx/core/json/JsonObject.html#put-java.lang.String-java.lang.Object-[put]` methods to put values into the JSON object.
+使用 `link:../../apidocs/io/vertx/core/json/JsonObject.html#put-java.lang.String-java.lang.Object-[put]` 方法可以将值放入到JSON对象里。
 
-The method invocations can be chained because of the fluent API:
+这个API是流式的，因此这个方法可以被链式地调用。
 
 [source,java]
 ----
@@ -47,9 +47,9 @@ JsonObject object = new JsonObject();
 object.put("foo", "bar").put("num", 123).put("mybool", true);
 ----
 
-==== Getting values from a JSON object
+==== 从 JSON 对象获取值
 
-You get values from a JSON object using the `getXXX` methods, for example:
+您可使用 `getXXX` 方法从JSON对象中获取值。例如：
 
 [source,java]
 ----
@@ -57,11 +57,11 @@ String val = jsonObject.getString("some-key");
 int intVal = jsonObject.getInteger("some-other-key");
 ----
 
-==== Mapping between JSON objects and Java objects
+==== JSON 对象和 Java 对象间的映射
 
-You can create a JSON object from the fields of a Java object as follows:
+您可以根据 Java 对象的字段创建一个JSON 对象，如下所示：
 
-You can instantiate a Java object and populate its fields from a JSON object as follows:
+你可以根据一个 JSON 对象来实例化一个Java 对象并填充字段值。如下所示：
 
 [source,java]
 ----
@@ -71,33 +71,33 @@ request.bodyHandler(buff -> {
 });
 ----
 
-Note that both of the above mapping directions use Jackson's `ObjectMapper#convertValue()` to perform the
-mapping. See the Jackson documentation for information on the impact of field and constructor visibility, caveats
-on serialization and deserialization across object references, etc.
+请注意上述代码直接使用了 Jackson 的 `ObjectMapper#convertValue()` 来执行
+映射。关于字段和构造函数的可见性的影响、对象引用的
+序列化和反序列化的问题等等可参考 Jackson 的文档获取更多信息。
 
-However, in the simplest case, both `mapFrom` and `mapTo` should succeed if all fields of the Java class are
-public (or have public getters/setters), and if there is a public default constructor (or no defined constructors).
+在最简单的情况下，如果 Java 类中所有的字段都是 
+`public`（或者有 `public` 的 getter/setter）时，并且有一个 `public` 的默认构造函数（或不定义构造函数），`mapFrom` 和 `mapTo` 都应该成功。
 
-Referenced objects will be transitively serialized/deserialized to/from nested JSON objects as
-long as the object graph is acyclic.
+只要不存在对象的循环引用，嵌套的 Java 对象就可以和嵌套的 JSON 对象
+相互序列化/反序列化。
 
-==== Encoding a JSON object to a String
+==== 将 JSON 对象编码成字符串
 
-You use `link:../../apidocs/io/vertx/core/json/JsonObject.html#encode--[encode]` to encode the object to a String form.
+您可使用 `link:../../apidocs/io/vertx/core/json/JsonObject.html#encode--[encode]` 方法将一个对象编码成字符串格式。（译者注：如要得到更优美、格式化的字符串，可以使用 `link:../../apidocs/io/vertx/core/json/JsonObject.html#encodePrettily--[encodePrettily]` 方法。）
 
-=== JSON arrays
+=== JSON 数组
 
-The `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` class represents JSON arrays.
+`link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` 类用来描述 JSON数组。
 
-A JSON array is a sequence of values (string, number, boolean).
+一个JSON 数组是一个值的序列（值的类型可以是 string、number、boolean 等）。
 
-JSON arrays can also contain null values.
+JSON 数组同样可以包含 `null` 值。
 
-==== Creating JSON arrays
+==== 创建 JSON 数组
 
-Empty JSON arrays can be created with the default constructor.
+可以使用默认构造函数创建空的JSON数组。
 
-You can create a JSON array from a string JSON representation as follows:
+您可以根据JSON格式的字符串创建一个JSON数组：
 
 [source,java]
 ----
@@ -105,9 +105,9 @@ String jsonString = "[\"foo\",\"bar\"]";
 JsonArray array = new JsonArray(jsonString);
 ----
 
-==== Adding entries into a JSON array
+==== 将数组项添加到JSON数组
 
-You add entries to a JSON array using the `link:../../apidocs/io/vertx/core/json/JsonArray.html#add-java.lang.Object-[add]` methods.
+您可以使用 `link:../../apidocs/io/vertx/core/json/JsonArray.html#add-java.lang.Object-[add]` 方法添加数组项到JSON数组中：
 
 [source,java]
 ----
@@ -115,9 +115,9 @@ JsonArray array = new JsonArray();
 array.add("foo").add(123).add(false);
 ----
 
-==== Getting values from a JSON array
+==== 从 JSON 数组中获取值
 
-You get values from a JSON array using the `getXXX` methods, for example:
+您可使用 `getXXX` 方法从JSON 数组中获取值。例如：
 
 [source,java]
 ----
@@ -126,15 +126,15 @@ Integer intVal = array.getInteger(1);
 Boolean boolVal = array.getBoolean(2);
 ----
 
-==== Encoding a JSON array to a String
+==== 将 JSON 数组编码成字符串
 
-You use `link:../../apidocs/io/vertx/core/json/JsonArray.html#encode--[encode]` to encode the array to a String form.
+您可以使用 `link:../../apidocs/io/vertx/core/json/JsonArray.html#encode--[encode]` 编码成字符串格式。
 
-==== Creating arbitrary JSON
+==== 创建任意类型的 JSON
 
-Creating JSON object and array assumes you are using valid string representation.
+创建 JSON 对象或数组的前提是，你需要事先已知其输入是合法的字符串。（译者注：这里说的“合法”指的是，你在使用`JsonObject`时，需要事先知道构造函数输入的字符串是一个json object `{...}`，同理，使用`JsonArray`时，字符串需要是一个json array `[...]`，否则即使输入了一个规范的Json字符串，也没有办法成功解析。）
 
-When you are unsure of the string validity then you should use instead ``link:../../apidocs/io/vertx/core/json/Json.html#decodeValue-java.lang.String-[Json.decodeValue]``
+当你不确定字符串是否合法时，你应当转而使用 ``link:../../apidocs/io/vertx/core/json/Json.html#decodeValue-java.lang.String-[Json.decodeValue]`` 方法。
 
 [source,java]
 ----
