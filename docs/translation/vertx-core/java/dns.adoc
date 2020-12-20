@@ -1,17 +1,17 @@
-== DNS client
+== DNS 客户端
 
-Often you will find yourself in situations where you need to obtain DNS informations in an asynchronous fashion.
-Unfortunally this is not possible with the API that is shipped with the Java Virtual Machine itself. Because of
-this Vert.x offers it's own API for DNS resolution which is fully asynchronous.
+通常情况下，您需要以异步方式来获取DNS信息。
+但不幸的是，Java 虚拟机本身附带的API是不可能的，因此
+Vert.x提供了它自己的完全异步解析DNS的API。
 
-To obtain a DnsClient instance you will create a new via the Vertx instance.
+若要获取DnsClient实例，您可以通过Vertx实例来创建一个。
 
 [source,java]
 ----
 DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
 ----
 
-You can also create the client with options and configure the query timeout.
+创建DnsClient时亦可通过传入配置设定查询的过期时间。
 
 [source,java]
 ----
@@ -22,23 +22,23 @@ DnsClient client = vertx.createDnsClient(new DnsClientOptions()
 );
 ----
 
-Creating the client with no arguments or omitting the server address will use the address of the server used internally
-for non blocking address resolution.
+创建DnsClient的时候，不指定参数或者不指定服务器地址的话，DnsClient则会使用服务器内部地址，
+来进行非阻塞的域名解析。
 
 [source,java]
 ----
 DnsClient client1 = vertx.createDnsClient();
 
-// Just the same but with a different query timeout
+// 指定超时时间
 DnsClient client2 = vertx.createDnsClient(new DnsClientOptions().setQueryTimeout(10000));
 ----
 
 === lookup
 
-Try to lookup the A (ipv4) or AAAA (ipv6) record for a given name. The first which is returned will be used,
-so it behaves the same way as you may be used from when using "nslookup" on your operation system.
+尝试为一个指定名称元素获取A（ipv4）或 AAAA（ipv6）记录时，第一条被返回的（记录）将会被使用。
+它的操作方式和操作系统上使用 "nslookup" 类似。
 
-To lookup the A / AAAA record for "vertx.io" you would typically use it like:
+要为 `vertx.io` 获取 A/AAAA 记录，您需要像下面那样做：
 
 [source,java]
 ----
@@ -54,10 +54,10 @@ client.lookup("vertx.io", ar -> {
 
 === lookup4
 
-Try to lookup the A (ipv4) record for a given name. The first which is returned will be used, so it behaves
-the same way as you may be used from when using "nslookup" on your operation system.
+尝试查找给定名称的A（ipv4）记录。第一个返回的（记录）将会被使用，
+因此它的操作方式与操作系统上使用 "nslookup" 类似。
 
-To lookup the A record for "vertx.io" you would typically use it like:
+要查找 "vertx.io" 的A记录，您需要像下面那样做：
 
 [source,java]
 ----
@@ -73,10 +73,10 @@ client.lookup4("vertx.io", ar -> {
 
 === lookup6
 
-Try to lookup the AAAA (ipv6) record for a given name. The first which is returned will be used, so it behaves the
-same way as you may be used from when using "nslookup" on your operation system.
+尝试查找给定名称的 AAAA（ipv6）记录。第一个返回的（记录）将会被使用，
+因此它的操作方式与在操作系统上使用 "nslookup" 类似。
 
-To lookup the A record for "vertx.io" you would typically use it like:
+要查找 "vertx.io" 的 AAAA记录，您需要像下面那样做：
 
 [source,java]
 ----
@@ -92,10 +92,10 @@ client.lookup6("vertx.io", ar -> {
 
 === resolveA
 
-Try to resolve all A (ipv4) records for a given name. This is quite similar to using "dig" on unix like operation
-systems.
+尝试解析给定名称的所有A（ipv4）记录，这与在unix操作系统上
+使用 "dig" 类似。
 
-To lookup all the A records for "vertx.io" you would typically do:
+要查找 "vertx.io" 的所有A记录，您通常会执行以下操作：
 
 [source,java]
 ----
@@ -114,10 +114,10 @@ client.resolveA("vertx.io", ar -> {
 
 === resolveAAAA
 
-Try to resolve all AAAA (ipv6) records for a given name. This is quite similar to using "dig" on unix like
-operation systems.
+尝试解析给定名称的所有AAAA（ipv6）记录，这与在Unix操作系统上
+使用 "dig" 类似。
 
-To lookup all the AAAAA records for "vertx.io" you would typically do:
+要查找 "vertx.io" 的所有AAAA记录，您通常会执行以下操作：
 
 [source,java]
 ----
@@ -136,10 +136,10 @@ client.resolveAAAA("vertx.io", ar -> {
 
 === resolveCNAME
 
-Try to resolve all CNAME records for a given name. This is quite similar to using "dig" on unix like operation
-systems.
+尝试解析给定名称的所有CNAME记录，这与在Unix操作系统上
+使用 "dig" 类似。
 
-To lookup all the CNAME records for "vertx.io" you would typically do:
+要查找 "vertx.io" 的所有CNAME记录，您通常会执行以下操作：
 
 [source,java]
 ----
@@ -158,10 +158,10 @@ client.resolveCNAME("vertx.io", ar -> {
 
 === resolveMX
 
-Try to resolve all MX records for a given name. The MX records are used to define which Mail-Server accepts
-emails for a given domain.
+尝试解析给定名称的所有MX记录，MX记录用于定义哪个邮件服务器去接受
+指定域的电子邮件。
 
-To lookup all the MX records for "vertx.io" you would typically do:
+要查找您常用执行的 "vertx.io" 的所有MX记录：
 
 [source,java]
 ----
@@ -178,10 +178,10 @@ client.resolveMX("vertx.io", ar -> {
 });
 ----
 
-Be aware that the List will contain the `link:../../apidocs/io/vertx/core/dns/MxRecord.html[MxRecord]` sorted by the priority of them, which
-means MX records with smaller priority coming first in the List.
+请注意，列表将包含按照它们优先级排序的 `link:../../apidocs/io/vertx/core/dns/MxRecord.html[MxRecord]` ，这
+意味着列表中优先级低的MX记录会第一个优先出现在列表中。
 
-The `link:../../apidocs/io/vertx/core/dns/MxRecord.html[MxRecord]` allows you to access the priority and the name of the MX record by offer methods for it like:
+`link:../../apidocs/io/vertx/core/dns/MxRecord.html[MxRecord]` 允许您通过下边提供的方法访问MX记录的优先级和名称：
 
 [source,java]
 ----
@@ -191,7 +191,10 @@ record.name();
 
 === resolveTXT
 
-Try to resolve all TXT records for a given name. TXT records are often used to define extra informations for a domain.
+尝试解析给定名称的所有TXT记录，TXT记录通常用于定义域的额外信息。
+
+要解析 "vertx.io" 的所有TXT记录，您可以使用下边几行代码：
+Try to resolve all TXT recrds for a given name. TXT records are often used to define extra informations for a domain.
 
 To resolve all the TXT records for "vertx.io" you could use something along these lines:
 
@@ -212,10 +215,10 @@ client.resolveTXT("vertx.io", ar -> {
 
 === resolveNS
 
-Try to resolve all NS records for a given name. The NS records specify which DNS Server hosts the DNS informations
-for a given domain.
+尝试解析给定名称的所有NS记录，NS记录指定一个DNS服务器，这个服务器管理
+指定域的DNS信息。
 
-To resolve all the NS records for "vertx.io" you could use something along these lines:
+要解析 "vertx.io" 的所有NS记录，您可以使用下边几行：
 
 [source,java]
 ----
@@ -234,10 +237,10 @@ client.resolveNS("vertx.io", ar -> {
 
 === resolveSRV
 
-Try to resolve all SRV records for a given name. The SRV records are used to define extra informations like port and
-hostname of services. Some protocols need this extra informations.
+尝试解析给定名称的所有SRV记录，SRV记录用于定义服务端口和
+主机名等额外信息。一些协议需要这些额外信息。
 
-To lookup all the SRV records for "vertx.io" you would typically do:
+要查找 "vertx.io" 的所有SRV记录，您通常会执行以下操作：
 
 [source,java]
 ----
@@ -254,10 +257,10 @@ client.resolveSRV("vertx.io", ar -> {
 });
 ----
 
-Be aware that the List will contain the SrvRecords sorted by the priority of them, which means SrvRecords
-with smaller priority coming first in the List.
+请注意，列表将包含按照它们优先级排序的 `SrvRecord` ，这意味着
+优先级低的记录会第一个优先出现在列表中。
 
-The `link:../../apidocs/io/vertx/core/dns/SrvRecord.html[SrvRecord]` allows you to access all informations contained in the SRV record itself:
+`link:../../apidocs/io/vertx/core/dns/SrvRecord.html[SrvRecord]` 允许您访问SRV记录本身中包含的所有信息：
 
 [source,java]
 ----
@@ -270,13 +273,13 @@ record.service();
 record.target();
 ----
 
-Please refer to the API docs for the exact details.
+有关详细信息，请参阅API文档。
 
 === resolvePTR
 
-Try to resolve the PTR record for a given name. The PTR record maps an ipaddress to a name.
+尝试解析给定名称的PTR记录，PTR记录将 `ipaddress` 映射到名称。
 
-To resolve the PTR record for the ipaddress 10.0.0.1 you would use the PTR notion of "1.0.0.10.in-addr.arpa"
+要解析IP地址 10.0.0.1 的PTR记录，您将使用 "1.0.0.10.in-addr.arpa"¸的PTR概念。
 
 [source,java]
 ----
@@ -293,10 +296,10 @@ client.resolvePTR("1.0.0.10.in-addr.arpa", ar -> {
 
 === reverseLookup
 
-Try to do a reverse lookup for an ipaddress. This is basically the same as resolve a PTR record, but allows you to
-just pass in the ipaddress and not a valid PTR query string.
+尝试对ipaddress进行反向查找，这与解析PTR记录类似。但是允许您
+传递非有效PTR查询字符串的ipaddress。
 
-To do a reverse lookup for the ipaddress 10.0.0.1 do something similar like this:
+要做ipaddress 10.0.0.1的反向查找类似的事：
 
 [source,java]
 ----

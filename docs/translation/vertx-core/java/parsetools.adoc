@@ -1,10 +1,10 @@
-== Record Parser
+== 记录解析器（Record Parser）
 
-The record parser allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed
-size records. It transforms a sequence of input buffer to a sequence of buffer structured as configured (either
-fixed size or separated records).
+记录解析器（Record Parser）允许您轻松解析由字节序列或固定长度带分隔符的记录的协议。
+它将输入缓冲区序列转换为已配置的缓冲区序列（固定大小
+或带分隔符的记录）。
 
-For example, if you have a simple ASCII text protocol delimited by '\n' and the input is the following:
+例如，若您使用 `\n` 分割的简单ASCII文本协议，并输入如下：
 
 [source]
 ----
@@ -14,7 +14,7 @@ buffer3: DOING OK
 buffer4:\n
 ----
 
-The record parser would produce
+记录解析器将生成下结果：
 [source]
 ----
 buffer1:HELLO
@@ -22,7 +22,7 @@ buffer2:HOW ARE YOU?
 buffer3:I AM DOING OK
 ----
 
-Let's see the associated code:
+我们来看看相关代码：
 
 [source, java]
 ----
@@ -36,7 +36,7 @@ parser.handle(Buffer.buffer("DOING OK"));
 parser.handle(Buffer.buffer("\n"));
 ----
 
-You can also produce fixed sized chunks as follows:
+我们还可以生成固定长度的块，如下：
 
 [source, java]
 ----
@@ -45,9 +45,15 @@ RecordParser.newFixed(4, h -> {
 });
 ----
 
-For more details, check out the `link:../../apidocs/io/vertx/core/parsetools/RecordParser.html[RecordParser]` class.
+有关更多详细信息，请查看 `link:../../apidocs/io/vertx/core/parsetools/RecordParser.html[RecordParser]` 类。
 
-== Json Parser
+== Json 解析器
+
+你可以很容易的解析JSON格式的内容，但是这就要求一次性提供整个JSON内容，
+而如果你要提供一个非常大的JSON，JSON解析器恐怕就不是个方便的方式。
+
+非阻塞JSON解析器 则是一个事件驱动的解析器, 它可以处理体积非常大的JSON。
+它将传输一系列`input buffer`到一系列JSON解析器事件。
 
 You can easily parse JSON structures but that requires to provide the JSON content at once, but it
 may not be convenient when you need to parse very large structures.
@@ -59,7 +65,7 @@ It transforms a sequence of input buffer to a sequence of JSON parse events.
 ----
 JsonParser parser = JsonParser.newParser();
 
-// Set handlers for various events
+// 设置不同事件的handler
 parser.handler(event -> {
   switch (event.type()) {
     case START_OBJECT:
@@ -92,7 +98,7 @@ parser.handler(event -> {
 });
 ----
 
-The parser is non-blocking and emitted events are driven by the input buffers.
+该解析器是非阻塞的，并且由 `input buffer` 驱动触发的事件
 
 [source, java]
 ----
@@ -120,8 +126,8 @@ parser.handle(Buffer.buffer("]"));
 parser.end();
 ----
 
-Event driven parsing provides more control but comes at the price of dealing with fine grained events, which can be
-inconvenient sometimes. The JSON parser allows you to handle JSON structures as values when it is desired:
+事件驱动的解析操作提供了更多的控制，但代价就是要处理非常细粒度的事件（`event-mode`），这有时
+是不方便的。当你需要的时候，JSON解析器允许你将JSON做为值(`value-mode`)处理。
 
 [source, java]
 ----
@@ -147,8 +153,7 @@ parser.handle(Buffer.buffer("[{\"firstName\":\"Bob\"},\"lastName\":\"Morane\"),.
 parser.end();
 ----
 
-The value mode can be set and unset during the parsing allowing you to switch between fine grained
-events or JSON object value events.
+`value-mode`可以在解析时启用或停用，并允许你在`event-mode`事件和 JSONObject的`value-mode`事件之间自由切换。
 
 [source, java]
 ----
@@ -159,17 +164,17 @@ parser.handler(event -> {
 
   switch (event.type()) {
     case START_OBJECT:
-      // Set object value mode to handle each entry, from now on the parser won't emit start object events
+      // 设置为 value-mode，自此开始，解析器则不会触发start-object事件
       parser.objectValueMode();
       break;
     case VALUE:
-      // Handle each object
-      // Get the field in which this object was parsed
+      // 处理每一个对象
+      // 获得从对象中解析出来的字段
       String id = event.fieldName();
       System.out.println("User with id " + id + " : " + event.value());
       break;
     case END_OBJECT:
-      // Set the object event mode so the parser emits start/end object events again
+      // 设置为 event mode，所以解析器重新触发 start/end 事件
       parser.objectEventMode();
       break;
   }
@@ -179,7 +184,7 @@ parser.handle(Buffer.buffer("{\"39877483847\":{\"firstName\":\"Bob\"},\"lastName
 parser.end();
 ----
 
-You can do the same with arrays as well
+你也可以对数组做同样的事情
 
 [source, java]
 ----
@@ -190,16 +195,16 @@ parser.handler(event -> {
 
   switch (event.type()) {
     case START_OBJECT:
-      // Set array value mode to handle each entry, from now on the parser won't emit start array events
+      // 设置为value mode来处理每个元素，自此开始，解析器不会触发 start-array 事件
       parser.arrayValueMode();
       break;
     case VALUE:
-      // Handle each array
-      // Get the field in which this object was parsed
+      // 处理每一个数组
+      // 获取对象中的字段
       System.out.println("Value : " + event.value());
       break;
     case END_OBJECT:
-      // Set the array event mode so the parser emits start/end object events again
+      // 设置为 event mode，从而解析器会重新触发 start/end 事件
       parser.arrayEventMode();
       break;
   }
@@ -209,33 +214,33 @@ parser.handle(Buffer.buffer("[0,1,2,3,4,...]"));
 parser.end();
 ----
 
-You can also decode POJOs
+你也可以反解析到POJO。
 
 [source, java]
 ----
 parser.handler(event -> {
-  // Handle each object
-  // Get the field in which this object was parsed
+  // 获取每个对象
+  // 获取对象中的字段
   String id = event.fieldName();
   User user = event.mapTo(User.class);
   System.out.println("User with id " + id + " : " + user.firstName + " " + user.lastName);
 });
 ----
 
-Whenever the parser fails to process a buffer, an exception will be thrown unless you set an exception handler:
+解析器解析buffer失败之后，会抛出异常；也可以通过设置 `exception handler` 处理异常：
 
 [source, java]
 ----
 JsonParser parser = JsonParser.newParser();
 
 parser.exceptionHandler(err -> {
-  // Catch any parsing or decoding error
+  // 捕捉所有的解析/反解析异常
 });
 ----
 
-The parser also parses json streams:
+解析器也可以解析JSON流：
 
-- concatenated json streams: `{"temperature":30}{"temperature":50}`
-- line delimited json streams: `{"an":"object"}\r\n3\r\n"a string"\r\nnull`
+- 连续的JSON流： `{"temperature":30}{"temperature":50}`
+- 行分割的JSON流： `{"an":"object"}\r\n3\r\n"a string"\r\nnull`
 
-For more details, check out the `link:../../apidocs/io/vertx/core/parsetools/JsonParser.html[JsonParser]` class.
+更多细节，详见 `link:../../apidocs/io/vertx/core/parsetools/JsonParser.html[JsonParser]` 。

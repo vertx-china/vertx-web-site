@@ -1,30 +1,30 @@
-=== Error handling
+=== 错误处理
 
-As you saw in previous sections the DnsClient allows you to pass in a Handler which will be notified with an
-AsyncResult once the query was complete. In case of an error it will be notified with a DnsException which will
-hole a `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html[DnsResponseCode]` that indicate why the resolution failed. This DnsResponseCode
-can be used to inspect the cause in more detail.
+如前边部分所述，DnsClient允许您传递一个Handler，
+查询完成后会传入调用Handler并一个 AsyncResult。在出现错误的情况下，通知中将
+包含一个`DnsException`，该异常会包含一个说明为何失败的 `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html[DnsResponseCode]` 。此DnsResponseCode
+可用于更详细检查原因。
 
-Possible DnsResponseCodes are:
+DnsResponseCode的可能取值包含：
 
-- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NOERROR[NOERROR]` No record was found for a given query
-- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#FORMERROR[FORMERROR]` Format error
-- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#SERVFAIL[SERVFAIL]` Server failure
-- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NXDOMAIN[NXDOMAIN]` Name error
-- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NOTIMPL[NOTIMPL]` Not implemented by DNS Server
-- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#REFUSED[REFUSED]` DNS Server refused the query
-- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#YXDOMAIN[YXDOMAIN]` Domain name should not exist
-- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#YXRRSET[YXRRSET]` Resource record should not exist
-- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NXRRSET[NXRRSET]` RRSET does not exist
-- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NOTZONE[NOTZONE]` Name not in zone
-- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADVERS[BADVERS]` Bad extension mechanism for version
-- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADSIG[BADSIG]` Bad signature
-- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADKEY[BADKEY]` Bad key
-- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADTIME[BADTIME]` Bad timestamp
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NOERROR[NOERROR]` 没有找到给定查询的记录
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#FORMERROR[FORMERROR]` 格式错误
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#SERVFAIL[SERVFAIL]` 服务器故障
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NXDOMAIN[NXDOMAIN]` 名称错误
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NOTIMPL[NOTIMPL]` DNS 服务器没实现
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#REFUSED[REFUSED]` DNS 服务器拒绝查询
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#YXDOMAIN[YXDOMAIN]` 域名不应该存在
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#YXRRSET[YXRRSET]` 资源记录不应该存在
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NXRRSET[NXRRSET]` RRSET不存在
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NOTZONE[NOTZONE]` 名称不在区域内
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADVERS[BADVERS]` 错误的版本扩展机制
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADSIG[BADSIG]` 非法签名
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADKEY[BADKEY]` 非法密钥
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADTIME[BADTIME]` 错误时间戳
 
-All of those errors are "generated" by the DNS Server itself.
+所有这些错误都由DNS服务器本身“生成”。
 
-You can obtain the DnsResponseCode from the DnsException like:
+您可以从 DnsException 中获取 DnsResponseCode，如：
 
 [source,java]
 ----
