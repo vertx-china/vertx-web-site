@@ -1,4 +1,4 @@
-[[Passing configuration to a verticle]]
+[[passing_configuration_to_a_verticle]]
 === 向 Verticle 传入配置
 
 可在部署时传给 Verticle 一个 JSON 格式的配置

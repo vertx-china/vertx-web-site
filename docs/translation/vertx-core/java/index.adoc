@@ -608,7 +608,7 @@ vertx run my-verticle.js -ha
 
 === 从命令行运行Verticle
 
-您可以在 Maven 或 Gradle 项目中以正常方式添加 Vert.x 
+您可以在 Maven 或 Gradle 项目中以正常方式添加 Vert.x
 Core 为依赖，在项目中直接使用 Vert.x。
 
 您也可以从命令行直接运行 Vert.x 的 Verticle。
@@ -647,7 +647,7 @@ Vert.x 在运行Java 源代码文件之前将执行运行时编译，这对于�
 
 Vert.x 实例维护的线程不是守护线程，因此它们会阻止JVM退出。
 
-如果您通过嵌入式的方式使用 Vert.x 并且完成了操作，您可以调用 `link:../../apidocs/io/vertx/core/Vertx.html#close--[close]` 
+如果您通过嵌入式的方式使用 Vert.x 并且完成了操作，您可以调用 `link:../../apidocs/io/vertx/core/Vertx.html#close--[close]`
 方法关闭它。
 
 这将关闭所有内部线程池并关闭其他资源，允许JVM退出。
@@ -655,7 +655,7 @@ Vert.x 实例维护的线程不是守护线程，因此它们会阻止JVM退出�
 === Context 对象
 
 当 Vert.x 传递一个事件给处理器或者调用 `link:../../apidocs/io/vertx/core/Verticle.html[Verticle]` 的 start 或 stop 方法时，
-它会关联一个 `Context` 对象来执行。通常来说这个context会是一个 
+它会关联一个 `Context` 对象来执行。通常来说这个context会是一个
 **event-loop context**，它绑定到了一个特定的 Event Loop 线程上。所以在该context上执行的操作总是
 在同一个 Event Loop 线程中。对于运行内联的阻塞代码的 Worker Verticle 来说，会关联
 一个 Worker Context，并且所有的操作运都会运行在 Worker 线程池的线程上。（译者注：每个 `Verticle` 在部署的时候都会被分配一个 `Context`（根据配置不同，可以是Event Loop Context 或者 Worker Context），之后此 `Verticle` 上所有的普通代码都会在此 `Context` 上执行（即对应的 Event Loop 或Worker 线程）。一个 `Context` 对应一个 Event Loop 线程（或 Worker 线程），但一个 Event Loop 可能对应多个 `Context`。）
@@ -706,7 +706,7 @@ context.runOnContext((v) -> {
 ----
 
 您还可以通过 `link:../../apidocs/io/vertx/core/Context.html#config--[config]` 方法
-访问 Verticle 的配置信息。查看 <<Passing configuration to a verticle, 向 Verticle 传入配置>> 章节了解更多配置信息。
+访问 Verticle 的配置信息。查看 <<passing_configuration_to_a_verticle, 向 Verticle 传入配置>> 章节了解更多配置信息。
 
 === 执行周期性/延迟性操作
 
@@ -773,7 +773,7 @@ vertx.cancelTimer(timerID);
 
 === Verticle worker pool
 
-Verticle 使用 Vert.x 中的 Worker Pool 来执行阻塞式行为，例如 `link:../../apidocs/io/vertx/core/Context.html#executeBlocking-io.vertx.core.Handler-boolean-io.vertx.core.Handler-[executeBlocking]` 或 
+Verticle 使用 Vert.x 中的 Worker Pool 来执行阻塞式行为，例如 `link:../../apidocs/io/vertx/core/Context.html#executeBlocking-io.vertx.core.Handler-boolean-io.vertx.core.Handler-[executeBlocking]` 或
 Worker Verticle。
 
 可以在部署配置项中指定不同的 Worker 线程池：
