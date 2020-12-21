@@ -23,7 +23,7 @@ Vert.x Core 提供了下列功能：
 Vert.x Core中的功能相当底层，不包含诸如数据库访问、授权或高层Web应用的功能。
 您可以在 *Vert.x ext* （扩展包）（译者注：Vert.x的扩展包是Vert.x的子项目集合，类似 link:../../vertx-web/java/[Web]、 link:../../vertx-web-client/java/[Web Client]、 link:../../#databases[Databases]等）中找到这些功能。
 
-*Vert.x Core* 小而轻，您可以只使用您需要的部分，它可
+*Vert.x Core* 小巧而轻便，您可以只使用您需要的部分，它可
 整体嵌入现存应用中。Vert.x没有强制要求使用特定的方式构
 造应用。
 
