@@ -1289,49 +1289,49 @@ Vert.x使用内置的日志API进行记录日志，并支持各种日志记录�
 * `io.vertx.core.logging.Log4j2LogDelegateFactory`，则使用Log4J2，
 * `io.vertx.core.logging.JULLogDelegateFactory`，则使用JDK日志记录
 
-=== Automatic configuration
+=== 自动配置
 
-When no `vertx.logger-delegate-factory-class-name` system property is set, Vert.x will try to find
-the most appropriate logger:
+当没有设置系统属性 `vertx.logger-delegate-factory-class-name` 的值时，Vert.x会尝试查找
+最合适的日志框架：
 
-* use SLF4J when available on the classpath with an actual implementation (i.e. `LoggerFactory.getILoggerFactory()` is not an instance of `NOPLoggerFactory`)
-* otherwise use Log4j2 when available on the classpath
-* otherwise use JUL
+* 当类路径下有SLF4J实现类时，则使用SLF4J，例如 `LoggerFactory.getILoggerFactory()` 返回值不是 `NOPLoggerFactory` 实例，
+* 否则，当classpath有Log4j2实现类时，则使用Log4j2
+* 除此之外，使用JUL
 
-=== Configuring JUL logging
+=== 配置JUL日志记录
 
-A JUL logging configuration file can be specified in the normal JUL way, by providing a system property named `java.util.logging.config.file` with the value being your configuration file.
-For more information on this and the structure of a JUL config file please consult the JDK logging documentation.
+JUL日志配置文件可以使用普通的JUL方式指定 —— 通过设置系统属性 `java.util.logging.config.file` 的值为您的配置文件。
+更多关于此部分以及JUL配置文件结构的内容，请参阅`JUL`日志记录的文档。
 
-Vert.x also provides a slightly more convenient way to specify a configuration file without having to set a system property.
-Just provide a JUL config file with the name `vertx-default-jul-logging.properties` on your classpath (e.g. inside your fatjar) and Vert.x will use that to configure JUL.
+Vert.x还提供了一种更方便的方式指定配置文件，无需设置系统属性。
+您只需在您的类路径中提供名为 `vertx-default-jul-logging.properties` 的JUL配置文件（例如在您的fatjar中），Vert.x将使用该配置文件配置JUL。
 
 [[netty-logging]]
-=== Netty logging
+=== Netty 日志记录
 
-Netty does not rely on external logging configuration (e.g system properties).
-Instead, it implements a logging configuration based on the logging libraries visible from the Netty classes:
+Netty并不依赖外部的日志配置（例如，系统属性）。
+相反，它基于Netty类可见的日志库实现日志记录配置：
 
-* use `SLF4J` library if it is visible
-* otherwise use `Log4j` if it is visible
-* otherwise use `Log4j2` if it is visible
-* otherwise fallback to `java.util.logging`
+* 使用 `SLF4J` 库，如果它可见，
+* 否则使用 `Log4j` ，如果它可见，
+* 否则使用 `Log4j2` ，如果它可见，
+* 否则使用默认的 `java.util.logging`
 
-NOTE: The eagle eyes among you might have noticed that Vert.x follows the same order of preference.
+NOTE: 你们锐利的眼光可能已经注意到Vert.x遵循相同的优先级顺序
 
-The logger implementation can be forced to a specific implementation by setting Netty's internal logger implementation directly on `io.netty.util.internal.logging.InternalLoggerFactory`:
+使用 `io.netty.util.internal.logging.InternalLoggerFactory` 可以直接强制设置日志实现类。
 
 [source,java]
 ----
-// Force logging to Log4j 2
+// 将日志实现强制设为 Log4j 2
 InternalLoggerFactory.setDefaultFactory(Log4J2LoggerFactory.INSTANCE);
 ----
 
-=== Troubleshooting
+=== 故障排除
 
-==== SLF4J warning at startup
+==== SLF4J启动警告
 
-If, when you start your application, you see the following message:
+若您在启动应用程序时看到以下信息：
 
 ----
 SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
@@ -1339,166 +1339,166 @@ SLF4J: Defaulting to no-operation (NOP) logger implementation
 SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
 ----
 
-It means that you have SLF4J-API in your classpath but no actual binding. Messages logged with SLF4J will be dropped.
-You should add a binding to your classpath. Check https://www.slf4j.org/manual.html#swapping to pick a binding and configure it.
+这意味着您的类路径中有 SLF4J-API 却没绑定到具体的实例类中。使用SLF4J记录的消息将会丢失。
+您应该添加具体的实现到你的类路径下。参考 https://www.slf4j.org/manual.html#swapping 选择具体实现并配置。
 
-Be aware that Netty looks for the SLF4-API jar and uses it by default.
+请注意，Netty会寻找SLF4-API的jar，并在默认情况下使用它。
 
-==== Connection reset by peer
+==== 对等连接重置
 
-If your logs show a bunch of:
+若您的日志显示一堆：
 
 ----
 io.vertx.core.net.impl.ConnectionBase
 SEVERE: java.io.IOException: Connection reset by peer
 ----
 
-It means that the client is resetting the HTTP connection instead of closing it. This message also indicates that you
-may have not consumed the complete payload (the connection was cut before you were able to).
+这意味着客户端正在重置HTTP连接，而不是关闭它。此消息还可能表示
+您没有读取完整的有效负荷（连接在读取完全之前被切断）。（译者注：通常情况下，这是正常的，无需担心，如果您打开浏览器，按快捷键不停地刷新页面，就能看到该SEVERE日志。）
 
 include::override/hostname-resolution.adoc[]
 
 [[high_avalibability_and_fail_over]]
-== High Availability and Fail-Over
+== 高可用与故障转移
 
-Vert.x allows you to run your verticles with high availability (HA) support. In that case, when a vert.x
-instance running a verticle dies abruptly, the verticle is migrated to another vertx instance. The vert.x
-instances must be in the same cluster.
+Vert.x 可以支持 verticle 运行于高可用（HA）模式。这种模式之下，如果一个 vert.x 
+实例所运行的 verticle 突然宕掉，该 verticle 将会被迁移到其他的 vert.x 实例中（该 vert.x 
+实例必须处于同一个集群之中）。
 
-=== Automatic failover
+=== 自动故障转移
 
-When vert.x runs with _HA_ enabled, if a vert.x instance where a verticle runs fails or dies, the verticle is
-redeployed automatically on another vert.x instance of the cluster. We call this _verticle fail-over_.
+当运行 vert.x 时开启了高可用（_HA_）选项，此时如果某个 vert.x 实例中的某个 verticle 运行失败或者宕掉，该 verticle 
+将会被自动重新部署于集群中的另一个 vert.x 实例中。我们把这种机制称为 _verticle故障转移_。
 
-To run vert.x with the _HA_ enabled, just add the `-ha` flag to the command line:
+只要在运行 vert.x 的命令行中追加 `-ha` 参数，就可以开启 _高可用_ 模式：
 
 [source]
 ----
 vertx run my-verticle.js -ha
 ----
 
-Now for HA to work, you need more than one Vert.x instances in the cluster, so let's say you have another
-Vert.x instance that you have already started, for example:
+要让高可用机制起作用，您需要在集群中开启至少2个 Vert.x 实例，现在假设您已经
+在集群中运行了一个 Vert.x 实例，例如：
 
 [source]
 ----
 vertx run my-other-verticle.js -ha
 ----
 
-If the Vert.x instance that is running `my-verticle.js` now dies (you can test this by killing the process
-with `kill -9`), the Vert.x instance that is running `my-other-verticle.js` will automatic deploy `my-verticle
-.js` so now that Vert.x instance is running both verticles.
+此时如果运行 `my-verticle.js` 的 Vert.x 实例宕掉了（例如您可以使用 `kill -9` 命令强行杀掉这个进程来模拟此场景），
+运行 `my-other-verticle.js` 的 Vert.x 实例会自动地部署 `my-verticle.js` ，
+此时该 Vert.x 实例同时运行了这两个 verticle （my-other-verticle.js 和 my-verticle.js）。
 
-NOTE: the migration is only possible if the second vert.x instance has access to the verticle file (here
-`my-verticle.js`).
+NOTE: 如果要使得这种迁移机制起作用，则必须保证第二个 vert.x 实例可以访问到该 verticle 对应的文件（在此场景中指的是 
+`my-verticle.js`）。
 
-IMPORTANT: Please note that cleanly closing a Vert.x instance will not cause failover to occur, e.g. `CTRL-C`
-or `kill -SIGINT`
+IMPORTANT: 请注意，通过正常方式退出的 Vert.x 实例不会触发故障转移操作（例如使用 `CTRL-C` 组合键
+或者 `kill -SIGINT` 命令）。
 
-You can also start _bare_ Vert.x instances - i.e. instances that are not initially running any verticles, they
-will also failover for nodes in the cluster. To start a bare instance you simply do:
+您也可以启动若干个 Vert.x _裸_ 实例————指的是它们在启动时没有加载任何 verticle，此时，它们
+一样可以对集群中的其他节点起到故障转移的作用。启动一个空白的 Vert.x 实例很简单，只需要执行以下命令：
 
 [source]
 ----
 vertx run -ha
 ----
 
-When using the `-ha` switch you do not need to provide the `-cluster` switch, as a cluster is assumed if you
-want HA.
+当使用 `-ha` 参数时， 可以不需要再追加 `-cluster` 参数，因为高可用模式是假定了您
+需要运行在集群模式之下的。
 
-NOTE: depending on your cluster configuration, you may need to customize the cluster manager configuration
-(Hazelcast by default), and/or add the `cluster-host` and `cluster-port` parameters.
+NOTE: 依据您的集群配置选项，您可能还是需要自定义集群管理器
+（默认使用 Hazelcast），以及追加集群主机（`cluster-host`）和集群端口（`cluster-port`）等参数。
 
-=== HA groups
+=== 高可用组
 
-When running a Vert.x instance with HA you can also optional specify a _HA group_. A HA group denotes a
-logical group of nodes in the cluster. Only nodes with the same HA group will failover onto one another. If
-you don't specify a HA group the default group `+++__DEFAULT__+++` is used.
+当 Vert.x 实例运行于高可用模式时，您还可以对其进行高可用分组，这里称之为 _高可用组_ 。此处的高可用组指的是一个
+集群之中的节点的一种逻辑分组，被分配了高可用组的节点只会对同一个高可用组之下的其他节点执行故障转移操作。如果
+没有指定高可用组，系统会自动将节点分配到默认的 `+++__DEFAULT__+++` 高可用组。
 
-To specify an HA group you use the `-hagroup` switch when running the verticle, e.g.
+在运行 verticle 时可以使用 `-hagroup` 参数指定高可用分组，例如：
 
 [source]
 ----
 vertx run my-verticle.js -ha -hagroup my-group
 ----
 
-Let's look at an example:
+举个例子：
 
-In a first terminal:
+在第一个终端里运行：
 
 [source]
 ----
 vertx run my-verticle.js -ha -hagroup g1
 ----
 
-In a second terminal, let's run another verticle using the same group:
+在第二个终端里，我们以同一个高可用组运行另一个 verticle：
 
 [source]
 ----
 vertx run my-other-verticle.js -ha -hagroup g1
 ----
 
-Finally, in a third terminal, launch another verticle using a different group:
+最后，在第三个终端里，我们以不同的高可用组再运行一个其他的 verticle：
 
 [source]
 ----
 vertx run yet-another-verticle.js -ha -hagroup g2
 ----
 
-If we kill the instance in terminal 1, it will fail over to the instance in terminal 2, not the instance in
-terminal 3 as that has a different group.
+如果我们杀掉第一个终端里的实例，这里面的 verticle 将会通过故障转移机制迁移到第二个终端里的实例中，而不是
+第三个终端里的实例中，因为第三个终端里的实例被分配了不同的高可用组。
 
-If we kill the instance in terminal 3, it won't get failed over as there is no other vert.x instance in that
-group.
+如果杀掉第三个终端里的实例，则不会发生故障转移操作，因为此终端里的 vert.x 实例被分配了不
+同的高可用组。
 
-=== Dealing with network partitions - Quora
+=== 处理网络分区 - Quora
 
-The HA implementation also supports quora. A quorum is the minimum number of votes that a distributed
-transaction has to obtain in order to be allowed to perform an operation in a distributed system.
+高可用实现也支持 `quora` （一种多数派机制）。在分布式系统中， Quorum 是指一种投票机制，在这种投票机制之下，
+某个分布式事务只有获得不少于指定投票数量的票数，才允许执行某个操作。
 
-When starting a Vert.x instance you can instruct it that it requires a `quorum` before any HA deployments will
-be deployed. In this context, a quorum is a minimum number of nodes for a particular group in the cluster.
-Typically you chose your quorum size to `Q = 1 + N/2` where `N` is the number of nodes in the group. If there
-are less than `Q` nodes in the cluster the HA deployments will undeploy. They will redeploy again if/when a
-quorum is re-attained. By doing this you can prevent against network partitions, a.k.a. _split brain_.
+启动 Vert.x 实例的时候，您可以将其设置成在进行高可用（HA）部署之前需要一个 `quorum` 。
+在这个语境之下， `quorum` 指的是集群中某个特定的分组内的节点数量的下限。
+典型的例如您将 `quorum` 的数值设置为 `1 + N/2` （现在以 Q 指代该数值，其中的 N 代表分组中的节点总数），
+那么如果集群中少于 `Q` 个节点的情况下，该高可用（HA）部署将被取消，待到节点数量达到这个 Q 数值的时候，会再次进行部署。
+这种机制可以防止出现网络分区（亦称 _脑裂_）。
 
-There is more information on quora http://en.wikipedia.org/wiki/Quorum_(distributed_computing)[here].
+关于 `quora` 的更多信息请参考 http://en.wikipedia.org/wiki/Quorum_(distributed_computing)[这里] 。
 
-To run vert.x instances with a quorum you specify `-quorum` on the command line, e.g.
+要在运行 vert.x 实例的时候启用 `quorum` ，您只需要在命令行中指定 `-quorum` 参数，例如
 
-In a first terminal:
+在第一个终端中执行：
 [source]
 ----
 vertx run my-verticle.js -ha -quorum 3
 ----
 
-At this point the Vert.x instance will start but not deploy the module (yet) because there is only one node
-in the cluster, not 3.
+此时 Vert.x 实例将会启动，但是并不会部署这个模块，因为现在只有1个节点，
+而不是3个。
 
-In a second terminal:
+在第二个终端中执行：
 [source]
 ----
 vertx run my-other-verticle.js -ha -quorum 3
 ----
 
-At this point the Vert.x instance will start but not deploy the module (yet) because there are only two nodes
-in the cluster, not 3.
+此时 Vert.x 实例将会启动，但是并不会部署这个模块，因为现在只有2个节点，
+而不是3个。
 
-In a third console, you can start another instance of vert.x:
+在第三个终端中，您可以启动另一个 vert.x 实例：
 
 [source]
 ----
 vertx run yet-another-verticle.js -ha -quorum 3
 ----
 
-Yay! - we have three nodes, that's a quorum. At this point the modules will automatically deploy on all
-instances.
+哇！————我们有了3个节点，这正是 `quorum` 的数值。此时此刻这些模块将会被自动地部署到所有
+实例上。
 
-If we now close or kill one of the nodes the modules will automatically undeploy on the other nodes, as there
-is no longer a quorum.
+如果我们关闭或者强行杀死其中一个节点，那么这些模块将会被自动卸载，因为节点数量
+已经不满足 `quorum` 数值条件。
 
-Quora can also be used in conjunction with ha groups. In that case, quora are resolved for each particular
-group.
+Quora 也可以和高可用分组联合使用，此时 quora 仅在指定的
+分组中起作用。
 
 == Native transports
 
