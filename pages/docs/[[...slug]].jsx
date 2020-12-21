@@ -7,7 +7,7 @@ import { useContext, useEffect } from "react"
 import { fetchGitHubStarsByUrl } from "../../components/lib/github-stars"
 
 const extractedDocsPath = "docs/extracted"
-const hashesPath = "docs/hashes"
+// const hashesPath = "docs/hashes"
 
 let asciidoctor
 let cache = {}
@@ -80,10 +80,12 @@ export async function getStaticPaths() {
   }
 }
 
-async function compileAsciiDoc(filename, version) {
+async function compileAsciiDoc(filename) {
   const cacache = require("cacache")
+  const fs1 = require("fs")
   const fs = require("fs").promises
-  const path = require("path")
+  // const path = require("path")
+  const crypto = require("crypto")
 
   const cachePath = "./.cache/docs"
 
@@ -97,26 +99,37 @@ async function compileAsciiDoc(filename, version) {
     }
   }
 
-  // load checksum for this version
-  let shaFile = path.join(hashesPath, `${version || "latest"}.sha`)
-  let sha
-  try {
-    sha = await fs.readFile(shaFile, "utf-8")
-  } catch (e) {
-    console.error(
-      "\n\n**********************************************************\n" +
-          "ERROR: Could not read documentation checksum file.\n" +
-          "Please run `npm run update-docs'\n" +
-          "**********************************************************\n")
-    throw e
+  let translationDocPath = filename.replace("extracted", "translation")
+  if (fs1.existsSync(translationDocPath)) {
+    filename = translationDocPath
   }
+
+  // load checksum for this version
+  // let shaFile = path.join(hashesPath, `${version || "latest"}.sha`)
+  // let sha
+  // try {
+  //   sha = await fs.readFile(shaFile, "utf-8")
+  // } catch (e) {
+  //   console.error(
+  //     "\n\n**********************************************************\n" +
+  //         "ERROR: Could not read documentation checksum file.\n" +
+  //         "Please run `npm run update-docs'\n" +
+  //         "**********************************************************\n")
+  //   throw e
+  // }
+
+  //读取一个Buffer
+  const buffer = await fs.readFile(filename)
+  const fsHash = crypto.createHash("sha1")
+
+  fsHash.update(buffer)
+  let sha = fsHash.digest("hex")
 
   let cacheKey = JSON.stringify({
     ...asciidoctorOptions,
     filename,
     sha
   })
-
   let info = await cacache.get.info(cachePath, cacheKey)
   if (info !== null) {
     let cachedDocument = await cacache.get(cachePath, cacheKey)
