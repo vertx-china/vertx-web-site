@@ -2,6 +2,8 @@
 
 ## 本地运行
 
+本项目运行环境为node 12, python 2.7, java14以下
+ 
 要在本地运行，如果是非windows系统，按[英文文档](README.md)里的步骤一步一步来跑，问题不是很大。
 
 windows系统需要修改package.json里的 `update-docs` 的命令为 `cd docs && gradlew`。
