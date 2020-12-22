@@ -4,10 +4,10 @@ Vertx vertx = Vertx.vertx(new VertxOptions().
   setPreferNativeTransport(true)
 );
 
-// True when native is available
+// 如果本地传输已启用，则返回 true 
 boolean usingNative = vertx.isNativeTransportEnabled();
 System.out.println("Running with native: " + usingNative);
 ----
 
-NOTE: preferring native transport will not prevent the application to execute (for example if a JAR is missing).
-If your application requires native transport, you need to check `link:../../apidocs/io/vertx/core/Vertx.html#isNativeTransportEnabled--[isNativeTransportEnabled]`.
+NOTE: 如果倾向于启用本地传输而相关条件却不满足的时候（例如相关JAR包缺失），程序依然可以运行。
+如果您要求您的程序必须启用本地传输，您必须首先通过 `link:../../apidocs/io/vertx/core/Vertx.html#isNativeTransportEnabled--[isNativeTransportEnabled]` 来确认是否启用了本地传输。

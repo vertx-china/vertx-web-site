@@ -1,29 +1,29 @@
-Vert.x Core provides an API for parsing command line arguments passed to programs. It's also able to print help
-messages detailing the options available for a command line tool. Even if such features are far from
-the Vert.x core topics, this API is used in the `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]` class that you can use in _fat-jar_
-and in the `vertx` command line tools. In addition, it's polyglot (can be used from any supported language) and is
-used in Vert.x Shell.
+Vert.x Core 提供了一套用于解析传递给程序的命令行参数的API。这套API也可以用于打印
+命令行相关参数、选项的详细帮助信息。即使这些功能远离
+Vert.x Core主题，该API已在 `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]` 类中使用，因此您可以在 _fat-jar_ 
+和 `vertx` 命令行工具中使用它们。此外，它支持多语言（可用于任何已支持的语言），并
+可在 Vert.x Shell 中使用。
 
-Vert.x CLI provides a model to describe your command line interface, but also a parser. This parser supports
-different types of syntax:
+Vert.x CLI 提供了一个编程模型用以描述命令行界面，这个编程模型也可以视为一种语法解析器，这个语法解析器支持
+不同类型的语法：
 
-* POSIX like options (ie. `tar -zxvf foo.tar.gz`)
-* GNU like long options (ie. `du --human-readable --max-depth=1`)
-* Java like properties (ie. `java -Djava.awt.headless=true -Djava.net.useSystemProxies=true Foo`)
-* Short options with value attached (ie. `gcc -O2 foo.c`)
-* Long options with single hyphen (ie. `ant -projecthelp`)
+* POSIX 风格的选项参数 （例如： `tar -zxvf foo.tar.gz`）
+* GNU 的长字符串风格的选项参数 （例如： `du --human-readable --max-depth=1`）
+* Java 风格的属性参数 （例如： `java -Djava.awt.headless=true -Djava.net.useSystemProxies=true Foo`）
+* 附带选项值的简短风格的选项参数 （例如： `gcc -O2 foo.c`）
+* 包含单个连接符的长字符串风格的选项参数 (例如： `ant -projecthelp`）
 
-Using the CLI api is a 3-steps process:
+使用这个命令行API只需要三个步骤：
 
-1. The definition of the command line interface
-2. The parsing of the user command line
-3. The query / interrogation
+1. 定义命令行接口
+2. 解析用户输入的命令行
+3. 进行查询/问答交互操作
 
-=== Definition Stage
+=== 定义阶段
 
-Each command line interface must define the set of options and arguments that will be used. It also requires a
-name. The CLI API uses the `link:../../apidocs/io/vertx/core/cli/Option.html[Option]` and `link:../../apidocs/io/vertx/core/cli/Argument.html[Argument]` classes to
-describe options and arguments:
+每个命令行界面都必须定义所要使用的选项和参数集合。这些选项和参数也需命名。
+命令行API使用 `link:../../apidocs/io/vertx/core/cli/Option.html[Option]` 和 `link:../../apidocs/io/vertx/core/cli/Argument.html[Argument]` 类来
+描述选项和参数：
 
 [source,java]
 ----

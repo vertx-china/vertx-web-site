@@ -1500,15 +1500,15 @@ vertx run yet-another-verticle.js -ha -quorum 3
 Quora 也可以和高可用分组联合使用，此时 quora 仅在指定的
 分组中起作用。
 
-== Native transports
+== 本地传输
 
-Vert.x can run with http://netty.io/wiki/native-transports.html[native transports] (when available) on BSD (OSX) and Linux:
+在BSD（OSX）和Linux操作系统中运行 Vert.x 的时候，如果条件允许，可以启用 http://netty.io/wiki/native-transports.html[native transports] 这种特性：
 
 include::override/configuring-native.adoc[]
 
-=== Native Linux Transport
+=== Linux 下的本地传输
 
-You need to add the following dependency in your classpath:
+您需要在classpath中加入以下依赖：
 
 [source,xml]
 ----
@@ -1520,7 +1520,7 @@ You need to add the following dependency in your classpath:
 </dependency>
 ----
 
-Native on Linux gives you extra networking options:
+Linux下的本地传输可以设置更多的网络选项：
 
 * `SO_REUSEPORT`
 * `TCP_QUICKACK`
@@ -1537,9 +1537,9 @@ vertx.createHttpServer(new HttpServerOptions()
 );
 ----
 
-=== Native BSD Transport
+=== BSD 下的本地传输
 
-You need to add the following dependency in your classpath:
+您需要在classpath中加入以下依赖：
 
 [source,xml]
 ----
@@ -1547,13 +1547,13 @@ You need to add the following dependency in your classpath:
  <groupId>io.netty</groupId>
  <artifactId>netty-transport-native-kqueue</artifactId>
  <classifier>osx-x86_64</classifier>
- <!--<version>Should align with netty version that Vert.x uses</version>-->
+ <!--<version>必须和 Vert.x 所使用的 netty 的版本一致</version>-->
 </dependency>
 ----
 
-MacOS Sierra and above are supported.
+MacOS 中，Sierra及以上的版本支持这种特性。
 
-Native on BSD gives you extra networking options:
+BSD 下的本地传输可以启用以下额外的网络选项：
 
 * `SO_REUSEPORT`
 
@@ -1562,61 +1562,61 @@ Native on BSD gives you extra networking options:
 vertx.createHttpServer(new HttpServerOptions().setReusePort(reusePort));
 ----
 
-=== Domain sockets
+=== 域套接字
 
-Natives provide domain sockets support for servers:
+通过本地传输，网络服务可以使用域套接字：
 
 [source,java]
 ----
 vertx.createNetServer().connectHandler(so -> {
-  // Handle application
+  // 处理请求
 }).listen(SocketAddress.domainSocketAddress("/var/tmp/myservice.sock"));
 ----
 
-or for http:
+http服务示例：
 
 [source,java]
 ----
 vertx.createHttpServer().requestHandler(req -> {
-  // Handle application
+  // 处理请求
 }).listen(SocketAddress.domainSocketAddress("/var/tmp/myservice.sock"), ar -> {
   if (ar.succeeded()) {
-    // Bound to socket
+    // 绑定到 socket
   } else {
     ar.cause().printStackTrace();
   }
 });
 ----
 
-As well as clients:
+也适用于网络客户端：
 
 [source,java]
 ----
 NetClient netClient = vertx.createNetClient();
 
-// Only available on BSD and Linux
+// 仅在 Linux 和 BSD 中可以使用
 SocketAddress addr = SocketAddress.domainSocketAddress("/var/tmp/myservice.sock");
 
-// Connect to the server
+// 连接到服务器
 netClient.connect(addr, ar -> {
   if (ar.succeeded()) {
-    // Connected
+    // 连接成功
   } else {
     ar.cause().printStackTrace();
   }
 });
 ----
 
-or for http:
+http客户端示例：
 
 [source,java]
 ----
 HttpClient httpClient = vertx.createHttpClient();
 
-// Only available on BSD and Linux
+// 仅在 Linux 和 BSD 中可以使用
 SocketAddress addr = SocketAddress.domainSocketAddress("/var/tmp/myservice.sock");
 
-// Send request to the server
+// 向服务器发送请求
 httpClient.request(new RequestOptions()
   .setServer(addr)
   .setHost("localhost")
@@ -1624,46 +1624,46 @@ httpClient.request(new RequestOptions()
   .setURI("/"))
   .onSuccess(request -> {
     request.send().onComplete(response -> {
-      // Process response
+      // 处理响应信息
     });
   });
 ----
 
-== Security notes
+== 安全提示
 
-Vert.x is a toolkit, not an opinionated framework where we force you to do things in a certain way. This gives you
-great power as a developer but with that comes great responsibility.
+Vert.x 是一套工具集，而不是一种强迫人们使用指定方式行事的框架，对于开发者而言，这赋予了你们
+强大的力量，但也使得你们必须负起不小的责任。
 
-As with any toolkit, it's possible to write insecure applications, so you should always be careful when developing
-your application especially if it's exposed to the public (e.g. over the internet).
+与任何一种工具集一样，写出不安全的程序是难以避免的，所以您在开发程序时需要时刻小心，
+特别是这个程序是暴露于毫无保护的公共场合（例如互联网）的情况下。
 
-=== Web applications
+=== Web 应用
 
-If writing a web application it's highly recommended that you use Vert.x-Web instead of Vert.x core directly for
-serving resources and handling file uploads.
+如果要编写一个 web 应用程序，这里强烈建议您使用 Vert.x-Web 
+来实现资源服务和文件上传功能，而不是直接使用 Vert.x core 。
 
-Vert.x-Web normalises the path in requests to prevent malicious clients from crafting URLs to access resources
-outside of the web root.
+Vert.x-Web 会对请求路径进行规整化，这可以阻止那些不怀好意的人利用精心构建的特殊URL来访
+问web应用根目录之外的资源的企图。
 
-Similarly for file uploads Vert.x-Web provides functionality for uploading to a known place on disk and does not rely
-on the filename provided by the client in the upload which could be crafted to upload to a different place on disk.
+在文件上传方面也是如此， Vert.x-Web 不会完全信赖客户所端提供的文件名，因为客户端有可能精心设置一个特殊的文件名，
+使得上传的文件被保存到磁盘上某个意料之外的位置上。 Vert.x-Web 可以保证上传的文件是被存放到磁盘上确切可知道位置的。
 
-Vert.x core itself does not provide such checks so it would be up to you as a developer to implement them yourself.
+Vert.x core没有这样的检查，您需要自己实现。
 
-=== Clustered event bus traffic
+=== 集群模式事件总线流量
 
-When clustering the event bus between different Vert.x nodes on a network, the traffic is sent un-encrypted across the
-wire, so do not use this if you have confidential data to send and your Vert.x nodes are not on a trusted network.
+在网络上使用集群模式的事件总线连接不同的 Vert.x 节点时，总线里的流量是未经加密的，
+因此，若您的 Vert.x 节点处于不可信任的网络之上，则应该避免使用这种方式向这样的 Vert.x 节点发送信息。
 
-=== Standard security best practices
+=== 安全方面的标准最佳实践
 
-Any service can have potentially vulnerabilities whether it's written using Vert.x or any other toolkit so always
-follow security best practice, especially if your service is public facing.
+任何服务都可能存在潜在的漏洞，无论是使用 Vert.x 还是任何其他工具包来进行编写，因此始终
+应该遵循安全最佳实践，特别是当您的服务面向公众时。
 
-For example you should always run them in a DMZ and with an user account that has limited rights in order to limit
-the extent of damage in case the service was compromised.
+例如，您应该始终在DMZ（隔离区）中运行它们，并使用权限受限的用户账户，以确保
+服务被渗透以后只会遭受有限的破坏。
 
-== Vert.x Command Line Interface API
+== Vert.x 命令行界面（CLI）API
 
 include::cli.adoc[]
 
