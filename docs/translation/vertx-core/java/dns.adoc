@@ -194,9 +194,6 @@ record.name();
 尝试解析给定名称的所有TXT记录，TXT记录通常用于定义域的额外信息。
 
 要解析 "vertx.io" 的所有TXT记录，您可以使用下边几行代码：
-Try to resolve all TXT recrds for a given name. TXT records are often used to define extra informations for a domain.
-
-To resolve all the TXT records for "vertx.io" you could use something along these lines:
 
 [source,java]
 ----
