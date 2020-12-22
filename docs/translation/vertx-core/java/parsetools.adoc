@@ -55,12 +55,6 @@ RecordParser.newFixed(4, h -> {
 非阻塞JSON解析器 则是一个事件驱动的解析器, 它可以处理体积非常大的JSON。
 它将传输一系列`input buffer`到一系列JSON解析器事件。
 
-You can easily parse JSON structures but that requires to provide the JSON content at once, but it
-may not be convenient when you need to parse very large structures.
-
-The non-blocking JSON parser is an event driven parser able to deal with very large structures.
-It transforms a sequence of input buffer to a sequence of JSON parse events.
-
 [source, java]
 ----
 JsonParser parser = JsonParser.newParser();
