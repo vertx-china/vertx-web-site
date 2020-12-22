@@ -44,23 +44,23 @@ CLI cli = CLI.create("copy")
         .setArgName("target"));
 ----
 
-As you can see, you can create a new `link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` using
-`link:../../apidocs/io/vertx/core/cli/CLI.html#create-java.lang.String-[CLI.create]`. The passed string is the name of the CLI. Once created you
-can set the summary and description. The summary is intended to be short (one line), while the description can
-contain more details. Each option and argument are also added on the `CLI` object using the
-`link:../../apidocs/io/vertx/core/cli/CLI.html#addArgument-io.vertx.core.cli.Argument-[addArgument]` and
-`link:../../apidocs/io/vertx/core/cli/CLI.html#addOption-io.vertx.core.cli.Option-[addOption]` methods.
+正如您所见到的一样，您可以通过 `link:../../apidocs/io/vertx/core/cli/CLI.html#create-java.lang.String-[CLI.create]` 方法来创建一个新的
+ `link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` 。此处传入的字符串参数就是这个CLI的名称。创建之后，
+ 可以给它设置摘要和描述。一般来说，摘要是指一行简短的文字说明，
+ 描述是指篇幅较长的详细说明。每个选项和参数可以使用 
+`link:../../apidocs/io/vertx/core/cli/CLI.html#addArgument-io.vertx.core.cli.Argument-[addArgument]` 和
+`link:../../apidocs/io/vertx/core/cli/CLI.html#addOption-io.vertx.core.cli.Option-[addOption]` 方法加入到`CLI`对象中。
 
-==== Options
+==== 选项列表
 
-An `link:../../apidocs/io/vertx/core/cli/Option.html[Option]` is a command line parameter identified by a _key_ present in the user command
-line. Options must have at least a long name or a short name. Long name are generally used using a `--` prefix,
-while short names are used with a single `-`. Names are case-sensitive; however, case-insensitive name matching
-will be used during the <<query_interrogation_stage, Query / Interrogation Stage>> if no exact match is found.
-Options can get a description displayed in the usage (see below). Options can receive 0, 1 or several values. An
-option receiving 0 values is a `flag`, and must be declared using
-`link:../../apidocs/io/vertx/core/cli/Option.html#setFlag-boolean-[setFlag]`. By default, options receive a single value, however, you can
-configure the option to receive several values using `link:../../apidocs/io/vertx/core/cli/Option.html#setMultiValued-boolean-[setMultiValued]`:
+`link:../../apidocs/io/vertx/core/cli/Option.html[Option]` 是指用户输入的命令行中出现的以 _键_ 来标识的命令行参数。
+选项必须至少有一个长名称或一个短名称。通常情况下，长名称使用 `--` 前缀，
+短名称使用单个 `-` 前缀。这些名称都是大小写敏感的；但是，在 <<query_interrogation_stage, 查询/问答交互阶段>> 的环节中，
+如果输入的名称无法精确匹配，则会使用大小写不敏感的方式进行匹配。
+选项可以在用法说明的部分显示出相关的描述（见下文）。选项可以接收0个，1个或者若干个选项值。
+接收0个选项值的选项称作 `标识（flag）`，标识必须使用 
+`link:../../apidocs/io/vertx/core/cli/Option.html#setFlag-boolean-[setFlag]` 来声明。缺省情况下，选项接收单个选项值，但是您也可以
+使用 `link:../../apidocs/io/vertx/core/cli/Option.html#setMultiValued-boolean-[setMultiValued]` 将其设置成接收多个选项值：
 
 [source,java]
 ----
@@ -75,8 +75,8 @@ CLI cli = CLI.create("some-name")
         .setDescription("a multi-valued option"));
 ----
 
-Options can be marked as mandatory. A mandatory option not set in the user command line throws an exception during
-the parsing:
+选项可以标记必填。用户如果没有输入必填选项，
+则会在命令行解析的过程中抛出异常：
 
 [source,java]
 ----
@@ -87,8 +87,8 @@ CLI cli = CLI.create("some-name")
         .setDescription("a mandatory option"));
 ----
 
-Non-mandatory options can have a _default value_. This value would be used if the user does not set the option in
-the command line:
+非必填选项可以拥有一个默认选项值，在用户没有输入对应的选项值时，
+则会启用这个默认选项值：
 
 [source,java]
 ----
@@ -99,10 +99,10 @@ CLI cli = CLI.create("some-name")
         .setDescription("an optional option with a default value"));
 ----
 
-An option can be _hidden_ using the `link:../../apidocs/io/vertx/core/cli/Option.html#setHidden-boolean-[setHidden]` method. Hidden option are
-not listed in the usage, but can still be used in the user command line (for power-users).
+选项也可以通过 `link:../../apidocs/io/vertx/core/cli/Option.html#setHidden-boolean-[setHidden]` 方法设置成 _隐藏_ 的。隐藏的选项
+不会在使用说明中显示出来，但是仍然可以起作用（提供给高级用户使用）。
 
-If the option value is contrained to a fixed set, you can set the different acceptable choices:
+如果选项值是一组固定的集合，可以设置允许输入哪些内容：
 
 [source,java]
 ----
@@ -114,15 +114,15 @@ CLI cli = CLI.create("some-name")
         .setDescription("a color"));
 ----
 
-Options can also be instantiated from their JSON form.
+选项列表配置也可以通过其对应格式的 JSON 数据来创建。
 
-==== Arguments
+==== 参数
 
-Unlike options, arguments do not have a _key_ and are identified by their _index_. For example, in
-`java com.acme.Foo`, `com.acme.Foo` is an argument.
+和选项不一样，参数不以 _键_ 进行标识而是以其 _索引_ 作为标识。例如，在 
+`java com.acme.Foo` 里， `com.acme.Foo` 就是一个参数。
 
-Arguments do not have a name, there are identified using a 0-based index. The first parameter has the
-index `0`:
+参数没有名称，它们是以从 `0` 开始计数的索引为标识。第一个参数的
+索引为 `0`：
 
 [source,java]
 ----
@@ -137,7 +137,7 @@ CLI cli = CLI.create("some-name")
         .setArgName("arg2"));
 ----
 
-If you don't set the argument indexes, it computes it automatically by using the declaration order.
+如果不设置参数的索引，则基于声明顺序自动计算索引值。
 
 [source,java]
 ----
@@ -152,21 +152,21 @@ CLI cli = CLI.create("some-name")
         .setArgName("arg2"));
 ----
 
-The `argName` is optional and used in the usage message.
+`argName` 是可选的，并且能在使用说明信息中使用。
 
-As options, `link:../../apidocs/io/vertx/core/cli/Argument.html[Argument]` can:
+和选项一样，`link:../../apidocs/io/vertx/core/cli/Argument.html[Argument]` 也可以：
 
-* be hidden using `link:../../apidocs/io/vertx/core/cli/Argument.html#setHidden-boolean-[setHidden]`
-* be mandatory using `link:../../apidocs/io/vertx/core/cli/Argument.html#setRequired-boolean-[setRequired]`
-* have a default value using `link:../../apidocs/io/vertx/core/cli/Argument.html#setDefaultValue-java.lang.String-[setDefaultValue]`
-* receive several values using `link:../../apidocs/io/vertx/core/cli/Argument.html#setMultiValued-boolean-[setMultiValued]` - only the last argument
-can be multi-valued.
+* 使用 `link:../../apidocs/io/vertx/core/cli/Argument.html#setHidden-boolean-[setHidden]` 设置为隐藏的
+* 使用 `link:../../apidocs/io/vertx/core/cli/Argument.html#setRequired-boolean-[setRequired]` 设置为必填的
+* 使用 `link:../../apidocs/io/vertx/core/cli/Argument.html#setDefaultValue-java.lang.String-[setDefaultValue]` 设置默认参数值
+* 使用 `link:../../apidocs/io/vertx/core/cli/Argument.html#setMultiValued-boolean-[setMultiValued]` 来接收多个参数值————只有最后一个参数才
+允许设置成接收多个参数值。
 
-Arguments can also be instantiated from their JSON form.
+参数也可以通过其对应格式的 JSON 数据来创建。
 
-==== Usage generation
+==== 生成使用说明信息
 
-Once your `link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` instance is configured, you can generate the _usage_ message:
+当 `link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` 实例配置完成之后，您可以用它来生成 _使用说明_ 信息：
 
 [source,java]
 ----
@@ -190,7 +190,7 @@ StringBuilder builder = new StringBuilder();
 cli.usage(builder);
 ----
 
-It generates an usage message like this one:
+这可以生成诸如此类的使用说明信息：
 
 [source]
 ----
@@ -201,33 +201,33 @@ A command line interface to copy files.
  -R,--directory   enables directory support
 ----
 
-If you need to tune the usage message, check the `link:../../apidocs/io/vertx/core/cli/UsageMessageFormatter.html[UsageMessageFormatter]` class.
+如果需要调整这个使用说明信息，请参考 `link:../../apidocs/io/vertx/core/cli/UsageMessageFormatter.html[UsageMessageFormatter]` 类。
 
-=== Parsing Stage
+=== 解析阶段
 
-Once your `link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` instance is configured, you can parse the user command line to evaluate
-each option and argument:
+`link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` 配置完成以后，您可以解析用户输入的命令行，并以此处理
+每个参数和选项：
 
 [source,java]
 ----
 CommandLine commandLine = cli.parse(userCommandLineArguments);
 ----
 
-The `link:../../apidocs/io/vertx/core/cli/CLI.html#parse-java.util.List-[parse]` method returns a `link:../../apidocs/io/vertx/core/cli/CommandLine.html[CommandLine]`
-object containing the values. By default, it validates the user command line and checks that each mandatory options
-and arguments have been set as well as the number of values received by each option. You can disable the
-validation by passing `false` as second parameter of `link:../../apidocs/io/vertx/core/cli/CLI.html#parse-java.util.List-boolean-[parse]`.
-This is useful if you want to check an argument or option is present even if the parsed command line is invalid.
+`link:../../apidocs/io/vertx/core/cli/CLI.html#parse-java.util.List-[parse]` 方法返回一个包含了这些值的 `link:../../apidocs/io/vertx/core/cli/CommandLine.html[CommandLine]` 对象。
+默认情况下，它会对用户输入的命令行进行检查校验，并确认哪些必填选项
+和必填参数有无缺失，以及每个选项值的数量是否符合要求。您可以将 
+`link:../../apidocs/io/vertx/core/cli/CLI.html#parse-java.util.List-boolean-[parse]` 方法中的第二个参数传入 `false` 值来禁用这项校验功能。
+这可以用来检查某个参数或选项是否存在，无论命令行输入是否合规。
 
-You can check whether or not the
-`link:../../apidocs/io/vertx/core/cli/CommandLine.html[CommandLine]` is valid using `link:../../apidocs/io/vertx/core/cli/CommandLine.html#isValid--[isValid]`.
+您可以使用
+`link:../../apidocs/io/vertx/core/cli/CommandLine.html#isValid--[isValid]` 方法来检查 `link:../../apidocs/io/vertx/core/cli/CommandLine.html[CommandLine]` 对象是否合规。
 
 [[query_interrogation_stage]]
-=== Query / Interrogation Stage
+=== 查询/问答交互阶段
 
-Once parsed, you can retrieve the values of the options and arguments from the
-`link:../../apidocs/io/vertx/core/cli/CommandLine.html[CommandLine]` object returned by the `link:../../apidocs/io/vertx/core/cli/CLI.html#parse-java.util.List-[parse]`
-method:
+命令行解析完成之后，您可以从 
+`link:../../apidocs/io/vertx/core/cli/CLI.html#parse-java.util.List-[parse]` 方法返回的 `link:../../apidocs/io/vertx/core/cli/CommandLine.html[CommandLine]` 对象中获取到
+选项值和参数值：
 
 [source,java]
 ----
@@ -237,8 +237,8 @@ boolean flag = commandLine.isFlagEnabled("my-flag");
 String arg0 = commandLine.getArgumentValue(0);
 ----
 
-One of your options can be marked as "help". If a user command line enabled a "help" option, the validation
-won't fail, but you have the opportunity to check if the user asks for help:
+其中一个选项可以标记为“帮助”。如果命令行启用了“帮助”选项，命令行的校验
+不会失败，而是有机会检查用户是否在寻求帮助：
 
 [source,java]
 ----

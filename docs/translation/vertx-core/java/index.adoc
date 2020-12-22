@@ -1667,14 +1667,14 @@ Vert.x core没有这样的检查，您需要自己实现。
 
 include::cli.adoc[]
 
-== The vert.x Launcher
+== Vert.x 启动器（Launcher）
 
-The vert.x `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]` is used in _fat jar_ as main class, and by the `vertx` command line
-utility. It executes a set of _commands_ such as _run_, _bare_, _start_...
+Vert.x `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]` 在 _fat-jar_ 中作为主类，由 `vertx` 命令行程序调用。
+它可执行一组 _命令_ ，如 _run_ 、 _bare_ 和 _start_ 等
 
-=== Extending the vert.x Launcher
+=== 扩展 Vert.x 启动器（Launcher）
 
-You can extend the set of command by implementing your own `link:../../apidocs/io/vertx/core/spi/launcher/Command.html[Command]` (in Java only):
+您可以通过实现自己的 `link:../../apidocs/io/vertx/core/spi/launcher/Command.html[Command]` 类来扩展命令集（仅限于Java）：
 
 [source, java]
 ----
@@ -1696,7 +1696,7 @@ public class MyCommand extends DefaultCommand {
 }
 ----
 
-You also need an implementation of `link:../../apidocs/io/vertx/core/spi/launcher/CommandFactory.html[CommandFactory]`:
+您还需要实现一个 `link:../../apidocs/io/vertx/core/spi/launcher/CommandFactory.html[CommandFactory]`：
 
 [source, java]
 ----
@@ -1707,18 +1707,18 @@ public class HelloCommandFactory extends DefaultCommandFactory<HelloCommand> {
 }
 ----
 
-Then, create the `src/main/resources/META-INF/services/io.vertx.core.spi.launcher.CommandFactory` and add a line
-indicating the fully qualified name of the factory:
+然后创建 `src/main/resources/META-INF/services/io.vertx.core.spi.launcher.CommandFactory` 并且添加一行
+表示工厂类的完全限定名称：
 
 ----
 io.vertx.core.launcher.example.HelloCommandFactory
 ----
 
-Builds the jar containing the command. Be sure to includes the SPI file
-(`META-INF/services/io.vertx.core.spi.launcher.CommandFactory`).
+构建包含命令的jar。确保包含了SPI文件
+(`META-INF/services/io.vertx.core.spi.launcher.CommandFactory`)。
 
-Then, place the jar containing the command into the classpath of your fat-jar (or include it inside) or in the `lib`
-directory of your vert.x distribution, and you would be able to execute:
+然后，将包含该命令的jar放入fat-jar（或包含在其中）的类路径中，或放在Vert.x发行版的 `lib` 
+目录中，您将可以执行：
 
 [source]
 ----
@@ -1726,53 +1726,53 @@ vertx hello vert.x
 java -jar my-fat-jar.jar hello vert.x
 ----
 
-=== Using the Launcher in fat jars
+=== 在 fat-jar 中使用启动器（Launcher）
 
-To use the `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]` class in a _fat-jar_ just set the `Main-Class` of the _MANIFEST_ to
-`io.vertx.core.Launcher`. In addition, set the `Main-Verticle` _MANIFEST_ entry to the name of your main verticle.
+要在 _fat-jar_ 中使用 `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]` 类，只需要将 _MANIFEST_ 的 `Main-Class` 设置为 
+`io.vertx.core.Launcher`。另外，将 _MANIFEST_ 中 `Main-Verticle` 条目设置为您的Main Verticle的名称。
 
-By default, it executed the `run` command. However, you can configure the default command by setting the
-`Main-Command` _MANIFEST_ entry. The default command is used if the _fat jar_ is launched without a command.
+默认情况下，它会执行 `run` 命令。但是，您可以通过设置 _MANIFEST_ 的 `Main-Command` 条目来配置默认命令。
+若在没有命令的情况下启动 _fat-jar_ 会使用默认命令。
 
-=== Sub-classing the Launcher
+=== 启动器（Launcher）子类
 
-You can also create a sub-class of `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]` to start your application. The class has been
-designed to be easily extensible.
+您还可以创建 `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]`的子类来启动您的应用程序。这个类
+设计得易于扩展。
 
-A `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]` sub-class can:
+一个启动器 `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]` 的子类可以：
 
-* customize the vert.x configuration in `link:../../apidocs/io/vertx/core/Launcher.html#beforeStartingVertx-io.vertx.core.VertxOptions-[beforeStartingVertx]`
-* retrieve the vert.x instance created by the "run" or "bare" command by
-overriding `link:../../apidocs/io/vertx/core/Launcher.html#afterStartingVertx-io.vertx.core.Vertx-[afterStartingVertx]`
-* configure the default verticle and command with
-`link:../../apidocs/io/vertx/core/impl/launcher/VertxCommandLauncher.html#getMainVerticle--[getMainVerticle]` and
-`link:../../apidocs/io/vertx/core/impl/launcher/VertxCommandLauncher.html#getDefaultCommand--[getDefaultCommand]`
-* add / remove commands using `link:../../apidocs/io/vertx/core/impl/launcher/VertxCommandLauncher.html#register-java.lang.Class-[register]`
-and `link:../../apidocs/io/vertx/core/impl/launcher/VertxCommandLauncher.html#unregister-java.lang.String-[unregister]`
+* 在 `link:../../apidocs/io/vertx/core/Launcher.html#beforeStartingVertx-io.vertx.core.VertxOptions-[beforeStartingVertx]` 中自定义 Vert.x 配置
+*  通过重写 `link:../../apidocs/io/vertx/core/Launcher.html#afterStartingVertx-io.vertx.core.Vertx-[afterStartingVertx]` 来
+检索由“run”或“bare”命令创建的Vert.x实例
+* 使用
+`link:../../apidocs/io/vertx/core/impl/launcher/VertxCommandLauncher.html#getMainVerticle--[getMainVerticle]` 和
+`link:../../apidocs/io/vertx/core/impl/launcher/VertxCommandLauncher.html#getDefaultCommand--[getDefaultCommand]` 方法配置默认的Verticle和命令
+* 使用 `link:../../apidocs/io/vertx/core/impl/launcher/VertxCommandLauncher.html#register-java.lang.Class-[register]`
+和 `link:../../apidocs/io/vertx/core/impl/launcher/VertxCommandLauncher.html#unregister-java.lang.String-[unregister]` 方法添加/删除命令
 
-=== Launcher and exit code
+=== 启动器（Launcher）和退出代码
 
-When you use the `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]` class as main class, it uses the following exit code:
+当您使用 `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]` 类作为主类时，它的退出码有以下取值：
 
-* `0` if the process ends smoothly, or if an uncaught error is thrown
-* `1` for general purpose error
-* `11` if Vert.x cannot be initialized
-* `12` if a spawn process cannot be started, found or stopped. This error code is used by the `start` and
-`stop` command
-* `14` if the system configuration is not meeting the system requirement (shc as java not found)
-* `15` if the main verticle cannot be deployed
+* `0` :进程顺利结束，或抛出未捕获的错误；
+* `1` :用于通用错误；
+* `11`:Vert.x无法初始化；
+* `12`:生成的进程无法启动、发现或停止，该错误代码一般由 `start` 和 
+`stop` 命令使用；
+* `14`:系统配置不符合系统要求（如找不到 `java` 命令）；
+* `15`:主Verticle不能被部署；
 
-== Configuring Vert.x cache
+== 配置 Vert.x 缓存
 
-When Vert.x needs to read a file from the classpath (embedded in a fat jar, in a jar form the classpath or a file
-that is on the classpath), it copies it to a cache directory. The reason behind this is simple: reading a file
-from a jar or from an input stream is blocking. So to avoid to pay the price every time, Vert.x copies the file to
-its cache directory and reads it from there every subsequent read. This behavior can be configured.
+当 Vert.x 需要从类路径中读取文件（嵌入在 fat-jar 中，在classpath中jar文件或
+classpath中其他文件）时，它会把文件复制到缓存目录。背后原因很简单：
+从 jar 或从输入流读取文件是阻塞的。所以为了避免每次都付出损耗，Vert.x 会将文件复制到
+其缓存目录中，并随后读取该文件。也可以配置此行为。
 
-First, by default, Vert.x uses `$CWD/.vertx` as cache directory. It creates a unique directory inside this one to
-avoid conflicts. This location can be configured by using the `vertx.cacheDirBase` system property. For instance
-if the current working directory is not writable (such as in an immutable container context), launch your
-application with:
+首先，默认情况下，Vert.x 使用 `$CWD/.vertx` 作为缓存目录，它在此目录创建一个唯一的目录，
+以避免冲突。可以使用 `vertx.cacheDirBase` 系统属性配置该位置。
+如，若当前工作目录不可写（例如在不可变容器中），请使用以下命令
+启动应用程序：
 
 [source]
 ----
@@ -1781,15 +1781,15 @@ vertx run my.Verticle -Dvertx.cacheDirBase=/tmp/vertx-cache
 java -jar my-fat.jar vertx.cacheDirBase=/tmp/vertx-cache
 ----
 
-IMPORTANT: the directory must be **writable**.
+IMPORTANT: 该目录必须是 **可写的** 。
 
-When you are editing resources such as HTML, CSS or JavaScript, this cache mechanism can be annoying as it serves
-only the first version of the file (and so you won't see your edits if you reload your page). To avoid this
-behavior, launch your application with `-Dvertx.disableFileCaching=true`. With this setting, Vert.x still uses
-the cache, but always refresh the version stored in the cache with the original source. So if you edit a file
-served from the classpath and refresh your browser, Vert.x reads it from the classpath, copies it to the cache
-directory and serves it from there. Do not use this setting in production, it can kill your performances.
+当您编辑资源（如HTML、CSS或JavaScript）时，这种缓存机制可能令人讨厌，因为它仅仅提供
+文件的第一个版本（因此，如果您想重新加载页面，不会显示到您的编辑改变）。要避免此情况，
+请使用 `-Dvertx.disableFileCaching=true` 启动应用程序。使用此设置，Vert.x 仍然使用
+缓存，但会始终读取原文件然后刷新在缓存中的版本。因此，如果您编辑从类路径提供的文件
+并刷新浏览器，Vert.x 会从类路径读取它，将其复制到缓存目录并从中提供。
+不要在生产环境使用这个设置，它很有可能影响性能。
 
-Finally, you can disable completely the cache by using `-Dvertx.disableFileCPResolving=true`. This setting is not
-without consequences. Vert.x would be unable to read any files from the classpath (only from the file system). Be
-very careful when using this settings.
+最后，您可以使用 `-Dvertx.disableFileCPResolving=true` 完全禁用高速缓存。这个设置
+的副作用是：Vert.x将无法从类路径中读取任何文件（仅从文件系统中读取）。
+使用此设置时要非常小心。

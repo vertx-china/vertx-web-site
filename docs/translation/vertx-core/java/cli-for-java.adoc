@@ -1,13 +1,13 @@
-=== Typed options and arguments
+=== 类型化的选项和参数
 
-The described `link:../../apidocs/io/vertx/core/cli/Option.html[Option]` and `link:../../apidocs/io/vertx/core/cli/Argument.html[Argument]` classes are _untyped_,
-meaning that the only get String values.
-`link:../../apidocs/io/vertx/core/cli/TypedOption.html[TypedOption]` and `link:../../apidocs/io/vertx/core/cli/TypedArgument.html[TypedArgument]` let you specify a _type_, so the
-(String) raw value is converted to the specified type.
+上述的 `link:../../apidocs/io/vertx/core/cli/Option.html[Option]` 和 `link:../../apidocs/io/vertx/core/cli/Argument.html[Argument]` 类是 _无类型_ 的，
+意味着只能从中获取到字符串类型的值。 
+`link:../../apidocs/io/vertx/core/cli/TypedOption.html[TypedOption]` 和 `link:../../apidocs/io/vertx/core/cli/TypedArgument.html[TypedArgument]` 能让您对其赋予一个 _类型_ ，这样
+（字符串类型的）原始值将被转换成对应的类型。
 
-Instead of
-`link:../../apidocs/io/vertx/core/cli/Option.html[Option]` and `link:../../apidocs/io/vertx/core/cli/Argument.html[Argument]`, use `link:../../apidocs/io/vertx/core/cli/TypedOption.html[TypedOption]`
-and `link:../../apidocs/io/vertx/core/cli/TypedArgument.html[TypedArgument]` in the `link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` definition:
+在 
+`link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` 对象的定义中使用 `link:../../apidocs/io/vertx/core/cli/TypedOption.html[TypedOption]` 和 `link:../../apidocs/io/vertx/core/cli/TypedArgument.html[TypedArgument]` 来取代
+ `link:../../apidocs/io/vertx/core/cli/Option.html[Option]` 和 `link:../../apidocs/io/vertx/core/cli/Argument.html[Argument]` ：
 
 [source,java]
 ----
@@ -31,7 +31,7 @@ CLI cli = CLI.create("copy")
         .setArgName("target"));
 ----
 
-Then you can retrieve the converted values as follows:
+这时您就可以通过如下方式获取转换后的值：
 
 [source,java]
 ----
@@ -41,15 +41,15 @@ File source = commandLine.getArgumentValue("source");
 File target = commandLine.getArgumentValue("target");
 ----
 
-The vert.x CLI is able to convert to classes:
+Vert.x CLI 可以转换具有如下特征的类：
 
-* having a constructor with a single
-`link:../../apidocs/java/lang/String.html[String]` argument, such as `link:../../apidocs/java/io/File.html[File]` or `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]`
-* with a static `from` or `fromString` method
-* with a static `valueOf` method, such as primitive types and enumeration
+* 拥有参数签名为一个 `link:../../apidocs/java/lang/String.html[String]` 类型的构造函数，
+例如 `link:../../apidocs/java/io/File.html[File]` 或者 `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]`
+* 拥有一个名为 `from` 或者 `fromString` 的静态方法
+* 拥有一个静态的 `valueOf` 方法，例如原始类型和枚举类型
 
-In addition, you can implement your own `link:../../apidocs/io/vertx/core/cli/converters/Converter.html[Converter]` and instruct the CLI to use
-this converter:
+此外您也可以实现自定义的 `link:../../apidocs/io/vertx/core/cli/converters/Converter.html[Converter]` 
+并在 `CLI` 对象使用它：
 
 [source,java]
 ----
@@ -60,14 +60,14 @@ CLI cli = CLI.create("some-name")
         .setLongName("person"));
 ----
 
-For booleans, the boolean values are evaluated to `true`: `on`, `yes`, `1`, `true`.
+对于布尔类型而言，这些值将被视为 `true` ：`on`， `yes`， `1`， `true` 。
 
-If one of your option has an `enum` as type, it computes the set of choices automatically.
+如果您的命令行选项存在 `enum` 类型，则会自动计算出一组选择范围。
 
-=== Using annotations
+=== 注解的使用
 
-You can also define your CLI using annotations. Definition is done using annotation on the class and on _setter_
-methods:
+您也可以使用注解来定义CLI对象。可以通过在类和 _setter_ 方法上使用注解来完成
+定义：
 
 [source, java]
 ----
@@ -97,7 +97,7 @@ public void setArg(String arg) {
 }
 ----
 
-Once annotated, you can define the `link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` and inject the values using:
+加上注解之后，您就可以使用以下方法来定义 `link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` 对象并将对应的值注入进去：
 
 [source,java]
 ----
