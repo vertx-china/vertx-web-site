@@ -147,7 +147,8 @@ parser.handle(Buffer.buffer("[{\"firstName\":\"Bob\"},\"lastName\":\"Morane\"),.
 parser.end();
 ----
 
-`value-mode`可以在解析时启用或停用，并允许你在`event-mode`事件和 JSONObject的`value-mode`事件之间自由切换。
+`value-mode` 可以在解析时启用或停用，并允许你在 
+`event-mode` 事件和 JSONObject的 `value-mode` 事件之间自由切换。
 
 [source, java]
 ----
