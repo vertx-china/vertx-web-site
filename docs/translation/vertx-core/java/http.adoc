@@ -1,25 +1,25 @@
-== Writing HTTP servers and clients
+== 编写 HTTP 服务端和客户端
 
-Vert.x allows you to easily write non blocking HTTP clients and servers.
+Vert.x 允许您轻松编写非阻塞的 HTTP 客户端和服务端。
 
-Vert.x supports the HTTP/1.0, HTTP/1.1 and HTTP/2 protocols.
+Vert.x 支持 HTTP/1.0、HTTP/1.1 和 HTTP/2 协议。
 
-The base API for HTTP is the same for HTTP/1.x and HTTP/2, specific API features are available for dealing with the
-HTTP/2 protocol.
+用于 HTTP 的基本 API 对 HTTP/1.x 和 HTTP/2 是相同的，特定的API功能也可用于处理 
+sHTTP/2 协议。
 
-=== Creating an HTTP Server
+=== 创建 HTTP 服务端
 
-The simplest way to create an HTTP server, using all default options is as follows:
+使用所有默认选项创建 HTTP 服务端的最简单方法如下：
 
 [source,java]
 ----
 HttpServer server = vertx.createHttpServer();
 ----
 
-=== Configuring an HTTP server
+=== 配置 HTTP 服务端
 
-If you don't want the default, a server can be configured by passing in a `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html[HttpServerOptions]`
-instance when creating it:
+若您不想用默认值，可以在创建服务器时传递一个  `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html[HttpServerOptions]` 
+实例给它：
 
 [source,java]
 ----
@@ -28,15 +28,15 @@ HttpServerOptions options = new HttpServerOptions().setMaxWebSocketFrameSize(100
 HttpServer server = vertx.createHttpServer(options);
 ----
 
-=== Configuring an HTTP/2 server
+===  配置 HTTP/2 服务端
 
-Vert.x supports HTTP/2 over TLS `h2` and over TCP `h2c`.
+Vert.x支持 TLS `h2` 和TCP `h2c` 之上的 HTTP/2 协议。
 
-- `h2` identifies the HTTP/2 protocol when used over TLS negotiated by https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation[Application-Layer Protocol Negotiation] (ALPN)
-- `h2c` identifies the HTTP/2 protocol when using in clear text over TCP, such connections are established either with
-an HTTP/1.1 upgraded request or directly
+- `h2` 表示使用了TLS的 https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation[应用层协议协商] (ALPN)协议来协商的 HTTP/2 协议
+- `h2c` 表示在TCP层上使用明文形式的 HTTP/2 协议，这样的连接是使用 
+HTTP/1.1升级 请求或者直接建立
 
-To handle `h2` requests, TLS must be enabled along with `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setUseAlpn-boolean-[setUseAlpn]`:
+要处理 `h2` 请求，你必须调用 `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setUseAlpn-boolean-[setUseAlpn]` 方法来启用TLS：
 
 [source,java]
 ----
@@ -48,27 +48,27 @@ HttpServerOptions options = new HttpServerOptions()
 HttpServer server = vertx.createHttpServer(options);
 ----
 
-ALPN is a TLS extension that negotiates the protocol before the client and the server start to exchange data.
+ALPN是一个TLS的扩展，它在客户端和服务器开始交换数据之前协商协议。
 
-Clients that don't support ALPN will still be able to do a _classic_ SSL handshake.
+不支持ALPN的客户端仍然可以执行 _经典的_ SSL握手。
 
-ALPN will usually agree on the `h2` protocol, although `http/1.1` can be used if the server or the client decides
-so.
+通常情况，ALPN会对 `h2` 协议达成一致，尽管服务器或客户端决定了仍然使用 `HTTP/1.1` 
+协议。
 
-To handle `h2c` requests, TLS must be disabled, the server will upgrade to HTTP/2 any request HTTP/1.1 that wants to
-upgrade to HTTP/2. It will also accept a direct `h2c` connection beginning with the `PRI * HTTP/2.0\r\nSM\r\n` preface.
+要处理 `h2c` 请求，TLS必须被禁用，服务器将升级到 HTTP/2 以满足任何希望升级到 HTTP/2 的 HTTP/1.1 请求。
+它还将接受以 `PRI * HTTP/2.0\r\nSM\r\n` 开始的 `h2c` 直接连接。
 
-WARNING: most browsers won't support `h2c`, so for serving web sites you should use `h2` and not `h2c`.
+WARNING: 大多数浏览器不支持 `h2c`，所以在建站时，您应该使用 `h2` 而不是 `h2c`。
 
-When a server accepts an HTTP/2 connection, it sends to the client its `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#getInitialSettings--[initial settings]`.
-The settings define how the client can use the connection, the default initial settings for a server are:
+当服务器接受 HTTP/2 连接时，它会向客户端发送其`link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#getInitialSettings--[初始设置]`。
+定义客户端如何使用连接，服务器的默认初始设置为：
 
-- `link:../../apidocs/io/vertx/core/http/Http2Settings.html#getMaxConcurrentStreams--[getMaxConcurrentStreams]`: `100` as recommended by the HTTP/2 RFC
-- the default HTTP/2 settings values for the others
+- `link:../../apidocs/io/vertx/core/http/Http2Settings.html#getMaxConcurrentStreams--[getMaxConcurrentStreams]` ：按照 HTTP/2 RFC建议推荐值为 `100`
+- 其他默认的 HTTP/2 的设置
 
-=== Logging network server activity
+=== 服务端网络活动日志
 
-For debugging purposes, network activity can be logged.
+为了进行调试，网络活动可以打日志。
 
 [source,java]
 ----
@@ -77,14 +77,14 @@ HttpServerOptions options = new HttpServerOptions().setLogActivity(true);
 HttpServer server = vertx.createHttpServer(options);
 ----
 
-See the chapter on <<logging_network_activity, logging network activity>> for a detailed explanation.
+详细说明请参阅 <<logging_network_activity, 网络活动日志>> 章节。
 
-=== Start the Server Listening
+=== 开启服务端监听
 
-To tell the server to listen for incoming requests you use one of the `link:../../apidocs/io/vertx/core/http/HttpServer.html#listen--[listen]`
-alternatives.
+要告诉服务器监听传入的请求，您可以使用其中一个 `link:../../apidocs/io/vertx/core/http/HttpServer.html#listen--[listen]` 
+方法。
 
-To tell the server to listen at the host and port as specified in the options:
+在配置项中告诉服务器监听指定的主机和端口：
 
 [source,java]
 ----
@@ -92,7 +92,7 @@ HttpServer server = vertx.createHttpServer();
 server.listen();
 ----
 
-Or to specify the host and port in the call to listen, ignoring what is configured in the options:
+或在调用listen方法时指定主机和端口号，这样就忽略了配置项（中的主机和端口）：
 
 [source,java]
 ----
@@ -100,13 +100,13 @@ HttpServer server = vertx.createHttpServer();
 server.listen(8080, "myhost.com");
 ----
 
-The default host is `0.0.0.0` which means 'listen on all available addresses' and the default port is `80`.
+默认主机名是 `0.0.0.0` ，它表示：监听所有可用地址；默认端口号是 `80` 。
 
-The actual bind is asynchronous so the server might not actually be listening until some time *after* the call to
-listen has returned.
+实际的绑定也是异步的，因此服务器也许并没有在调用listen方法返回时监听，而是在一段时间 *过后* 
+才监听。
 
-If you want to be notified when the server is actually listening you can provide a handler to the `listen` call.
-For example:
+若您希望在服务器实际监听时收到通知，您可以向 `listen` 提供一个处理器。
+例如：
 
 [source,java]
 ----
@@ -120,9 +120,9 @@ server.listen(8080, "myhost.com", res -> {
 });
 ----
 
-=== Getting notified of incoming requests
+=== 收到传入请求的通知
 
-To be notified when a request arrives you need to set a `link:../../apidocs/io/vertx/core/http/HttpServer.html#requestHandler-io.vertx.core.Handler-[requestHandler]`:
+若您需要在收到请求时收到通知，则需要设置一个 `link:../../apidocs/io/vertx/core/http/HttpServer.html#requestHandler-io.vertx.core.Handler-[requestHandler]` ：
 
 [source,java]
 ----
@@ -132,24 +132,24 @@ server.requestHandler(request -> {
 });
 ----
 
-=== Handling requests
+=== 处理请求
 
-When a request arrives, the request handler is called passing in an instance of `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html[HttpServerRequest]`.
-This object represents the server side HTTP request.
+当请求到达时，Vert.x 会像对应的处理函数传入一个 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html[HttpServerRequest]` 实例并调用请求处理函数。
+此对象表示服务端 HTTP 请求。
 
-The handler is called when the headers of the request have been fully read.
+当请求的头信息被完全读取时会调用该请求处理器。
 
-If the request contains a body, that body will arrive at the server some time after the request handler has been called.
+如果请求包含请求体，那么该请求体将在请求处理器被调用后的某个时间到达服务器。
 
-The server request object allows you to retrieve the `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#uri--[uri]`,
-`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#path--[path]`, `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#params--[params]` and
-`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#headers--[headers]`, amongst other things.
+服务请求对象允许您读取 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#uri--[uri]`，
+`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#path--[path]`， `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#params--[params]` 和
+`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#headers--[headers]` 等其他信息。
 
-Each server request object is associated with one server response object. You use
-`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#response--[response]` to get a reference to the `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html[HttpServerResponse]`
-object.
+每一个服务请求对象和一个服务响应对象绑定，您可以用 
+`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#response--[response]` 方法获取一个 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html[HttpServerResponse]` 
+对象的引用。
 
-Here's a simple example of a server handling a request and replying with "hello world" to it.
+这是服务器处理请求并回复 “hello world” 的简单示例。
 
 [source,java]
 ----
@@ -158,119 +158,119 @@ vertx.createHttpServer().requestHandler(request -> {
 }).listen(8080);
 ----
 
-==== Request version
+==== 请求版本
 
-The version of HTTP specified in the request can be retrieved with `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#version--[version]`
+在请求中指定的 HTTP 版本可通过 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#version--[version]` 方法获取。
 
-==== Request method
+==== 请求方法
 
-Use `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#method--[method]` to retrieve the HTTP method of the request.
-(i.e. whether it's GET, POST, PUT, DELETE, HEAD, OPTIONS, etc).
+使用 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#method--[method]` 方法读取请求中的 HTTP 方法。
+（即GET、POST、PUT、DELETE、HEAD、OPTIONS等）。
 
-==== Request URI
+==== 请求URI
 
-Use `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#uri--[uri]` to retrieve the URI of the request.
+使用 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#uri--[uri]` 方法读取请求中的URI路径。
 
-Note that this is the actual URI as passed in the HTTP request, and it's almost always a relative URI.
+请注意，这是在HTTP 请求中传递的实际URI，它总是一个相对的URI。
 
-The URI is as defined in http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html[Section 5.1.2 of the HTTP specification - Request-URI]
+这个URI是在 http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html[Section 5.1.2 of the HTTP specification - Request-URI] 中定义的。
 
-==== Request path
+==== 请求路径
 
-Use `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#path--[path]` to return the path part of the URI
+使用 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#path--[path]`方法读取URI中的路径部分。
 
-For example, if the request URI was:
+例如，请求的URI为：
 
 a/b/c/page.html?param1=abc&param2=xyz
 
-Then the path would be
+请求路径是：
 
 /a/b/c/page.html
 
-==== Request query
+==== 请求查询
 
-Use `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#query--[query]` to return the query part of the URI
+使用 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#query--[query]` 读取URI中的查询部分。
 
-For example, if the request URI was:
+例如，请求的URI为：
 
 a/b/c/page.html?param1=abc&param2=xyz
 
-Then the query would be
+请求查询是：
 
 param1=abc&param2=xyz
 
-==== Request headers
+==== 请求头部
 
-Use `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#headers--[headers]` to return the headers of the HTTP request.
+使用 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#headers--[headers]` 方法获取HTTP 请求中的请求头部信息。
 
-This returns an instance of `link:../../apidocs/io/vertx/core/MultiMap.html[MultiMap]` - which is like a normal Map or Hash but allows multiple
-values for the same key - this is because HTTP allows multiple header values with the same key.
+这个方法返回一个 `link:../../apidocs/io/vertx/core/MultiMap.html[MultiMap]` 实例。它像一个普通的Map或哈希表，并且它还允许
+同一个键支持多个值 —— 因为HTTP允许同一个键支持多个请求头的值。
 
-It also has case-insensitive keys, that means you can do the following:
+它的键值不区分大小写，这意味着您可以执行以下操作：
 
 [source,java]
 ----
 MultiMap headers = request.headers();
 
-// Get the User-Agent:
+// 读取User-Agent
 System.out.println("User agent is " + headers.get("user-agent"));
 
-// You can also do this and get the same result:
+// 这样做可以得到和上边相同的结果
 System.out.println("User agent is " + headers.get("User-Agent"));
 ----
 
-==== Request host
+==== 请求主机
 
-Use `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#host--[host]` to return the host of the HTTP request.
+使用 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#host--[host]` 方法返回 HTTP 请求中的主机名。
 
-For HTTP/1.x requests the `host` header is returned, for HTTP/1 requests the `:authority` pseudo header is returned.
+对于 HTTP/1.x 请求返回请求头中的 `host` 值，对于 HTTP/1 请求则返回伪头中的 `:authority` 的值。
 
-==== Request parameters
+==== 请求参数
 
-Use `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#params--[params]` to return the parameters of the HTTP request.
+您可以使用 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#params--[params]` 方法返回HTTP请求中的参数信息。
 
-Just like `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#headers--[headers]` this returns an instance of `link:../../apidocs/io/vertx/core/MultiMap.html[MultiMap]`
-as there can be more than one parameter with the same name.
+像 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#headers--[headers]` 方法一样，它也会返回一个 `link:../../apidocs/io/vertx/core/MultiMap.html[MultiMap]` 实例，
+因为可以有多个具有相同名称的参数。
 
-Request parameters are sent on the request URI, after the path. For example if the URI was:
+请求参数在请求URI的 path 部分之后，例如URI是：
 
 /page.html?param1=abc&param2=xyz
 
-Then the parameters would contain the following:
+那么参数将包含以下内容：
 
 ----
 param1: 'abc'
 param2: 'xyz
 ----
 
-Note that these request parameters are retrieved from the URL of the request. If you have form attributes that
-have been sent as part of the submission of an HTML form submitted in the body of a `multi-part/form-data` request
-then they will not appear in the params here.
+请注意，这些请求参数是从请求的 URI 中解析读取的，若您已经将表单属性
+存放在请求体中发送出去，并且该请求为 `multi-part/form-data` 类型请求
+，那么它们将不会显示在此处的参数中。
 
-==== Remote address
+==== 远程地址
 
-The address of the sender of the request can be retrieved with `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#remoteAddress--[remoteAddress]`.
+可以使用 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#remoteAddress--[remoteAddress]` 方法读取请求发送者的地址。
 
-==== Absolute URI
+==== 绝对URI
 
-The URI passed in an HTTP request is usually relative. If you wish to retrieve the absolute URI corresponding
-to the request, you can get it with `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#absoluteURI--[absoluteURI]`
+HTTP 请求中传递的URI通常是相对的，若您想要读取请求中和相对URI对应的绝对URI，
+可调用 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#absoluteURI--[absoluteURI]` 方法。
 
-==== End handler
+==== 结束处理器
 
-The `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#endHandler-io.vertx.core.Handler-[endHandler]` of the request is invoked when the entire request,
-including any body has been fully read.
+当整个请求（包括任何正文）已经被完全读取时，请求中的 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#endHandler-io.vertx.core.Handler-[endHandler]` 
+方法会被调用。
 
-==== Reading Data from the Request Body
+==== 请求体中读取数据
 
-Often an HTTP request contains a body that we want to read. As previously mentioned the request handler is called
-when just the headers of the request have arrived so the request object does not have a body at that point.
+HTTP请求通常包含我们需要读取的主体。如前所述，当请求头部达到时，
+请求处理器会被调用，因此请求对象在此时没有请求体。
 
-This is because the body may be very large (e.g. a file upload) and we don't generally want to buffer the entire
-body in memory before handing it to you, as that could cause the server to exhaust available memory.
+这是因为请求体可能非常大（如文件上传），并且我们不会在内容发送给您之前
+将其全部缓冲存储在内存中，这可能会导致服务器耗尽可用内存。
 
-To receive the body, you can use the `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#handler-io.vertx.core.Handler-[handler]`  on the request,
-this will get called every time a chunk of the request body arrives. Here's an example:
+要接收请求体，您可在请求中调用 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#handler-io.vertx.core.Handler-[handler]` 方法设置一个处理器，
+每次请求体的一小块数据收到时，该处理器都会被调用。以下是一个例子：
 
 [source,java]
 ----
@@ -279,11 +279,11 @@ request.handler(buffer -> {
 });
 ----
 
-The object passed into the handler is a `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]`, and the handler can be called
-multiple times as data arrives from the network, depending on the size of the body.
+传递给处理器的对象是一个 `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]`，
+当数据从网络到达时，处理器可以多次被调用，这取决于请求体的大小。
 
-In some cases (e.g. if the body is small) you will want to aggregate the entire body in memory, so you could do
-the aggregation yourself as follows:
+在某些情况下（例：若请求体很小），您将需要将这个请求体聚合到内存中，
+以便您可以按照下边的方式进行聚合：
 
 [source,java]
 ----
@@ -299,8 +299,8 @@ request.endHandler(v -> {
 });
 ----
 
-This is such a common case, that Vert.x provides a `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#bodyHandler-io.vertx.core.Handler-[bodyHandler]` to do this
-for you. The body handler is called once when all the body has been received:
+这是一个常见的情况，Vert.x为您提供了一个 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#bodyHandler-io.vertx.core.Handler-[bodyHandler]` 方法来执行此操作。
+当所有请求体被收到时，`bodyHandler` 绑定的处理器会被调用一次：
 
 [source,java]
 ----
@@ -309,28 +309,28 @@ request.bodyHandler(totalBuffer -> {
 });
 ----
 
-==== Streaming requests
+==== 流式请求
 
-The request object is a `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` so you can pipe the request body to any
-`link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` instance.
+请求对象实现了 `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 接口，因此您可以将请求体读取到任何 
+`link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` 实例中。
 
-See the chapter on <<streams, streams>> for a detailed explanation.
+详细请参阅 <<streams, 流>> 章节。
 
-==== Handling HTML forms
+==== 处理 HTML 表单
 
-HTML forms can be submitted with either a content type of `application/x-www-form-urlencoded` or `multipart/form-data`.
+您可使用 `application/x-www-form-urlencoded` 或 `multipart/form-data` 这两种 content-type 来提交 HTML 表单。
 
-For url encoded forms, the form attributes are encoded in the url, just like normal query parameters.
+对于使用 URL 编码过的表单，表单属性会被编码在URL中，如同普通查询参数一样。
 
-For multi-part forms they are encoded in the request body, and as such are not available until the entire body
-has been read from the wire.
+对于 multipart 类型的表单，它会被编码在请求体中，而且在整个请求体被
+完全读取之前它是不可用的。
 
-Multi-part forms can also contain file uploads.
+Multipart 表单还可以包含文件上传。
 
-If you want to retrieve the attributes of a multi-part form you should tell Vert.x that you expect to receive
-such a form *before* any of the body is read by calling `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#setExpectMultipart-boolean-[setExpectMultipart]`
-with true, and then you should retrieve the actual attributes using `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#formAttributes--[formAttributes]`
-once the entire body has been read:
+若您想要读取 multipart 表单的属性，您应该告诉 Vert.x 您会在读取任何
+正文 *之前* 调用 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#setExpectMultipart-boolean-[setExpectMultipart]` 方法，
+然后在整个请求体都被读取后，您可以使用 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#formAttributes--[formAttributes]` 方法来
+读取实际的表单属性。
 
 [source,java]
 ----
@@ -343,17 +343,17 @@ server.requestHandler(request -> {
 });
 ----
 
-==== Handling form file uploads
+==== 处理文件上传
 
-Vert.x can also handle file uploads which are encoded in a multi-part request body.
+Vert.x 可以处理以 multipart 编码形式上传的的文件。
 
-To receive file uploads you tell Vert.x to expect a multi-part form and set an
-`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#uploadHandler-io.vertx.core.Handler-[uploadHandler]` on the request.
+要接收文件，您可以告诉 Vert.x 使用 multipart 表单，并对请求设置 
+`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#uploadHandler-io.vertx.core.Handler-[uploadHandler]` 。
 
-This handler will be called once for every
-upload that arrives on the server.
+当服务器每次接收到上传请求时，
+该处理器将被调用一次。
 
-The object passed into the handler is a `link:../../apidocs/io/vertx/core/http/HttpServerFileUpload.html[HttpServerFileUpload]` instance.
+传递给处理器的对象是一个 `link:../../apidocs/io/vertx/core/http/HttpServerFileUpload.html[HttpServerFileUpload]` 实例。
 
 [source,java]
 ----
@@ -365,8 +365,8 @@ server.requestHandler(request -> {
 });
 ----
 
-File uploads can be large we don't provide the entire upload in a single buffer as that might result in memory
-exhaustion, instead, the upload data is received in chunks:
+上传的文件可能很大，我们不会在单个缓冲区中包含整个上传的数据，因为这样会导致内存耗尽。
+相反，上传数据是以块的形式被接收的：
 
 [source,java]
 ----
@@ -377,11 +377,11 @@ request.uploadHandler(upload -> {
 });
 ----
 
-The upload object is a `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` so you can pipe the request body to any
-`link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` instance. See the chapter on <<streams, streams>> for a
-detailed explanation.
+上传对象实现了 `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 接口，因此您可以将请求体读取到任何 
+`link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` 实例中。详细说明请参阅 <<streams, 流>> 
+章节。
 
-If you just want to upload the file to disk somewhere you can use `link:../../apidocs/io/vertx/core/http/HttpServerFileUpload.html#streamToFileSystem-java.lang.String-io.vertx.core.Handler-[streamToFileSystem]`:
+若您只是想将文件上传到服务器的某个磁盘，可以使用 `link:../../apidocs/io/vertx/core/http/HttpServerFileUpload.html#streamToFileSystem-java.lang.String-io.vertx.core.Handler-[streamToFileSystem]` 方法：
 
 [source,java]
 ----
@@ -390,8 +390,8 @@ request.uploadHandler(upload -> {
 });
 ----
 
-WARNING: Make sure you check the filename in a production system to avoid malicious clients uploading files
-to arbitrary places on your filesystem. See <<Security notes, security notes>> for more information.
+WARNING: 确保您检查了生产系统的文件名，以避免恶意客户将文件上传
+到文件系统中的任意位置。有关详细信息，参阅  <<Security notes, 安全说明>>。
 
 ==== Handling cookies
 
@@ -434,23 +434,23 @@ String cookieValue = someCookie.getValue();
 request.response().addCookie(Cookie.cookie("othercookie", "somevalue"));
 ----
 
-==== Handling compressed body
+==== 处理压缩体
 
-Vert.x can handle compressed body payloads which are encoded by the client with the _deflate_ or _gzip_
-algorithms.
+Vert.x 可以处理在客户端通过 _deflate_ 或 _gzip_ 算法压缩过的请求体
+信息。
 
-To enable decompression set `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setDecompressionSupported-boolean-[setDecompressionSupported]` on the
-options when creating the server.
+若要启用解压缩功能则您要在创建服务器时调用 `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setDecompressionSupported-boolean-[setDecompressionSupported]` 
+方法设置配置项。
 
-By default decompression is disabled.
+默认情况下解压缩是被禁用的。
 
-==== Receiving custom HTTP/2 frames
+==== 接收自定义 HTTP/2 帧
 
-HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
-of frames to be sent and received.
+HTTP/2 是用于 HTTP 请求/响应模型的包含各种帧的一种帧协议，该协议允许
+发送和接收其他类型的帧。
 
-To receive custom frames, you can use the `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#customFrameHandler-io.vertx.core.Handler-[customFrameHandler]` on the request,
-this will get called every time a custom frame arrives. Here's an example:
+若要接收自定义帧(frame)，您可以在请求中使用 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#customFrameHandler-io.vertx.core.Handler-[customFrameHandler]` ，
+每次当自定义的帧数据到达时，这个处理器会被调用。这而是一个例子：
 
 [source,java]
 ----
@@ -461,36 +461,36 @@ request.customFrameHandler(frame -> {
 });
 ----
 
-HTTP/2 frames are not subject to flow control - the frame handler will be called immediatly when a
-custom frame is received whether the request is paused or is not
+HTTP/2 帧不受流量控制限制 —— 当接收到自定义帧时，不论请求是否暂停，
+自定义帧处理器都将立即被调用。
 
-=== Sending back responses
+=== 发回响应
 
-The server response object is an instance of `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html[HttpServerResponse]` and is obtained from the
-request with `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#response--[response]`.
+服务器响应对象是一个 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html[HttpServerResponse]` 实例，它可以从
+request对应的 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#response--[response]` 方法中读取。
 
-You use the response object to write a response back to the HTTP client.
+您可以使用响应对象回写一个响应到 HTTP客户端。
 
-==== Setting status code and message
+==== 设置状态码和消息
 
-The default HTTP status code for a response is `200`, representing `OK`.
+默认的 HTTP 状态响应码为 `200`，表示 `OK`。
 
-Use `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#setStatusCode-int-[setStatusCode]` to set a different code.
+可使用 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#setStatusCode-int-[setStatusCode]` 方法设置不同状态代码。
 
-You can also specify a custom status message with `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#setStatusMessage-java.lang.String-[setStatusMessage]`.
+您还可用 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#setStatusMessage-java.lang.String-[setStatusMessage]` 方法指定自定义状态消息。
 
-If you don't specify a status message, the default one corresponding to the status code will be used.
+若您不指定状态信息，将会使用默认的状态码响应。
 
-NOTE: for HTTP/2 the status won't be present in the response since the protocol won't transmit the message
-to the client
+NOTE: 对于 HTTP/2 中的状态不会在响应中描述 —— 因为协议不会将消息发送
+回客户端。
 
-==== Writing HTTP responses
+==== 向 HTTP 响应写入数据
 
-To write data to an HTTP response, you use one of the `link:../../apidocs/io/vertx/core/streams/WriteStream.html#write-java.lang.Object-[write]` operations.
+想要将数据写入 HTTP Response，您可使用任意一个 `link:../../apidocs/io/vertx/core/streams/WriteStream.html#write-java.lang.Object-[write]` 方法。
 
-These can be invoked multiple times before the response is ended. They can be invoked in a few ways:
+它们可以在响应结束之前被多次调用，它们可以通过以下几种方式调用：
 
-With a single buffer:
+对用单个缓冲区：
 
 [source,java]
 ----
@@ -498,7 +498,7 @@ HttpServerResponse response = request.response();
 response.write(buffer);
 ----
 
-With a string. In this case the string will encoded using UTF-8 and the result written to the wire.
+写入字符串，这种请求字符串将使用 UTF-8 进行编码，并将结果写入到报文中。
 
 [source,java]
 ----
@@ -506,8 +506,8 @@ HttpServerResponse response = request.response();
 response.write("hello world!");
 ----
 
-With a string and an encoding. In this case the string will encoded using the specified encoding and the
-result written to the wire.
+写入带编码方式的字符串，这种情况字符串将使用指定的编码方式编码，
+并将结果写入到报文中。
 
 [source,java]
 ----
@@ -515,22 +515,22 @@ HttpServerResponse response = request.response();
 response.write("hello world!", "UTF-16");
 ----
 
-Writing to a response is asynchronous and always returns immediately after the write has been queued.
+响应写入是异步的，并且在写操作进入队列之后会立即返回。
 
-If you are just writing a single string or buffer to the HTTP response you can write it and end the response in a
-single call to the `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#end-java.lang.String-[end]`
+若您只需要将单个字符串或Buffer写入到HTTP 响应，则可使用 
+`link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#end-java.lang.String-[end]` 方法将其直接写入响应中并发回到客户端。
 
-The first call to write results in the response header being written to the response. Consequently, if you are
-not using HTTP chunking then you must set the `Content-Length` header before writing to the response, since it will
-be too late otherwise. If you are using HTTP chunking you do not have to worry.
+第一次写入操作会触发响应头的写入，因此，若您
+不使用HTTP 分块，那么必须在写入响应之前设置 `Content-Length` 头，否则
+不会生效。若您使用 HTTP 分块则不需要担心这点。
 
-==== Ending HTTP responses
+==== 完成 HTTP 响应
 
-Once you have finished with the HTTP response you should `link:../../apidocs/io/vertx/core/streams/WriteStream.html#end-io.vertx.core.Handler-[end]` it.
+一旦您完成了 HTTP 响应，可调用 `link:../../apidocs/io/vertx/core/streams/WriteStream.html#end-io.vertx.core.Handler-[end]` 将其发回客户端。
 
-This can be done in several ways:
+这可以通过几种方式完成：
 
-With no arguments, the response is simply ended.
+没有参数，直接结束响应，发回客户端：
 
 [source,java]
 ----
@@ -539,8 +539,8 @@ response.write("hello world!");
 response.end();
 ----
 
-It can also be called with a string or buffer in the same way `write` is called. In this case it's just the same as
-calling write with a string or buffer followed by calling end with no arguments. For example:
+您也可以和调用 `write` 方法一样传String或Buffer给 `end` 方法。
+这种情况，它和先调用带String或Buffer参数的 `write` 方法，之后调用无参 `end` 方法一样。例如：
 
 [source,java]
 ----
@@ -548,21 +548,21 @@ HttpServerResponse response = request.response();
 response.end("hello world!");
 ----
 
-==== Closing the underlying connection
+==== 关闭底层连接
 
-You can close the underlying TCP connection with `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#close--[close]`.
+您可以调用 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#close--[close]` 方法关闭底层的TCP 连接。
 
-Non keep-alive connections will be automatically closed by Vert.x when the response is ended.
+当响应结束时，Vert.x 将自动关闭非 keep-alive 的连接。
 
-Keep-alive connections are not automatically closed by Vert.x by default. If you want keep-alive connections to be
-closed after an idle time, then you configure `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setIdleTimeout-int-[setIdleTimeout]`.
+默认情况下，Vert.x 不会自动关闭 keep-alive 的连接，若您想要在
+一段空闲时间之后让 Vert.x 自动关闭 keep-alive 的连接，则使用 `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setIdleTimeout-int-[setIdleTimeout]`  方法进行配置。
 
-HTTP/2 connections send a {@literal GOAWAY} frame before closing the response.
+HTTP/2 连接在关闭响应之前会发送 {@literal GOAWAY} 帧。
 
-==== Setting response headers
+==== 设置响应头
 
-HTTP response headers can be added to the response by adding them directly to the
-`link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#headers--[headers]`:
+HTTP 响应头可直接添加到 HTTP 响应中，通常直接操作 
+`link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#headers--[headers]` ：
 
 [source,java]
 ----
@@ -572,7 +572,7 @@ headers.set("content-type", "text/html");
 headers.set("other-header", "wibble");
 ----
 
-Or you can use `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#putHeader-java.lang.String-java.lang.String-[putHeader]`
+或您可使用 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#putHeader-java.lang.String-java.lang.String-[putHeader]` 方法：
 
 [source,java]
 ----
@@ -580,16 +580,16 @@ HttpServerResponse response = request.response();
 response.putHeader("content-type", "text/html").putHeader("other-header", "wibble");
 ----
 
-Headers must all be added before any parts of the response body are written.
+响应头必须在写入响应正文消息之前进行设置。
 
-==== Chunked HTTP responses and trailers
+==== 分块 HTTP 响应和附加尾部
 
-Vert.x supports http://en.wikipedia.org/wiki/Chunked_transfer_encoding[HTTP Chunked Transfer Encoding].
+Vert.x 支持 http://en.wikipedia.org/wiki/Chunked_transfer_encoding[分块传输编码(HTTP Chunked Transfer Encoding)] 。
 
-This allows the HTTP response body to be written in chunks, and is normally used when a large response body is
-being streamed to a client and the total size is not known in advance.
+这允许HTTP 响应体以块的形式写入，通常在响应体预先不知道尺寸、
+需要将很大响应正文以流式传输到客户端时使用。
 
-You put the HTTP response into chunked mode as follows:
+您可以通过如下方式开启分块模式：
 
 [source,java]
 ----
@@ -597,15 +597,15 @@ HttpServerResponse response = request.response();
 response.setChunked(true);
 ----
 
-Default is non-chunked. When in chunked mode, each call to one of the `link:../../apidocs/io/vertx/core/streams/WriteStream.html#write-java.lang.Object-[write]`
-methods will result in a new HTTP chunk being written out.
+默认是不分块的，当处于分块模式，每次调用任意一个 `link:../../apidocs/io/vertx/core/streams/WriteStream.html#write-java.lang.Object-[write]` 
+方法将导致新的 HTTP 块被写出。
 
-When in chunked mode you can also write HTTP response trailers to the response. These are actually written in
-the final chunk of the response.
+在分块模式下，您还可以将响应的HTTP 响应附加尾部(trailers)写入响应，这种方式实际上是在写入
+响应的最后一块。
 
-NOTE: chunked response has no effect for an HTTP/2 stream
+NOTE: 分块响应在 HTTP/2 流中无效。
 
-To add trailers to the response, add them directly to the `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#trailers--[trailers]`.
+若要向响应添加尾部，则直接添加到 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#trailers--[trailers]` 里。
 
 [source,java]
 ----
@@ -615,7 +615,7 @@ MultiMap trailers = response.trailers();
 trailers.set("X-wibble", "woobble").set("X-quux", "flooble");
 ----
 
-Or use `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#putTrailer-java.lang.String-java.lang.String-[putTrailer]`.
+或者调用 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#putTrailer-java.lang.String-java.lang.String-[putTrailer]` 方法。
 
 [source,java]
 ----
@@ -624,22 +624,22 @@ response.setChunked(true);
 response.putTrailer("X-wibble", "woobble").putTrailer("X-quux", "flooble");
 ----
 
-==== Serving files directly from disk or the classpath
+==== 直接从磁盘或 Classpath 读文件
 
-If you were writing a web server, one way to serve a file from disk would be to open it as an `link:../../apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]`
-and pipe it to the HTTP response.
+若您正在编写一个Web 服务端，一种从磁盘中读取并提供文件的方法是将文件作为 `link:../../apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]` 对象
+打开并其传送到HTTP 响应中。
 
-Or you could load it it one go using `link:../../apidocs/io/vertx/core/file/FileSystem.html#readFile-java.lang.String-io.vertx.core.Handler-[readFile]` and write it straight to the response.
+或您可以使用 `link:../../apidocs/io/vertx/core/file/FileSystem.html#readFile-java.lang.String-io.vertx.core.Handler-[readFile]` 方法一次性加载它，并直接将其写入响应。
 
-Alternatively, Vert.x provides a method which allows you to serve a file from disk or the filesystem to an HTTP response
-in one operation.
-Where supported by the underlying operating system this may result in the OS directly transferring bytes from the
-file to the socket without being copied through user-space at all.
+或者，Vert.x 提供了一种方法，允许您在一个操作中将文件从磁盘或文件系统中读取并提供给HTTP 
+响应。
+若底层操作系统支持，这会导致操作系统不通过用户空间复制而直接将文件内容中字节数据从
+文件传输到Socket。
 
-This is done by using `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#sendFile-java.lang.String-[sendFile]`, and is usually more efficient for large
-files, but may be slower for small files.
+这是使用 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#sendFile-java.lang.String-[sendFile]` 方法完成的，对于大文件处理通常更有效，
+而这个方法对于小文件可能很慢。
 
-Here's a very simple web server that serves files from the file system using sendFile:
+这儿是一个非常简单的 Web 服务器，它使用 `sendFile` 方法从文件系统中读取并提供文件：
 
 [source,java]
 ----
@@ -654,19 +654,19 @@ vertx.createHttpServer().requestHandler(request -> {
 }).listen(8080);
 ----
 
-Sending a file is asynchronous and may not complete until some time after the call has returned. If you want to
-be notified when the file has been writen you can use `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#sendFile-java.lang.String-io.vertx.core.Handler-[sendFile]`
+发送文件是异步的，可能在调用返回一段时间后才能完成。如果要在
+文件写入时收到通知，可以在 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#sendFile-java.lang.String-io.vertx.core.Handler-[sendFile]` 方法中设置一个处理器。
 
-Please see the chapter about <<classpath, serving files from the classpath>> for restrictions about the classpath resolution or disabling it.
+请阅读 <<classpath, 从 Classpath 访问文件>> 章节了解类路径的限制或禁用它。
 
-NOTE: If you use `sendFile` while using HTTPS it will copy through user-space, since if the kernel is copying data
-directly from disk to socket it doesn't give us an opportunity to apply any encryption.
+NOTE: 若在 HTTPS 协议中使用 `sendFile` 方法，它将会通过用户空间进行复制，因为若内核将数据
+直接从磁盘复制到 Socket，则不会给我们任何加密的机会。
 
-WARNING: If you're going to write web servers directly using Vert.x be careful that users cannot exploit the
-path to access files outside the directory from which you want to serve them or the classpath It may be safer instead to use
-Vert.x Web.
+WARNING: 若您要直接使用 Vert.x 编写 Web 服务器，请注意，您想提供文件和类路径之外访问的位置 —— 
+用户是无法直接利用路径访问的。更安全的做法是使用
+Vert.x Web替代。
 
-When there is a need to serve just a segment of a file, say starting from a given byte, you can achieve this by doing:
+当需要提供文件的一部分，从给定的字节开始，您可以像下边这样做：
 
 [source,java]
 ----
@@ -689,8 +689,8 @@ vertx.createHttpServer().requestHandler(request -> {
 }).listen(8080);
 ----
 
-You are not required to supply the length if you want to send a file starting from an offset until the end, in this
-case you can just do:
+若您想要从偏移量开始发送文件直到尾部，则不需要提供长度信息，这种情况下，您可以
+执行以下操作：
 
 [source,java]
 ----
@@ -706,15 +706,15 @@ vertx.createHttpServer().requestHandler(request -> {
 }).listen(8080);
 ----
 
-==== Piping responses
+==== Pumping 响应
 
-The server response is a `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` so you can pipe to it from any
-`link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]`, e.g. `link:../../apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]`, `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`,
-`link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]` or `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html[HttpServerRequest]`.
+服务端响应 `HttpServerResponse` 也是一个 `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` 实例，因此您可以从任何 
+`link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 向其泵送数据，如 `link:../../apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]`， `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`，
+`link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]` 或者 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html[HttpServerRequest]`。
 
-Here's an example which echoes the request body back in the response for any PUT methods.
-It uses a pipe for the body, so it will work even if the HTTP request body is much larger than can fit in memory
-at any one time:
+这儿有一个例子，它回应了任何 PUT 方法的响应中的请求体。
+它为请求体使用了 Pump，所以即使 HTTP 请求体很大并填满了内存，
+任何时候它依旧会工作：
 
 [source,java]
 ----
@@ -746,13 +746,13 @@ vertx.createHttpServer().requestHandler(request -> {
 }).listen(8080);
 ----
 
-==== Writing HTTP/2 frames
+==== 写入 HTTP/2 帧
 
-HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
-of frames to be sent and received.
+HTTP/2 是用于 HTTP 请求/响应模型的包含各种帧的一种帧协议，该协议允许
+发送和接收其他类型的帧。
 
-To send such frames, you can use the `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#writeCustomFrame-int-int-io.vertx.core.buffer.Buffer-[writeCustomFrame]` on the response.
-Here's an example:
+要发送这样的帧，您可以在响应中使用 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#writeCustomFrame-int-int-io.vertx.core.buffer.Buffer-[writeCustomFrame]` 方法。
+以下是一个例子：
 
 [source,java]
 ----
@@ -760,36 +760,36 @@ int frameType = 40;
 int frameStatus = 10;
 Buffer payload = Buffer.buffer("some data");
 
-// Sending a frame to the client
+// 向客户端发送一帧
 response.writeCustomFrame(frameType, frameStatus, payload);
 ----
 
-These frames are sent immediately and are not subject to flow control - when such frame is sent there it may be done
-before other {@literal DATA} frames.
+这些帧被立即发送，并且不受流程控制的影响——当这样的帧被发送到那里时，
+可以在其他的 {@literal DATA} 帧之前完成。
 
-==== Stream reset
+==== 流重置
 
-HTTP/1.x does not allow a clean reset of a request or a response stream, for example when a client uploads
-a resource already present on the server, the server needs to accept the entire response.
+HTTP/1.x 不允许请求或响应流执行清除重置，如当客户端上传的资源
+已经存在于服务器上，服务器就需要接受整个响应。
 
-HTTP/2 supports stream reset at any time during the request/response:
+HTTP/2 在请求/响应期间随时支持流重置：
 
 [source,java]
 ----
 request.response().reset();
 ----
 
-By default the `NO_ERROR` (0) error code is sent, another code can sent instead:
+默认会发送 `NO_ERROR` (0)错误代码，您也可以发送另外一个错误代码：
 
 [source,java]
 ----
 request.response().reset(8);
 ----
 
-The HTTP/2 specification defines the list of http://httpwg.org/specs/rfc7540.html#ErrorCodes[error codes] one can use.
+HTTP/2 规范中定义了可用的  http://httpwg.org/specs/rfc7540.html#ErrorCodes[错误码]  列表：
 
-The request handler are notified of stream reset events with the `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#exceptionHandler-io.vertx.core.Handler-[request handler]` and
-`link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#exceptionHandler-io.vertx.core.Handler-[response handler]`:
+若使用了 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#exceptionHandler-io.vertx.core.Handler-[request handler]` 和
+`link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#exceptionHandler-io.vertx.core.Handler-[response handler]` 两个处理器过后，在流重置完成时您将会收到通知：
 
 [source,java]
 ----
@@ -801,25 +801,25 @@ request.response().exceptionHandler(err -> {
 });
 ----
 
-==== Server push
+==== 服务器推送
 
-Server push is a new feature of HTTP/2 that enables sending multiple responses in parallel for a single client request.
+服务器推送(Server Push)是 HTTP/2 支持的一个新功能，可以为单个客户端请求并行发送多个响应。
 
-When a server process a request, it can push a request/response to the client:
+当服务器处理请求时，它可以向客户端推送请求/响应：
 
 [source,java]
 ----
 HttpServerResponse response = request.response();
 
-// Push main.js to the client
+// 推送main.js到客户端
 response.push(HttpMethod.GET, "/main.js", ar -> {
 
   if (ar.succeeded()) {
 
-    // The server is ready to push the response
+    // 服务器准备推送响应
     HttpServerResponse pushedResponse = ar.result();
 
-    // Send main.js response
+    // 发送main.js响应
     pushedResponse.
         putHeader("content-type", "application/json").
         end("alert(\"Push response hello\")");
@@ -828,17 +828,17 @@ response.push(HttpMethod.GET, "/main.js", ar -> {
   }
 });
 
-// Send the requested resource
+// 发送请求的资源内容
 response.sendFile("<html><head><script src=\"/main.js\"></script></head><body></body></html>");
 ----
 
-When the server is ready to push the response, the push response handler is called and the handler can send the response.
+当服务器准备推送响应时，推送响应处理器会被调用，并会发送响应。
 
-The push response handler may receive a failure, for instance the client may cancel the push because it already has `main.js` in its
-cache and does not want it anymore.
+推送响应处理器客户能会接收到失败，如：客户端可能取消推送，因为它已经在缓存中包含了 `main.js`，
+并不在需要它。
 
-The `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#push-io.vertx.core.http.HttpMethod-java.lang.String-java.lang.String-io.vertx.core.Handler-[push]` method must be called before the initiating response ends, however
-the pushed response can be written after.
+您必须在响应结束之前调用 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#push-io.vertx.core.http.HttpMethod-java.lang.String-java.lang.String-io.vertx.core.Handler-[push]` 方法，但是
+在推送响应过后依然可以写响应。
 
 ==== Handling exceptions
 
@@ -846,27 +846,27 @@ You can set an `link:../../apidocs/io/vertx/core/http/HttpServer.html#exceptionH
 exceptions that happens before the connection is passed to the `link:../../apidocs/io/vertx/core/http/HttpServer.html#requestHandler-io.vertx.core.Handler-[requestHandler]`
 or to the `link:../../apidocs/io/vertx/core/http/HttpServer.html#webSocketHandler-io.vertx.core.Handler-[webSocketHandler]`, e.g during the TLS handshake.
 
-=== HTTP Compression
+===  HTTP 压缩
 
-Vert.x comes with support for HTTP Compression out of the box.
+Vert.x 支持 HTTP 压缩，开箱即用。
 
-This means you are able to automatically compress the body of the responses before they are sent back to the client.
+这意味着在响应发送回客户端之前，您可以将响应体自动压缩。
 
-If the client does not support HTTP compression the responses are sent back without compressing the body.
+若客户端不支持HTTP 压缩，则它可以发回没有压缩过的请求。
 
-This allows to handle Client that support HTTP Compression and those that not support it at the same time.
+这允许它同时处理支持HTTP 压缩的客户端和不支持的客户端。
 
-To enable compression use can configure it with `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setCompressionSupported-boolean-[setCompressionSupported]`.
+要启用压缩，可以使用 `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setCompressionSupported-boolean-[setCompressionSupported]` 方法进行配置。
 
-By default compression is not enabled.
+默认情况下，未启用压缩。
 
-When HTTP compression is enabled the server will check if the client includes an `Accept-Encoding` header which
-includes the supported compressions. Commonly used are deflate and gzip. Both are supported by Vert.x.
+当启用HTTP 压缩时，服务器将检查客户端请求头中是否包含了 `Accept-Encoding` 并支持常用的 deflate 和 gzip 压缩算法。
+Vert.x 两者都支持。
 
-If such a header is found the server will automatically compress the body of the response with one of the supported
-compressions and send it back to the client.
+若找到这样的请求头，服务器将使用所支持的压缩算法之一自动压缩响应正文
+并发送回客户端。
 
-Whenever the response needs to be sent without compression you can set the header `content-encoding` to `identity`:
+可以通过将响应头 `content-encoding` 设置为 `identity` ，来关闭响应内容的压缩:
 
 [source,java]
 ----
@@ -875,33 +875,33 @@ request.response()
   .sendFile("/path/to/image.jpg");
 ----
 
-Be aware that compression may be able to reduce network traffic but is more CPU-intensive.
+注意：压缩可以减少网络流量，但是CPU密集度会更高。
 
-To address this latter issue Vert.x allows you to tune the 'compression level' parameter that is native of the gzip/deflate compression algorithms.
+为了解决后边一个问题，Vert.x也允许您调整原始的 gzip/deflate 压缩算法的 “压缩级别” 参数
 
-Compression level allows to configure gizp/deflate algorithms in terms of the compression ratio of the resulting data and the computational cost of the compress/decompress operation.
+压缩级别允许根据所得数据的压缩比和压缩/解压的计算成本来配置 gzip/deflate 算法。
 
-The compression level is an integer value ranged from '1' to '9', where '1' means lower compression ratio but fastest algorithm and '9' means maximum compression ratio available but a slower algorithm.
+压缩级别是从 “1” 到 “9” 的整数值，其中 “1” 表示更低的压缩比但是最快的算法，“9” 表示可用的最大压缩比但比较慢的算法。
 
-Using compression levels higher that 1-2 usually allows to save just some bytes in size - the gain is not linear, and depends on the specific data to be compressed
-- but it comports a non-trascurable cost in term of CPU cycles required to the server while generating the compressed response data
-( Note that at moment Vert.x doesn't support any form caching of compressed response data, even for static files, so the compression is done on-the-fly
-at every request body generation ) and in the same way it affects client(s) while decoding (inflating) received responses, operation that becomes more CPU-intensive
-the more the level increases.
+使用高于 1-2 的压缩级别通常允许仅仅保存一些字节大小 —— 它的增益不是线性的，并取决于要压缩的特定数据 
+—— 但它可以满足服务器所要求的CPU周期的不可控的成本
+（注意现在Vert.x不支持任何缓存形式的响应数据，如静态文件，因此压缩是
+在每个请求体生成时进行的）,它可生成压缩过的响应数据、并对接收的响应解码（膨胀）—— 和客户端使用的方式一致，
+这种操作随着压缩级别的增长会变得更加倾向于CPU密集型。
 
-By default - if compression is enabled via `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setCompressionSupported-boolean-[setCompressionSupported]` - Vert.x will use '6' as compression level,
-but the parameter can be configured to address any case with `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setCompressionLevel-int-[setCompressionLevel]`.
+默认情况下 —— 如果通过 `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setCompressionSupported-boolean-[setCompressionSupported]` 方法启用压缩，Vert.x 将使用 “6” 作为压缩级别，
+但是该参数可通过 `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setCompressionLevel-int-[setCompressionLevel]` 方法来更改。
 
-=== Creating an HTTP client
+=== 创建 HTTP 客户端
 
-You create an `link:../../apidocs/io/vertx/core/http/HttpClient.html[HttpClient]` instance with default options as follows:
+您可通过以下方式创建一个具有默认配置的 `link:../../apidocs/io/vertx/core/http/HttpClient.html[HttpClient]` 实例：
 
 [source,java]
 ----
 HttpClient client = vertx.createHttpClient();
 ----
 
-If you want to configure options for the client, you create it as follows:
+若您想要配置客户端选项，可按以下方式创建：
 
 [source,java]
 ----
@@ -909,12 +909,12 @@ HttpClientOptions options = new HttpClientOptions().setKeepAlive(false);
 HttpClient client = vertx.createHttpClient(options);
 ----
 
-Vert.x supports HTTP/2 over TLS `h2` and over TCP `h2c`.
+Vert.x 支持基于 TLS `h2` 和 TCP `h2c` 的 HTTP/2 协议。
 
-By default the http client performs HTTP/1.1 requests, to perform HTTP/2 requests the `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setProtocolVersion-io.vertx.core.http.HttpVersion-[setProtocolVersion]`
-must be set to `link:../../apidocs/io/vertx/core/http/HttpVersion.html#HTTP_2[HTTP_2]`.
+默认情况下，HTTP 客户端会发送 HTTP/1.1 请求。若要执行 HTTP/2 请求，则必须调用 `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setProtocolVersion-io.vertx.core.http.HttpVersion-[setProtocolVersion]` 
+方法将版本设置成 `link:../../apidocs/io/vertx/core/http/HttpVersion.html#HTTP_2[HTTP_2]` 。
 
-For `h2` requests, TLS must be enabled with _Application-Layer Protocol Negotiation_:
+对于 `h2` 请求，必须使用 _应用层协议协商(ALPN)_ 启用TLS：
 
 [source,java]
 ----
@@ -927,7 +927,7 @@ HttpClientOptions options = new HttpClientOptions().
 HttpClient client = vertx.createHttpClient(options);
 ----
 
-For `h2c` requests, TLS must be disabled, the client will do an HTTP/1.1 requests and try an upgrade to HTTP/2:
+对于 `h2c` 请求，TLS必须禁用，客户端将执行 HTTP/1.1 请求并尝试升级到 HTTP/2：
 
 [source,java]
 ----
@@ -936,21 +936,21 @@ HttpClientOptions options = new HttpClientOptions().setProtocolVersion(HttpVersi
 HttpClient client = vertx.createHttpClient(options);
 ----
 
-`h2c` connections can also be established directly, i.e connection started with a prior knowledge, when
-`link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setHttp2ClearTextUpgrade-boolean-[setHttp2ClearTextUpgrade]` options is set to false: after the
-connection is established, the client will send the HTTP/2 connection preface and expect to receive
-the same preface from the server.
+`h2c` 连接也可以直接建立，如连接可以使用前文提到的方式创建，当 
+`link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setHttp2ClearTextUpgrade-boolean-[setHttp2ClearTextUpgrade]` 选项设置为 `false` 时：
+建立连接后，客户端将发送 HTTP/2 连接前缀，并期望从服务端接收
+相同的连接偏好。
 
-The http server may not support HTTP/2, the actual version can be checked
-with `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#version--[version]` when the response arrives.
+HTTP 服务端可能不支持 HTTP/2，当响应到达时，可以使用 
+`link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#version--[version]` 方法检查响应实际HTTP版本。
 
-When a clients connects to an HTTP/2 server, it sends to the server its `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#getInitialSettings--[initial settings]`.
-The settings define how the server can use the connection, the default initial settings for a client are the default
-values defined by the HTTP/2 RFC.
+当客户端连接到 HTTP/2 服务端时，它将向服务端发送其 `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#getInitialSettings--[初始设置]` 。
+设置定义服务器如何使用连接、客户端的
+默认初始设置是由 HTTP/2 RFC定义的。
 
-=== Logging network client activity
+=== 客户端网络活动日志
 
-For debugging purposes, network activity can be logged.
+为了进行调试，可以给网络活动打日志：
 
 [source,java]
 ----
@@ -958,35 +958,35 @@ HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
 HttpClient client = vertx.createHttpClient(options);
 ----
 
-See the chapter on <<logging_network_activity, logging network activity>> for a detailed explanation.
+详情请参阅 <<logging_network_activity, 网络活动日志>> 章节。
 
-=== Making requests
+=== 发送请求
 
-The http client is very flexible and there are various ways you can make requests with it.
+HTTP 客户端是很灵活的，您可以通过各种方式发出请求。
 
-The first step when making a request is obtaining an HTTP connection to the remote server:
+发送请求的第一步是获取远程服务器的HTTP连接：
 
 [source,java]
 ----
 client.request(HttpMethod.GET,8080, "myserver.mycompany.com", "/some-uri", ar1 -> {
   if (ar1.succeeded()) {
-    // Connected to the server
+    // 已连接到服务器
   }
 });
 ----
 
-The client will connect to the remote server or reuse an available connection from the client connection pool.
+HTTP客户端会连接到远程服务器，也可能复用连接池里可用的连接。
 
-==== Default host and port
+==== 默认主机和端口
 
-Often you want to make many requests to the same host/port with an http client. To avoid you repeating the host/port
-every time you make a request you can configure the client with a default host/port:
+通常您希望使用 HTTP 客户端向同一个主机/端口发送很多请求。为避免每次发送请求时重复设主机/端口，
+您可以为客户端配置默认主机/端口：
 
 [source,java]
 ----
 HttpClientOptions options = new HttpClientOptions().setDefaultHost("wibble.com");
 
-// Can also set default port if you want...
+// 若您需要，可设置默认端口
 HttpClient client = vertx.createHttpClient(options);
 client.request(HttpMethod.GET, "/some-uri", ar1 -> {
   if (ar1.succeeded()) {
@@ -1001,15 +1001,15 @@ client.request(HttpMethod.GET, "/some-uri", ar1 -> {
 });
 ----
 
-==== Writing request headers
+==== 设置请求头
 
-You can write headers to a request using the `link:../../apidocs/io/vertx/core/http/HttpHeaders.html[HttpHeaders]` as follows:
+可以使用 `link:../../apidocs/io/vertx/core/http/HttpHeaders.html[HttpHeaders]` 设置请求头，比如:
 
 [source,java]
 ----
 HttpClient client = vertx.createHttpClient();
 
-// Write some headers using the headers multi-map
+// 使用MultiMap设置请求头
 MultiMap headers = HttpHeaders.set("content-type", "application/json").set("other-header", "foo");
 
 client.request(HttpMethod.GET, "some-uri", ar1 -> {
@@ -1026,10 +1026,10 @@ client.request(HttpMethod.GET, "some-uri", ar1 -> {
 });
 ----
 
-The headers are an instance of `link:../../apidocs/io/vertx/core/MultiMap.html[MultiMap]` which provides operations for adding, setting and removing
-entries. Http headers allow more than one value for a specific key.
+这个headers是 `link:../../apidocs/io/vertx/core/MultiMap.html[MultiMap]` 的实例，它提供了添加、设置、删除条目的操作。
+HTTP请求头允许一个特定的键包含多个值。
 
-You can also write headers using `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#putHeader-java.lang.String-java.lang.String-[putHeader]`
+您也可以使用 `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#putHeader-java.lang.String-java.lang.String-[putHeader]` 方法设置请求头：
 
 [source,java]
 ----
@@ -1037,16 +1037,16 @@ request.putHeader("content-type", "application/json")
        .putHeader("other-header", "foo");
 ----
 
-If you wish to write headers to the request you must do so before any part of the request body is written.
+若您想写入请求头，则您必须在写入任何请求体之前这样做来设置请求头。
 
-==== Writing request and processing response
+==== 写请求并处理响应
 
-The `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]` `request` methods connects to the remote server
-or reuse an existing connection. The request instance obtained is pre-populated with some data
-such like the host or the request URI, but you need to send this request to the server.
+`link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]` 的 `request` 方法会连接到远程服务器，
+或复用一个已有连接。获得的请求实例已预先填充了一些数据，
+例如主机或请求URI，但您需要将此请求发送到服务器。
 
-You can call `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#send--[send]` to send a request such as an HTTP
-`GET` and process the asynchronous `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]`.
+调用 `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#send--[send]` 方法可以发送HTTP请求，
+如`GET`请求，并异步处理 `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]` 响应。
 
 [source,java]
 ----
@@ -1054,7 +1054,7 @@ client.request(HttpMethod.GET,8080, "myserver.mycompany.com", "/some-uri", ar1 -
   if (ar1.succeeded()) {
     HttpClientRequest request = ar1.result();
 
-    // Send the request and process the response
+    // 发送请求并处理响应
     request.send(ar -> {
       if (ar.succeeded()) {
         HttpClientResponse response = ar.result();
@@ -1067,10 +1067,10 @@ client.request(HttpMethod.GET,8080, "myserver.mycompany.com", "/some-uri", ar1 -
 });
 ----
 
-You can also send the request with a body.
+你也可以发送带请求体的请求。
 
-`link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#send-java.lang.String-[send]` with a string, the `Content-Length`
-header will be set for you if it was not previously set.
+使用 `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#send-java.lang.String-[send]` 方法可以发送String类型的请求体， 
+如果 `Content-Length` 请求头没有预先设置，会自动设置。
 
 [source,java]
 ----
@@ -1078,7 +1078,7 @@ client.request(HttpMethod.GET,8080, "myserver.mycompany.com", "/some-uri", ar1 -
   if (ar1.succeeded()) {
     HttpClientRequest request = ar1.result();
 
-    // Send the request and process the response
+    // 发送请求并处理响应
     request.send("Hello World", ar -> {
       if (ar.succeeded()) {
         HttpClientResponse response = ar.result();
@@ -1091,8 +1091,8 @@ client.request(HttpMethod.GET,8080, "myserver.mycompany.com", "/some-uri", ar1 -
 });
 ----
 
-`link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#send-io.vertx.core.buffer.Buffer-[send]` with a buffer, the
-`Content-Length` header will be set for you if it was not previously set.
+使用 `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#send-io.vertx.core.buffer.Buffer-[send]` 方法可以发送Buffer类型的请求体， 
+如果 `Content-Length` 请求头没有预先设置，会自动设置。
 
 [source,java]
 ----
@@ -1106,8 +1106,8 @@ request.send(Buffer.buffer("Hello World"), ar -> {
 });
 ----
 
-`link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#send-io.vertx.core.streams.ReadStream-[send]` with a stream, if
-the `Content-Length` header was not previously set, the request is sent with a chunked `Content-Encoding`.
+使用 `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#send-io.vertx.core.streams.ReadStream-[send]` 方法可以发送Stream类型的请求体，
+如果 `Content-Length` 请求头没有预先设置，会设置分块传输的 `Content-Encoding` 请求头。
 
 [source,java]
 ----
@@ -1123,15 +1123,15 @@ request
 });
 ----
 
-==== Streaming Request body
+==== 发送流的请求体
 
-The `send` method send requests at once.
+HttpClient的 `send` 方法在调用后马上发起请求。
 
-Sometimes you'll want to have low level control on how you write requests bodies.
+但有时候需要对请求体的写入做底层控制。
 
-The `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]` can be used to write the request body.
+`link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]` 可用于写请求体.
 
-Here are some examples of writing a POST request with a body:
+下面是发起带请求体的POST请求的例子：
 
 [source,java]
 ----
@@ -1143,16 +1143,16 @@ client.request(HttpMethod.POST, "some-uri")
       System.out.println("Received response with status code " + response.statusCode());
     });
 
-    // Now do stuff with the request
+    // 现在可以对请求做各种配置
     request.putHeader("content-length", "1000");
     request.putHeader("content-type", "text/plain");
     request.write(body);
 
-    // Make sure the request is ended when you're done with it
+    // 确认请求可以结束
     request.end();
 });
 
-// Or fluently:
+// 或使用链式调用风格:
 
 client.request(HttpMethod.POST, "some-uri")
   .onSuccess(request -> {
@@ -1169,83 +1169,83 @@ client.request(HttpMethod.POST, "some-uri")
 });
 ----
 
-Methods exist to write strings in UTF-8 encoding and in any specific encoding and to write buffers:
+也有一些方法可用于写入UTF-8编码的字符串，或以其他特定编码写入buffer：
 
 [source,java]
 ----
 request.write("some data");
 
-// Write string encoded in specific encoding
+// 指定字符串编码
 request.write("some other data", "UTF-16");
 
-// Write a buffer
+// 通过buffer写入
 Buffer buffer = Buffer.buffer();
 buffer.appendInt(123).appendLong(245l);
 request.write(buffer);
 ----
 
-If you are just writing a single string or buffer to the HTTP request you can write it and end the request in a
-single call to the `end` function.
+如果你的http请求只需要写入一个字符串或buffer，
+可以直接调用 `end` 方法。
 
 [source,java]
 ----
 request.end("some simple data");
 
-// Write buffer and end the request (send it) in a single call
+// 通过调用一次end方法，写入一个buffer并结束请求
 Buffer buffer = Buffer.buffer().appendDouble(12.34d).appendLong(432l);
 request.end(buffer);
 ----
 
-When you're writing to a request, the first call to `write` will result in the request headers being written
-out to the wire.
+当您写入请求时，第一次调用 `write` 方法将先将请求头写入到
+请求报文中。
 
-The actual write is asynchronous and might not occur until some time after the call has returned.
+实际写入操作是异步的，它可能在调用返回一段时间后才发生。
 
-Non-chunked HTTP requests with a request body require a `Content-Length` header to be provided.
+带请求体的非分块 HTTP 请求需要提供 `Content-Length` 头。
 
-Consequently, if you are not using chunked HTTP then you must set the `Content-Length` header before writing
-to the request, as it will be too late otherwise.
+因此，若您不使用 HTTP 分块，则必须在写入请求之前设置 `Content-Length` 头，
+否则会出错。
 
-If you are calling one of the `end` methods that take a string or buffer then Vert.x will automatically calculate
-and set the `Content-Length` header before writing the request body.
+若您在调用其中一个 `end` 方法处理 String 或 Buffer，在写入请求体之前，Vert.x 将自动计算并
+设置 `Content-Length`。
 
-If you are using HTTP chunking a a `Content-Length` header is not required, so you do not have to calculate the size
-up-front.
+若您在使用HTTP 分块模式，则不需要 `Content-Length` 头，因此您不必
+先计算大小。
 
-==== Ending streamed HTTP requests
+==== 结束HTTP请求流
 
-Once you have finished with the HTTP request you must end it with one of the `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#end-java.lang.String-[end]`
-operations.
+一旦完成了 HTTP 请求的准备工作，您必须调用其中一个 `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#end-java.lang.String-[end]` 方法来
+发送该请求（结束请求）。
 
-Ending a request causes any headers to be written, if they have not already been written and the request to be marked
-as complete.
+结束一个请求时，若请求头尚未被写入，会导致它们被写入，并且请求被标记
+成完成的。
 
-Requests can be ended in several ways. With no arguments the request is simply ended:
+请求可以通过多种方式结束。无参简单结束请求的方式如：
 
 [source,java]
 ----
 request.end();
 ----
 
-Or a string or buffer can be provided in the call to `end`. This is like calling `write` with the string or buffer
-before calling `end` with no arguments
+或可以在调用 `end` 方法时提供 String 或 Buffer，这个和先调用带 String/Buffer 参数的 `write` 方法之后
+再调用无参 `end` 方法一样：
 
 [source,java]
 ----
 request.end("some-data");
 
-// End it with a buffer
+// 使用buffer结束
 Buffer buffer = Buffer.buffer().appendFloat(12.3f).appendInt(321);
 request.end(buffer);
 ----
 
-==== Using the request as a stream
+==== 使用流式请求
 
-An `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]` instance is also a `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` instance.
+`link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]` 实例实现了 `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` 接口。
 
-You can pipe to it from any `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` instance.
+这意味着您可以从任何 `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 实例将数据泵入请求中。
 
-For, example, you could pipe a file on disk to a http request body as follows:
+例如，您可以将磁盘上的文件直接泵送到HTTP 请求体中，如下所示：
 
 [source,java]
 ----
@@ -1253,23 +1253,23 @@ request.setChunked(true);
 file.pipeTo(request);
 ----
 
-==== Chunked HTTP requests
+==== 分块 HTTP 请求
 
-Vert.x supports http://en.wikipedia.org/wiki/Chunked_transfer_encoding[HTTP Chunked Transfer Encoding] for requests.
+Vert.x 支持 http://en.wikipedia.org/wiki/Chunked_transfer_encoding[HTTP Chunked Transfer Encoding] 请求。
 
-This allows the HTTP request body to be written in chunks, and is normally used when a large request body is being streamed
-to the server, whose size is not known in advance.
+这允许使用块方式写入HTTP 请求体，这个在请求体比较大需要流式
+发送到服务器，或预先不知道大小时很常用。
 
-You put the HTTP request into chunked mode using `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#setChunked-boolean-[setChunked]`.
+您可使用 `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#setChunked-boolean-[setChunked]` 将HTTP 请求设置成分块模式。
 
-In chunked mode each call to write will cause a new chunk to be written to the wire. In chunked mode there is
-no need to set the `Content-Length` of the request up-front.
+在分块模式下，每次调用 `write` 方法将导致新的块被写入到报文。
+这种模式中，无需先设置请求头中的 `Content-Length`。
 
 [source,java]
 ----
 request.setChunked(true);
 
-// Write some chunks
+// 写一些块
 for (int i = 0; i < 10; i++) {
   request.write("this-is-chunk-" + i);
 }
@@ -1277,20 +1277,20 @@ for (int i = 0; i < 10; i++) {
 request.end();
 ----
 
-==== Request timeouts
+==== 请求超时
 
-You can set a timeout for a specific http request using `link:../../apidocs/io/vertx/core/http/RequestOptions.html#setTimeout-long-[setTimeout]` or
-`link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#setTimeout-long-[setTimeout]`.
+您可使用 `link:../../apidocs/io/vertx/core/http/RequestOptions.html#setTimeout-long-[setTimeout]` 或
+`link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#setTimeout-long-[setTimeout]` 设置一个特定 HTTP 请求的超时时间。
 
-If the request does not return any data within the timeout period an exception will be passed to the exception handler
-(if provided) and the request will be closed.
+若请求在超时期限内未返回任何数据，则异常将会被传给异常处理器
+（若已提供），并且请求将会被关闭。
 
-==== Writing HTTP/2 frames
+==== 写 HTTP/2 帧
 
-HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
-of frames to be sent and received.
+HTTP/2 是用于 HTTP 请求/响应模型的具有各种帧的一个帧协议，该协议允许
+发送和接收其他类型的帧。
 
-To send such frames, you can use the `link:../../apidocs/io/vertx/core/streams/WriteStream.html#write-java.lang.Object-[write]` on the request. Here's an example:
+要发送这样的帧，您可以使用 `link:../../apidocs/io/vertx/core/streams/WriteStream.html#write-java.lang.Object-[write]` 方法写入请求，以下是一个例子：
 
 [source,java]
 ----
@@ -1298,33 +1298,33 @@ int frameType = 40;
 int frameStatus = 10;
 Buffer payload = Buffer.buffer("some data");
 
-// Sending a frame to the server
+// 发送一帧到服务器
 request.writeCustomFrame(frameType, frameStatus, payload);
 ----
 
-==== Stream reset
+==== 流重置
 
-HTTP/1.x does not allow a clean reset of a request or a response stream, for example when a client uploads a resource already
-present on the server, the server needs to accept the entire response.
+HTTP/1.x 不允许请求或响应流进行重置，如当客户端上传了服务器上
+存在的资源时，服务器依然要接收整个响应。
 
-HTTP/2 supports stream reset at any time during the request/response:
+HTTP/2 在请求/响应期间随时支持流重置：
 
 [source,java]
 ----
 request.reset();
 ----
 
-By default the NO_ERROR (0) error code is sent, another code can sent instead:
+默认情况，发送 `NO_ERROR(0)` 错误代码，可发送另一个代码：
 
 [source,java]
 ----
 request.reset(8);
 ----
 
-The HTTP/2 specification defines the list of http://httpwg.org/specs/rfc7540.html#ErrorCodes[error codes] one can use.
+HTTP/2规范定义了可使用的 http://httpwg.org/specs/rfc7540.html#ErrorCodes[错误码] 列表。
 
-The request handler are notified of stream reset events with the `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#exceptionHandler-io.vertx.core.Handler-[request handler]` and
-`link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#exceptionHandler-io.vertx.core.Handler-[response handler]`:
+若使用了 `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#exceptionHandler-io.vertx.core.Handler-[request handler]` 和 
+`link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#exceptionHandler-io.vertx.core.Handler-[response handler]` 两个处理器过后，在流重置完成时您将会收到通知。
 
 [source,java]
 ----
@@ -1336,13 +1336,13 @@ request.exceptionHandler(err -> {
 });
 ----
 
-=== Handling HTTP responses
+=== 处理 HTTP 响应
 
-You receive an instance of `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]` into the handler that you specify in of
-the request methods or by setting a handler directly on the `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]` object.
+您可以在请求方法中指定处理器或通过 `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]` 对象直接设置处理器
+来接收到 `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]` 的实例。
 
-You can query the status code and the status message of the response with `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#statusCode--[statusCode]`
-and `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#statusMessage--[statusMessage]`.
+您可以通过 `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#statusCode--[statusCode]` 
+和 `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#statusMessage--[statusMessage]` 方法从响应中查询响应的状态码和状态消息：
 
 [source,java]
 ----
@@ -1351,41 +1351,41 @@ request.send(ar2 -> {
 
     HttpClientResponse response = ar2.result();
 
-    // the status code - e.g. 200 or 404
+    // 状态代码,如:200、404
     System.out.println("Status code is " + response.statusCode());
 
-    // the status message e.g. "OK" or "Not Found".
+    // 状态消息,如:OK、Not Found
     System.out.println("Status message is " + response.statusMessage());
   }
 });
 
-// Similar to above, set a completion handler and end the request
+// 与上面类似，设置一个请求发送完成的handler并结束请求
 request
   .response(ar2 -> {
     if (ar2.succeeded()) {
 
       HttpClientResponse response = ar2.result();
 
-      // the status code - e.g. 200 or 404
+      // 状态代码,如:200、404
       System.out.println("Status code is " + response.statusCode());
 
-      // the status message e.g. "OK" or "Not Found".
+      // 状态消息,如:OK、Not Found
       System.out.println("Status message is " + response.statusMessage());
     }
   })
   .end();
 ----
 
-==== Using the response as a stream
+==== 使用流式响应
 
-The `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]` instance is also a `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` which means
-you can pipe it to any `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` instance.
+`link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]` 实现了 `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` ，这意味着
+您可以泵送数据到任何 `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` 实例。
 
-==== Response headers and trailers
+==== 响应头和尾
 
-Http responses can contain headers. Use `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#headers--[headers]` to get the headers.
+HTTP 响应可包含头信息。您可以使用 `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#headers--[headers]` 方法来读取响应头。
 
-The object returned is a `link:../../apidocs/io/vertx/core/MultiMap.html[MultiMap]` as HTTP headers can contain multiple values for single keys.
+该方法返回的对象是 一个 `link:../../apidocs/io/vertx/core/MultiMap.html[MultiMap]` 实例，因为 HTTP 响应头中单个键可以关联多个值。
 
 [source,java]
 ----
@@ -1393,20 +1393,20 @@ String contentType = response.headers().get("content-type");
 String contentLength = response.headers().get("content-lengh");
 ----
 
-Chunked HTTP responses can also contain trailers - these are sent in the last chunk of the response body.
+分块 HTTP 响应还可以包含响应尾(trailer) —— 这实际上是在发送响应体的最后一个（数据）块。
 
-You use `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#trailers--[trailers]` to get the trailers. Trailers are also a `link:../../apidocs/io/vertx/core/MultiMap.html[MultiMap]`.
+您可使用 `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#trailers--[trailers]` 方法读取响应尾，尾数据也是一个 `link:../../apidocs/io/vertx/core/MultiMap.html[MultiMap]` 。
 
-==== Reading the request body
+==== 读取请求体
 
-The response handler is called when the headers of the response have been read from the wire.
+当从报文中读取到响应头时，响应处理器就会被调用。
 
-If the response has a body this might arrive in several pieces some time after the headers have been read. We
-don't wait for all the body to arrive before calling the response handler as the response could be very large and we
-might be waiting a long time, or run out of memory for large responses.
+如果收到的HTTP 响应包含响应体（正文），它可能会在响应头被读取后的某个时间以分片的方式到达。
+在调用响应处理器之前，我们不要等待所有的响应体到达，因为它可能非常大而
+要等待很长时间、又或者会花费大量内存。
 
-As parts of the response body arrive, the `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#handler-io.vertx.core.Handler-[handler]` is called with
-a `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]` representing the piece of the body:
+当响应体的某部分（数据）到达时，`link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#handler-io.vertx.core.Handler-[handler]` 方法绑定的回调函数将会被调用，
+其中传入的 `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]` 中包含了响应体的这一分片（部分）内容：
 
 [source,java]
 ----
@@ -1424,8 +1424,8 @@ client.request(HttpMethod.GET, "some-uri", ar1 -> {
 });
 ----
 
-If you know the response body is not very large and want to aggregate it all in memory before handling it, you can
-either aggregate it yourself:
+若您知道响应体不是很大，并想在处理之前在内存中聚合所有响应体数据，那么您可以
+自己聚合：
 
 [source,java]
 ----
@@ -1435,7 +1435,7 @@ request.send(ar2 -> {
 
     HttpClientResponse response = ar2.result();
 
-    // Create an empty buffer
+    // 创建空的缓冲区
     Buffer totalBuffer = Buffer.buffer();
 
     response.handler(buffer -> {
@@ -1445,15 +1445,15 @@ request.send(ar2 -> {
     });
 
     response.endHandler(v -> {
-      // Now all the body has been read
+      // 现在所有的响应体都读取了
       System.out.println("Total response body length is " + totalBuffer.length());
     });
   }
 });
 ----
 
-Or you can use the convenience `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#body-io.vertx.core.Handler-[body]` which
-is called with the entire body when the response has been fully read:
+或者当响应已被完全读取时，您可以使用 `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#body-io.vertx.core.Handler-[body]` 方法
+以便读取整个响应体：
 
 [source,java]
 ----
@@ -1465,7 +1465,7 @@ request.send(ar1 -> {
 
       if (ar2.succeeded()) {
         Buffer body = ar2.result();
-        // Now all the body has been read
+        // 现在所有的响应体都读取了
         System.out.println("Total response body length is " + body.length());
       }
     });
@@ -1473,10 +1473,10 @@ request.send(ar1 -> {
 });
 ----
 
-==== Response end handler
+==== 响应完成处理器
 
-The response `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#endHandler-io.vertx.core.Handler-[endHandler]` is called when the entire response body has been read
-or immediately after the headers have been read and the response handler has been called if there is no body.
+当整个响应体被完全读取或者无响应体的响应头被完全读取时，响应的 `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#endHandler-io.vertx.core.Handler-[endHandler]` 
+就会被调用。
 
 ==== Request and response composition
 
@@ -1587,20 +1587,20 @@ Future<Void> future = client
     }));
 ----
 
-==== Reading cookies from the response
+==== 从响应中读取Cookie
 
-You can retrieve the list of cookies from a response using `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#cookies--[cookies]`.
+您可以通过 `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#cookies--[cookies]` 方法从响应中获取 Cookie 列表。
 
-Alternatively you can just parse the `Set-Cookie` headers yourself in the response.
+或者您可以在响应中自己解析 `Set-Cookie` 头。
 
-==== 30x redirection handling
+==== 30x 重定向处理器
 
-The client can be configured to follow HTTP redirections provided by the `Location` response header when the client receives:
+客户端可配置成根据 `Location` 响应头遵循HTTP 重定向规则：
 
-* a `301`, `302`, `307` or `308` status code along with a HTTP GET or HEAD method
-* a `303` status code, in addition the directed request perform an HTTP GET methodn
+* GET或HEAD请求的HTTP响应码：`301`、`302`、`307` 或 `308` 
+* GET请求的HTTP响应码 `303` 
 
-Here's an example:
+这有个例子：
 
 [source,java]
 ----
@@ -1620,7 +1620,7 @@ client.request(HttpMethod.GET, "some-uri", ar1 -> {
 });
 ----
 
-The maximum redirects is `16` by default and can be changed with `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setMaxRedirects-int-[setMaxRedirects]`.
+默认情况最大的重定向数为 `16`，您可使用 `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setMaxRedirects-int-[setMaxRedirects]` 方法设置。
 
 [source,java]
 ----
@@ -1644,67 +1644,67 @@ client.request(HttpMethod.GET, "some-uri", ar1 -> {
 });
 ----
 
-One size does not fit all and the default redirection policy may not be adapted to your needs.
+没有放之四海而皆准的策略，缺省的重定向策略可能不能满足您的需要。
 
-The default redirection policy can changed with a custom implementation:
+默认重定向策略可使用自定义实现更改：
 
 [source,java]
 ----
 client.redirectHandler(response -> {
 
-  // Only follow 301 code
+  // 仅仅遵循301状态代码
   if (response.statusCode() == 301 && response.getHeader("Location") != null) {
 
-    // Compute the redirect URI
+    // 计算重定向URI
     String absoluteURI = resolveURI(response.request().absoluteURI(), response.getHeader("Location"));
 
-    // Create a new ready to use request that the client will use
+    // 创建客户端将使用的新的可用请求
     return Future.succeededFuture(new RequestOptions().setAbsoluteURI(absoluteURI));
   }
 
-  // We don't redirect
+  // （其他情况）不需要重定向
   return null;
 });
 ----
 
-The policy handles the original `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]` received and returns either `null`
-or a `Future<HttpClientRequest>`.
+这个策略将会处理接收到的原始 `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]` ，并返回 `null` 
+或 `Future<HttpClientRequest>` 。
 
-- when `null` is returned, the original response is processed
-- when a future is returned, the request will be sent on its successful completion
-- when a future is returned, the exception handler set on the request is called on its failure
+* 当返回的是 `null` 时，处理原始响应
+* 当返回的是 `Future` 时，请求将在它成功完成后发送
+* 当返回的是 `Future` 时，请求失败时调用设置的异常处理器
 
-The returned request must be unsent so the original request handlers can be sent and the client can send it after.
+返回的请求必须是未发送的，这样原始请求处理器才会被发送而且客户端之后才能发送请求。
 
-Most of the original request settings will be propagated to the new request:
+大多数原始请求设置将会传播（拷贝）到新请求中：
 
-* request headers, unless if you have set some headers
-* request body unless the returned request uses a `GET` method
-* response handler
-* request exception handler
-* request timeout
+* 请求头，除非您已经设置了一些头
+* 请求体，除非返回的请求使用了 `GET` 方法
+* 响应处理器
+* 请求异常处理器
+* 请求超时
 
-==== 100-Continue handling
+==== 100-Continue 处理
 
-According to the http://www.w3.org/Protocols/rfc2616/rfc2616-sec8.html[HTTP 1.1 specification] a client can set a
-header `Expect: 100-Continue` and send the request header before sending the rest of the request body.
+根据 http://www.w3.org/Protocols/rfc2616/rfc2616-sec8.html[HTTP/1.1 规范] ，一个客户端可以设置
+请求头 `Expect: 100-Continue`，并且在发送剩余请求体之前先发送请求头。
 
-The server can then respond with an interim response status `Status: 100 (Continue)` to signify to the client that
-it is ok to send the rest of the body.
+然后服务器可以通过回复临时响应状态 `Status: 100 (Continue)` 来告诉客户端
+可以发送请求的剩余部分。
 
-The idea here is it allows the server to authorise and accept/reject the request before large amounts of data are sent.
-Sending large amounts of data if the request might not be accepted is a waste of bandwidth and ties up the server
-in reading data that it will just discard.
+这里的想法是允许服务器在发送大量数据之前授权、接收/拒绝请求，若请求不能被接收，
+则发送大量数据信息会浪费带宽，并将服务器绑定在读取
+即将丢弃的无用数据中。
 
-Vert.x allows you to set a `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#continueHandler-io.vertx.core.Handler-[continueHandler]` on the
-client request object
+Vert.x 允许您在客户端请求对象中设置一个`link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#continueHandler-io.vertx.core.Handler-[continueHandler]` 。
 
-This will be called if the server sends back a `Status: 100 (Continue)` response to signify that it is ok to send
-the rest of the request.
+它将在服务器发回一个状态 `Status: 100 (Continue)` 时被调用, 同时也表示（客户端）可以
+发送请求的剩余部分。
 
-This is used in conjunction with `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#sendHead--[sendHead]`to send the head of the request.
+通常将其与 `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#sendHead--[sendHead]` 
+结合起来发送请求的头信息。
 
-Here's an example:
+以下是一个例子：
 
 [source,java]
 ----
@@ -1717,7 +1717,7 @@ client.request(HttpMethod.PUT, "some-uri")
     request.putHeader("Expect", "100-Continue");
 
     request.continueHandler(v -> {
-      // OK to send rest of body
+      // 可发送请求体剩余部分
       request.write("Some data");
       request.write("Some more data");
       request.end();
@@ -1727,26 +1727,26 @@ client.request(HttpMethod.PUT, "some-uri")
 });
 ----
 
-On the server side a Vert.x http server can be configured to automatically send back 100 Continue interim responses
-when it receives an `Expect: 100-Continue` header.
+在服务端，Vert.x HTTP Server可配置成接收到 `Expect: 100-Continue` 头时
+自动发回 `100 Continue` 临时响应信息。
 
-This is done by setting the option `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setHandle100ContinueAutomatically-boolean-[setHandle100ContinueAutomatically]`.
+这个可通过 `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setHandle100ContinueAutomatically-boolean-[setHandle100ContinueAutomatically]` 方法来设置。
 
-If you'd prefer to decide whether to send back continue responses manually, then this property should be set to
-`false` (the default), then you can inspect the headers and call `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#writeContinue--[writeContinue]`
-to have the client continue sending the body:
+若您想要决定是否手动发送持续响应，那么此属性可设置成
+`false` （默认值），然后您可以通过检查头信息并且调用 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#writeContinue--[writeContinue]` 
+方法让客户端持续发送请求体：
 
 [source,java]
 ----
 httpServer.requestHandler(request -> {
   if (request.getHeader("Expect").equalsIgnoreCase("100-Continue")) {
 
-    // Send a 100 continue response
+    // 发送100 Continue持续响应
     request.response().writeContinue();
 
-    // The client should send the body when it receives the 100 response
+    // 当客户端收到100响应代码则可以发送剩余请求体
     request.bodyHandler(body -> {
-      // Do something with body
+      // 处理请求体
     });
 
     request.endHandler(v -> {
@@ -1756,9 +1756,9 @@ httpServer.requestHandler(request -> {
 });
 ----
 
-You can also reject the request by sending back a failure status code directly: in this case the body
-should either be ignored or the connection should be closed (100-Continue is a performance hint and
-cannot be a logical protocol constraint):
+您也可以通过直接发送故障状态代码来拒绝该请求：这种情况下，请求体
+应该被忽略或连接应该被关闭（ `100-Continue` 是一个性能提示，
+并不是逻辑协议约束）：
 
 [source,java]
 ----
@@ -1769,16 +1769,16 @@ httpServer.requestHandler(request -> {
     boolean rejectAndClose = true;
     if (rejectAndClose) {
 
-      // Reject with a failure code and close the connection
-      // this is probably best with persistent connection
+      // 使用失败码拒绝并关闭这个连接，
+      // 这可能是长连接最好的
       request.response()
           .setStatusCode(405)
           .putHeader("Connection", "close")
           .end();
     } else {
 
-      // Reject with a failure code and ignore the body
-      // this may be appropriate if the body is small
+      // 使用失败码拒绝忽略请求体，
+      // 若体积很小，这是适用的
       request.response()
           .setStatusCode(405)
           .end();
@@ -1787,24 +1787,24 @@ httpServer.requestHandler(request -> {
 });
 ----
 
-==== Creating HTTP tunnels
+==== 创建HTTP隧道
 
-HTTP tunnels can be created with `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#connect-io.vertx.core.Handler-[connect]`:
+可以使用 `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#connect-io.vertx.core.Handler-[connect]` 创建HTTP隧道：
 
 [source,java]
 ----
 client.request(HttpMethod.CONNECT, "some-uri")
   .onSuccess(request -> {
 
-    // Connect to the server
+    // 连接到服务器
     request.connect(ar -> {
       if (ar.succeeded()) {
         HttpClientResponse response = ar.result();
 
         if (response.statusCode() != 200) {
-          // Connect failed for some reason
+          // 某些原因连接失败
         } else {
-          // Tunnel created, raw buffers are transmitted on the wire
+          // HTTP隧道创建成功，原始数据将传输到缓冲区
           NetSocket socket = response.netSocket();
         }
       }
@@ -1812,17 +1812,17 @@ client.request(HttpMethod.CONNECT, "some-uri")
 });
 ----
 
-The handler will be called after the HTTP response header is received, the socket will be ready for tunneling
-and will send and receive buffers.
+收到HTTP响应头时，会调用上面传入的handler，socket也会准备好隧道传输，
+并将会发送、接收数据到缓冲区。
 
-`connect` works like `send`, but it reconfigures the transport to exchange
-raw buffers.
+`connect` 方法的作用类似 `send` 方法，区别在于前者重新配置传输交换
+原始数据缓冲区。
 
-==== Client push
+==== 客户端推送
 
-Server push is a new feature of HTTP/2 that enables sending multiple responses in parallel for a single client request.
+服务器推送(Server Push)是 HTTP/2 的一个新功能，它可以为单个客户端并行发送多个响应。
 
-A push handler can be set on a request to receive the request/response pushed by the server:
+可以在接收服务器推送的请求/响应的请求上设置一个推送处理器：
 
 [source,java]
 ----
@@ -1831,27 +1831,27 @@ client.request(HttpMethod.GET, "/index.html")
 
     request
       .response().onComplete(response -> {
-        // Process index.html response
+        // 处理index.html响应
       });
 
-    // Set a push handler to be aware of any resource pushed by the server
+    // 设置一个推送处理器来感知服务器推送的任何资源
     request.pushHandler(pushedRequest -> {
 
-      // A resource is pushed for this request
+      // 为当前请求推送资源
       System.out.println("Server pushed " + pushedRequest.path());
 
-      // Set an handler for the response
+      // 为响应设置处理器
       pushedRequest.response().onComplete(pushedResponse -> {
         System.out.println("The response for the pushed request");
       });
     });
 
-    // End the request
+    // 结束请求
     request.end();
 });
 ----
 
-If the client does not want to receive a pushed request, it can reset the stream:
+若客户端不想收到推送请求，它可重置流：
 
 [source,java]
 ----
@@ -1859,21 +1859,21 @@ request.pushHandler(pushedRequest -> {
   if (pushedRequest.path().equals("/main.js")) {
     pushedRequest.reset();
   } else {
-    // Handle it
+    // 处理逻辑
   }
 });
 ----
 
-When no handler is set, any stream pushed will be automatically cancelled by the client with
-a stream reset (`8` error code).
+若没有设置任何处理器时，任何被推送的流将被客户端自动
+重置流（错误代码 `8` ）。
 
-==== Receiving custom HTTP/2 frames
+==== 接收自定义 HTTP/2 帧
 
-HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind of
-frames to be sent and received.
+HTTP/2 是用于 HTTP 请求/响应模型的具有各种帧的一个帧协议，该协议允许
+发送和接收其他类型的帧。
 
-To receive custom frames, you can use the customFrameHandler on the request, this will get called every time a custom
-frame arrives. Here's an example:
+要接收自定义帧，您可以在请求中使用 `customFrameHandler`，每次自定义帧到达时就会
+调用它。以下是一个例子：
 
 [source,java]
 ----
@@ -1884,90 +1884,90 @@ response.customFrameHandler(frame -> {
 });
 ----
 
-=== Enabling compression on the client
+=== 客户端启用压缩
 
-The http client comes with support for HTTP Compression out of the box.
+HTTP 客户端支持开箱即用的 HTTP 压缩功能。
 
-This means the client can let the remote http server know that it supports compression, and will be able to handle
-compressed response bodies.
+这意味着客户端可以让远程服务器知道它支持压缩，并且能处理
+压缩过的响应体（数据）。
 
-An http server is free to either compress with one of the supported compression algorithms or to send the body back
-without compressing it at all. So this is only a hint for the Http server which it may ignore at will.
+HTTP 服务端可以自由地使用自己支持的压缩算法之一进行压缩，也可以在
+不压缩的情况下将响应体发回。所以这仅仅是 HTTP 服务端的一个可能被随意忽略的提示。
 
-To tell the http server which compression is supported by the client it will include an `Accept-Encoding` header with
-the supported compression algorithm as value. Multiple compression algorithms are supported. In case of Vert.x this
-will result in the following header added:
+要告诉服务器当前客户端支持哪种压缩，则它（请求头）将包含一个 `Accept-Encoding` 头，
+其值为可支持的压缩算法，（该值可）支持多种压缩算法。这种情况 Vert.x 
+将添加以下头：
 
 Accept-Encoding: gzip, deflate
 
-The server will choose then from one of these. You can detect if a server ompressed the body by checking for the
-`Content-Encoding` header in the response sent back from it.
+服务器将从其中（算法）选择一个，您可以通过服务器发回的响应中响应头 
+`Content-Encoding` 来检测服务器是否适应这个正文。
 
-If the body of the response was compressed via gzip it will include for example the following header:
+若响应体通过 `gzip` 压缩，它将包含例如下边的头：
 
 Content-Encoding: gzip
 
-To enable compression set `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setTryUseCompression-boolean-[setTryUseCompression]` on the options
-used when creating the client.
+创建客户端时可使用 `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setTryUseCompression-boolean-[setTryUseCompression]` 设置配置项
+启用压缩。
 
-By default compression is disabled.
+默认情况压缩被禁用。
 
-=== HTTP/1.x pooling and keep alive
+=== HTTP/1.x pooling 和 keep alive
 
-Http keep alive allows http connections to be used for more than one request. This can be a more efficient use of
-connections when you're making multiple requests to the same server.
+HTTP 的 Keep Alive 允许单个 HTTP 连接用于多个请求。当您向同一台服务器发送多个请求时，
+可以更加有效使用连接。
 
-For HTTP/1.x versions, the http client supports pooling of connections, allowing you to reuse connections between requests.
+对于 HTTP/1.x 版本，HTTP 客户端支持连接池，它允许您重用请求之间的连接。
 
-For pooling to work, keep alive must be true using `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setKeepAlive-boolean-[setKeepAlive]`
-on the options used when configuring the client. The default value is true.
+为了连接池（能）工作，配置客户端时，keep alive 必须通过 `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setKeepAlive-boolean-[setKeepAlive]` 
+方法设置成 `true` 。默认值为 `true` 。
 
-When keep alive is enabled. Vert.x will add a `Connection: Keep-Alive` header to each HTTP/1.0 request sent.
-When keep alive is disabled. Vert.x will add a `Connection: Close` header to each HTTP/1.1 request sent to signal
-that the connection will be closed after completion of the response.
+当 keep alive 启用时，Vert.x 将为每一个发送的 HTTP/1.0 请求添加一个 `Connection: Keep-Alive` 头。
+当 keep alive 禁用时，Vert.x 将为每一个 HTTP/1.1 请求添加一个 `Connection: Close` 头 —— 
+表示在响应完成后连接将被关闭。
 
-The maximum number of connections to pool *for each server* is configured using `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setMaxPoolSize-int-[setMaxPoolSize]`
+可使用 `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setMaxPoolSize-int-[setMaxPoolSize]` 方法 *为每个服务器* 配置连接池的最大连接数。
 
-When making a request with pooling enabled, Vert.x will create a new connection if there are less than the maximum number of
-connections already created for that server, otherwise it will add the request to a queue.
+当启用连接池创建请求时，若存在少于已经为服务器创建的最大连接数，Vert.x 将创建一个新连接，
+否则直接将请求添加到队列中。
 
-Keep alive connections will be closed by the client automatically after a timeout. The timeout can be specified
-by the server using the `keep-alive` header:
-
+Keep Alive的连接将在闲置一段时间后被客户端自动关闭。这个超时时间可以在服务端通过
+ `keep-alive` 请求头设置：
+ 
 ----
 keep-alive: timeout=30
 ----
 
-You can set the default timeout using `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setKeepAliveTimeout-int-[setKeepAliveTimeout]` - any
-connections not used within this timeout will be closed. Please note the timeout value is in seconds not milliseconds.
+或者，您可使用 `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setKeepAliveTimeout-int-[setKeepAliveTimeout]` 设置空闲时间——在设置的时间内然后没使用的连接将被关闭。
+请注意空闲超时值以秒为单位而不是毫秒。
 
 === HTTP/1.1 pipe-lining
 
-The client also supports pipe-lining of requests on a connection.
+客户端还支持连接上的请求管道(pipeline)。
 
-Pipe-lining means another request is sent on the same connection before the response from the preceding one has
-returned. Pipe-lining is not appropriate for all requests.
+管道意味着在返回一个响应之前，在同一个连接上发送另一个请求。
+管道不适合所有请求。
 
-To enable pipe-lining, it must be enabled using `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setPipelining-boolean-[setPipelining]`.
-By default pipe-lining is disabled.
+若要启用管道，必须调用 `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setPipelining-boolean-[setPipelining]` 方法。
+默认禁用管道的。
 
-When pipe-lining is enabled requests will be written to connections without waiting for previous responses to return.
+当启用管道时，请求可以不等待以前的响应返回而写入到连接。
 
-The number of pipe-lined requests over a single connection is limited by `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setPipeliningLimit-int-[setPipeliningLimit]`.
-This option defines the maximum number of http requests sent to the server awaiting for a response. This limit ensures the
-fairness of the distribution of the client requests over the connections to the same server.
+单个连接的管道请求限制数由 `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setPipeliningLimit-int-[setPipeliningLimit]` 方法设置。
+此选项定义了发送到服务器的等待响应的最大请求数。这个限制可以确保
+和同一个服务器的连接分发到客户端的公平性。
 
-=== HTTP/2 multiplexing
+=== HTTP/2 多路复用
 
-HTTP/2 advocates to use a single connection to a server, by default the http client uses a single
-connection for each server, all the streams to the same server are multiplexed over the same connection.
+HTTP/2 提倡使用服务器的单一连接，默认情况下，HTTP 客户端针对每个服务器都使用单一连接，
+同样服务器上的所有流都会复用到对应连接中。
 
-When the clients needs to use more than a single connection and use pooling, the `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setHttp2MaxPoolSize-int-[setHttp2MaxPoolSize]`
-shall be used.
+当客户端需要使用连接池并使用超过一个连接时，则可使用 `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setHttp2MaxPoolSize-int-[setHttp2MaxPoolSize]` 
+设置。
 
-When it is desirable to limit the number of multiplexed streams per connection and use a connection
-pool instead of a single connection, `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setHttp2MultiplexingLimit-int-[setHttp2MultiplexingLimit]`
-can be used.
+当您希望限制每个连接的多路复用流数量而使用连接池
+而不是单个连接时，可使用 `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setHttp2MultiplexingLimit-int-[setHttp2MultiplexingLimit]` 
+设置。
 
 [source,java]
 ----
@@ -1979,37 +1979,37 @@ HttpClientOptions clientOptions = new HttpClientOptions().
 HttpClient client = vertx.createHttpClient(clientOptions);
 ----
 
-The multiplexing limit for a connection is a setting set on the client that limits the number of streams
-of a single connection. The effective value can be even lower if the server sets a lower limit
-with the `link:../../apidocs/io/vertx/core/http/Http2Settings.html#setMaxConcurrentStreams-long-[SETTINGS_MAX_CONCURRENT_STREAMS]` setting.
+连接的复用限制是在客户端上设置限制单个连接的流数量。
+如果服务器使用 `link:../../apidocs/io/vertx/core/http/Http2Settings.html#setMaxConcurrentStreams-long-[SETTINGS_MAX_CONCURRENT_STREAMS]` 设置了下限，
+则有效值可以更低。
 
-HTTP/2 connections will not be closed by the client automatically. To close them you can call `link:../../apidocs/io/vertx/core/http/HttpConnection.html#close--[close]`
-or close the client instance.
+HTTP/2 连接不会被客户端自动关闭，若要关闭它们，可以调用 `link:../../apidocs/io/vertx/core/http/HttpConnection.html#close--[close]` 来
+关闭客户端实例。
 
-Alternatively you can set idle timeout using `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setIdleTimeout-int-[setIdleTimeout]` - any
-connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
+或者，您可以使用 `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setIdleTimeout-int-[setIdleTimeout]` 设置空闲时间——
+这个时间内没有使用的任何连接将被关闭，注意，空闲时间以秒为单位，不是毫秒。
 
-=== HTTP connections
+=== HTTP 连接
 
-The `link:../../apidocs/io/vertx/core/http/HttpConnection.html[HttpConnection]` offers the API for dealing with HTTP connection events, lifecycle
-and settings.
+`link:../../apidocs/io/vertx/core/http/HttpConnection.html[HttpConnection]` 接口提供了处理HTTP 连接事件、生命周期、
+设置的API。
 
-HTTP/2 implements fully the `link:../../apidocs/io/vertx/core/http/HttpConnection.html[HttpConnection]` API.
+HTTP/2 实现了完整的 `link:../../apidocs/io/vertx/core/http/HttpConnection.html[HttpConnection]` API。
 
-HTTP/1.x implements partially the `link:../../apidocs/io/vertx/core/http/HttpConnection.html[HttpConnection]` API: only the close operation,
-the close handler and exception handler are implemented. This protocol does not provide semantics for
-the other operations.
+HTTP/1.x 实现了 `link:../../apidocs/io/vertx/core/http/HttpConnection.html[HttpConnection]` 中的部分API：仅实现了关闭操作、
+关闭处理器和异常处理器。该协议并不提供其他
+操作的语义。
 
-==== Server connections
+==== 服务端连接
 
-The `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#connection--[connection]` method returns the request connection on the server:
+`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#connection--[connection]` 方法会返回服务器上的请求连接：
 
 [source,java]
 ----
 HttpConnection connection = request.connection();
 ----
 
-A connection handler can be set on the server to be notified of any incoming connection:
+可以在服务器上设置连接处理器，任意连接传入时可得到通知：
 
 [source,java]
 ----
@@ -2020,16 +2020,16 @@ server.connectionHandler(connection -> {
 });
 ----
 
-==== Client connections
+==== 客户端连接
 
-The `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#connection--[connection]` method returns the request connection on the client:
+`link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#connection--[connection]` 方法会返回客户端上的连接请求：
 
 [source,java]
 ----
 HttpConnection connection = request.connection();
 ----
 
-A connection handler can be set on the client to be notified when a connection has been established happens:
+可以在请求上设置连接处理器在连接发生时通知：
 
 [source,java]
 ----
@@ -2038,25 +2038,25 @@ client.connectionHandler(connection -> {
 });
 ----
 
-==== Connection settings
+==== 连接配置
 
-The configuration of an HTTP/2 is configured by the `link:../../apidocs/io/vertx/core/http/Http2Settings.html[Http2Settings]` data object.
+HTTP/2 由 `link:../../apidocs/io/vertx/core/http/Http2Settings.html[Http2Settings]` 数据对象来配置。
 
-Each endpoint must respect the settings sent by the other side of the connection.
+每个 Endpoint 都必须遵守连接另一端的发送设置。
 
-When a connection is established, the client and the server exchange initial settings. Initial settings
-are configured by `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setInitialSettings-io.vertx.core.http.Http2Settings-[setInitialSettings]` on the client and
-`link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setInitialSettings-io.vertx.core.http.Http2Settings-[setInitialSettings]` on the server.
+当建立连接时，客户端和服务器交换初始配置，初始设置
+由客户端上的 `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setInitialSettings-io.vertx.core.http.Http2Settings-[setInitialSettings]` 和
+服务器上的 `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setInitialSettings-io.vertx.core.http.Http2Settings-[setInitialSettings]` 方法配置。
 
-The settings can be changed at any time after the connection is established:
+连接建立后可随时更改设置：
 
 [source,java]
 ----
 connection.updateSettings(new Http2Settings().setMaxConcurrentStreams(100));
 ----
 
-As the remote side should acknowledge on reception of the settings update, it's possible to give a callback
-to be notified of the acknowledgment:
+由于远程方应该确认接收者的配置更新，也有可能在回调中
+接收确认通知：
 
 [source,java]
 ----
@@ -2067,8 +2067,8 @@ connection.updateSettings(new Http2Settings().setMaxConcurrentStreams(100), ar -
 });
 ----
 
-Conversely the `link:../../apidocs/io/vertx/core/http/HttpConnection.html#remoteSettingsHandler-io.vertx.core.Handler-[remoteSettingsHandler]` is notified
-when the new remote settings are received:
+相反，在收到新的远程设置时会
+通知 `link:../../apidocs/io/vertx/core/http/HttpConnection.html#remoteSettingsHandler-io.vertx.core.Handler-[remoteSettingsHandler]` 。
 
 [source,java]
 ----
@@ -2077,13 +2077,13 @@ connection.remoteSettingsHandler(settings -> {
 });
 ----
 
-NOTE: this only applies to the HTTP/2 protocol
+NOTE: 此功能仅适用于 HTTP/2 协议。
 
-==== Connection ping
+==== 连接 Ping
 
-HTTP/2 connection ping is useful for determining the connection round-trip time or check the connection
-validity: `link:../../apidocs/io/vertx/core/http/HttpConnection.html#ping-io.vertx.core.buffer.Buffer-io.vertx.core.Handler-[ping]` sends a {@literal PING} frame to the remote
-endpoint:
+HTTP/2 连接 ping 对于确定连接往返时间或检查连接
+有效性很有用：`link:../../apidocs/io/vertx/core/http/HttpConnection.html#ping-io.vertx.core.buffer.Buffer-io.vertx.core.Handler-[ping]` 发送 {@literal PING} 帧到
+远端：
 
 [source,java]
 ----
@@ -2096,8 +2096,8 @@ connection.ping(data, pong -> {
 });
 ----
 
-Vert.x will send automatically an acknowledgement when a {@literal PING} frame is received,
-an handler can be set to be notified for each ping received:
+当接收到 {@literal PING} 帧时，Vert.x 将自动发送确认，
+可设置处理器当收到 ping 帧时发送通知调用处理器：
 
 [source,java]
 ----
@@ -2106,36 +2106,36 @@ connection.pingHandler(ping -> {
 });
 ----
 
-The handler is just notified, the acknowledgement is sent whatsoever. Such feature is aimed for
-implementing  protocols on top of HTTP/2.
+处理器只是接到通知，确认被发送，这个功能旨在
+基于 HTTP/2 协议之上实现。
 
-NOTE: this only applies to the HTTP/2 protocol
+NOTE: 此功能仅适用于 HTTP/2 协议。
 
-==== Connection shutdown and go away
+==== 连接关闭/GOAWAY
 
-Calling `link:../../apidocs/io/vertx/core/http/HttpConnection.html#shutdown--[shutdown]` will send a {@literal GOAWAY} frame to the
-remote side of the connection, asking it to stop creating streams: a client will stop doing new requests
-and a server will stop pushing responses. After the {@literal GOAWAY} frame is sent, the connection
-waits some time (30 seconds by default) until all current streams closed and close the connection:
+调用 `link:../../apidocs/io/vertx/core/http/HttpConnection.html#shutdown--[shutdown]` 方法将发送 {@literal GOAWAY} 帧到
+远程的连接，要求其停止创建流：客户端将停止发送新请求，
+并且服务器将停止推送响应。发送 {@literal GOAWAY} 帧后，连接
+将等待一段时间（默认为30秒），直到所有当前流关闭和连接关闭。
 
 [source,java]
 ----
 connection.shutdown();
 ----
 
-The `link:../../apidocs/io/vertx/core/http/HttpConnection.html#shutdownHandler-io.vertx.core.Handler-[shutdownHandler]` notifies when all streams have been closed, the
-connection is not yet closed.
+`link:../../apidocs/io/vertx/core/http/HttpConnection.html#shutdownHandler-io.vertx.core.Handler-[shutdownHandler]` 通知何时关闭所有流，
+连接尚未关闭。
 
-It's possible to just send a {@literal GOAWAY} frame, the main difference with a shutdown is that
-it will just tell the remote side of the connection to stop creating new streams without scheduling a connection
-close:
+有可能只需发送 {@literal GOAWAY} 帧，和关闭主要的区别在于
+它将只是告诉远程连接停止创建新流，而没有计划
+关闭连接：
 
 [source,java]
 ----
 connection.goAway(0);
 ----
 
-Conversely, it is also possible to be notified when {@literal GOAWAY} are received:
+相反，也可以在收到 `{@literal GOAWAY} 时收到通知：
 
 [source,java]
 ----
@@ -2144,59 +2144,59 @@ connection.goAwayHandler(goAway -> {
 });
 ----
 
-The `link:../../apidocs/io/vertx/core/http/HttpConnection.html#shutdownHandler-io.vertx.core.Handler-[shutdownHandler]` will be called when all current streams
-have been closed and the connection can be closed:
+当所有当前流已经关闭并且可关闭连接时，`link:../../apidocs/io/vertx/core/http/HttpConnection.html#shutdownHandler-io.vertx.core.Handler-[shutdownHandler]` 
+将被调用：
 
 [source,java]
 ----
 connection.goAway(0);
 connection.shutdownHandler(v -> {
 
-  // All streams are closed, close the connection
+  // 所有流被关闭时，关闭连接
   connection.close();
 });
 ----
 
-This applies also when a {@literal GOAWAY} is received.
+当接收到 {@literal GOAWAY} 时也适用。
 
-NOTE: this only applies to the HTTP/2 protocol
+NOTE: 此功能仅适用于HTTP/2协议。
 
-==== Connection close
+==== 连接关闭
 
-Connection `link:../../apidocs/io/vertx/core/http/HttpConnection.html#close--[close]` closes the connection:
+您可以通过 `link:../../apidocs/io/vertx/core/http/HttpConnection.html#close--[close]` 方法关闭连接：
 
-- it closes the socket for HTTP/1.x
-- a shutdown with no delay for HTTP/2, the {@literal GOAWAY} frame will still be sent before the connection is closed. *
+- 对于 HTTP/1.x 来说，它会关闭底层的 Socket
+- 对于 HTTP/2 来说，它将执行无延迟关闭， {@literal GOAWAY} 帧将会在连接关闭之前被发送
 
-The `link:../../apidocs/io/vertx/core/http/HttpConnection.html#closeHandler-io.vertx.core.Handler-[closeHandler]` notifies when a connection is closed.
+连接关闭时 `link:../../apidocs/io/vertx/core/http/HttpConnection.html#closeHandler-io.vertx.core.Handler-[closeHandler]` 将发出通知。
 
-=== HttpClient usage
+=== HttpClient 使用说明
 
-The HttpClient can be used in a Verticle or embedded.
+HttpClient可以在一个 Verticle 中使用或者嵌入使用。
 
-When used in a Verticle, the Verticle *should use its own client instance*.
+在 Verticle 中使用时，Verticle *应该使用自己的客户端实例* 。
 
-More generally a client should not be shared between different Vert.x contexts as it can lead to unexpected behavior.
+一般来说，不应该在不同的 Vert.x 上下文环境之间共享客户端，因为它可能导致不可预知的意外。
 
-For example a keep-alive connection will call the client handlers on the context of the request that opened the connection, subsequent requests will use
-the same context.
+例如：keep-alive的连接将在打开连接的请求上下文环境调用客户端处理器，后续请求将使用
+相同上下文环境。
 
-When this happen Vert.x detects it and log a warn:
+当这种情况发生时，Vert.x会检测到并记录下边警告：
 
 ----
 Reusing a connection with a different context: an HttpClient is probably shared between different Verticles
 ----
 
-The HttpClient can be embedded in a non Vert.x thread like a unit test or a plain java `main`: the client handlers
-will be called by different Vert.x threads and contexts, such contexts are created as needed. For production this
-usage is not recommended.
+HttpClient可以嵌套在非 Vert.x 线程中，如单元测试或纯Java的 `main` 线程中：客户端处理器
+将被不同的Vert.x 线程和上下文调用，这样的上下文会根据需要创建。对于生产环境，
+不推荐这样使用。
 
-=== Server sharing
+=== 水平扩展 - 服务端共享
 
-When several HTTP servers listen on the same port, vert.x orchestrates the request handling using a
-round-robin strategy.
+当多个 HTTP 服务端在同一个端口上监听时，Vert.x 会使用
+轮询策略来管理请求处理。
 
-Let's take a verticle creating a HTTP server such as:
+我们用 Verticle 来创建 HTTP 服务端，如：
 
 .io.vertx.examples.http.sharing.HttpServerVerticle
 [source,java]
@@ -2206,14 +2206,14 @@ vertx.createHttpServer().requestHandler(request -> {
 }).listen(8080);
 ----
 
-This service is listening on the port 8080. So, when this verticle is instantiated multiple times as with:
-`vertx run io.vertx.examples.http.sharing.HttpServerVerticle -instances 2`, what's happening ? If both
-verticles would bind to the same port, you would receive a socket exception. Fortunately, vert.x is handling
-this case for you. When you deploy another server on the same host and port as an existing server it doesn't
-actually try and create a new server listening on the same host/port. It binds only once to the socket. When
-receiving a request it calls the server handlers following a round robin strategy.
+这个服务兼通8080端口。那么当verticle被实例化多次，如： 
+`vertx run io.vertx.examples.http.sharing.HttpServerVerticle -instances 2` ，将会发生什么？如果两个
+Verticle 都绑定到同一个端口，您将收到一个 Socket 异常。幸运的是，Vert.x 可以为您处理
+这种情况。在与现有服务端相同的主机和端口上部署另一个服务器时，实际上并不会
+尝试创建在同一主机/端口上监听的新服务端，它只绑定一次到Socket，
+当接收到请求时，会按照轮询策略调用服务端的请求处理函数。
 
-Let's now imagine a client such as:
+我们现在想象一个客户端，如下：
 [source,java]
 ----
 vertx.setPeriodic(100, (l) -> {
@@ -2233,7 +2233,7 @@ vertx.setPeriodic(100, (l) -> {
 });
 ----
 
-Vert.x delegates the requests to one of the server sequentially:
+Vert.x 将请求顺序委托给其中一个服务器：
 
 [source]
 ----
@@ -2244,19 +2244,19 @@ Hello from i.v.e.h.s.HttpServerVerticle@2
 ...
 ----
 
-Consequently the servers can scale over available cores while each Vert.x verticle instance remains strictly
-single threaded, and you don't have to do any special tricks like writing load-balancers in order to scale your
-server on your multi-core machine.
+因此，服务器可直接扩展可用的核，而每个 Vert.x 中的 Verticle 实例仍然严格使用
+单线程，您不需要像编写负载均衡器那样使用任何特殊技巧去编写，
+以便在多核机器上扩展服务器。
 
-=== Using HTTPS with Vert.x
+=== 使用 HTTPS
 
-Vert.x http servers and clients can be configured to use HTTPS in exactly the same way as net servers.
+Vert.x 的 HTTP 服务端和客户端可以配置成和网络服务器完全相同的方式使用 HTTPS。
 
-Please see <<ssl, configuring net servers to use SSL>> for more information.
+有关详细信息，请参阅 <<ssl, 配置网络服务器以使用 SSL>> 章节。
 
-SSL can also be enabled/disabled per request with `link:../../apidocs/io/vertx/core/http/RequestOptions.html[RequestOptions]` or when
-specifying a scheme with `link:../../apidocs/io/vertx/core/http/RequestOptions.html#setAbsoluteURI-java.lang.String-[setAbsoluteURI]`
-method.
+SSL可以通过每个请求的 link:../../apidocs/io/vertx/core/http/RequestOptions.html[RequestOptions]` 来启用/禁用，或在
+指定模式时调用 `link:../../apidocs/io/vertx/core/http/RequestOptions.html#setAbsoluteURI-java.lang.String-[setAbsoluteURI]` 
+方法。
 
 [source,java]
 ----
@@ -2277,16 +2277,16 @@ client.request(new RequestOptions()
 });
 ----
 
-The `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setSsl-boolean-[setSsl]` setting acts as the default client setting.
+`link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setSsl-boolean-[setSsl]` 设置将用作客户端默认配置。
 
-The `link:../../apidocs/io/vertx/core/http/RequestOptions.html#setSsl-java.lang.Boolean-[setSsl]` overrides the default client setting
+`link:../../apidocs/io/vertx/core/http/RequestOptions.html#setSsl-java.lang.Boolean-[setSsl]` 将覆盖默认客户端设置。
 
-* setting the value to `false` will disable SSL/TLS even if the client is configured to use SSL/TLS
-* setting the value to `true` will enable SSL/TLS  even if the client is configured to not use SSL/TLS, the actual
-client SSL/TLS (such as trust, key/certificate, ciphers, ALPN, ...) will be reused
+* 即使客户端配置成使用 SSL/TLS，该值设置成 `false` 将禁用SSL/TLS。
+* 即使客户端配置成不使用 SSL/TLS，该值设置成 `true` 将启用SSL/TLS，
+实际的客户端SSL/TLS（如受信、密钥/证书、密码、ALPN 等）将被重用。
 
-Likewise `link:../../apidocs/io/vertx/core/http/RequestOptions.html#setAbsoluteURI-java.lang.String-[setAbsoluteURI]` scheme
-also overrides the default client setting.
+同样， `link:../../apidocs/io/vertx/core/http/RequestOptions.html#setAbsoluteURI-java.lang.String-[setAbsoluteURI]` 方法也会
+（在调用时）覆盖默认客户端设置。
 
 ==== Server Name Indication (SNI)
 
@@ -2296,22 +2296,22 @@ Vert.x http client will present the actual hostname as _server name_ during the 
 
 === WebSockets
 
-http://en.wikipedia.org/wiki/WebSocket[WebSockets] are a web technology that allows a full duplex socket-like
-connection between HTTP servers and HTTP clients (typically browsers).
+http://en.wikipedia.org/wiki/WebSocket[WebSockets] 是一种Web技术，可以在 
+HTTP 服务端和 HTTP 客户端（通常是浏览器）之间实现全双工 Socket 连接。
 
-Vert.x supports WebSockets on both the client and server-side.
+Vert.x HTTP 客户端和服务端都支持 WebSocket。
 
-==== WebSockets on the server
+==== 服务端 WebSocket
 
-There are two ways of handling WebSockets on the server side.
+在服务端处理 WebSocket 有两种方法。
 
 ===== WebSocket handler
 
-The first way involves providing a `link:../../apidocs/io/vertx/core/http/HttpServer.html#webSocketHandler-io.vertx.core.Handler-[webSocketHandler]`
-on the server instance.
+第一种方法需要在服务端实例上提供一个 `link:../../apidocs/io/vertx/core/http/HttpServer.html#webSocketHandler-io.vertx.core.Handler-[webSocketHandler]` 
+。
 
-When a WebSocket connection is made to the server, the handler will be called, passing in an instance of
-`link:../../apidocs/io/vertx/core/http/ServerWebSocket.html[ServerWebSocket]`.
+当对服务端创建 WebSocket 连接时，Vert.x 将向 `Handler` 传入一个 
+`link:../../apidocs/io/vertx/core/http/ServerWebSocket.html[ServerWebSocket]` 实例，在其中去处理它。
 
 [source,java]
 ----
@@ -2320,7 +2320,7 @@ server.webSocketHandler(webSocket -> {
 });
 ----
 
-You can choose to reject the WebSocket by calling `link:../../apidocs/io/vertx/core/http/ServerWebSocket.html#reject--[reject]`.
+您可以调用 `link:../../apidocs/io/vertx/core/http/ServerWebSocket.html#reject--[reject]` 方法来拒绝一个 WebSocket。
 
 [source,java]
 ----
@@ -2328,12 +2328,12 @@ server.webSocketHandler(webSocket -> {
   if (webSocket.path().equals("/myapi")) {
     webSocket.reject();
   } else {
-    // Do something
+    // 处理逻辑
   }
 });
 ----
 
-You can perform an asynchronous handshake by calling `link:../../apidocs/io/vertx/core/http/ServerWebSocket.html#setHandshake-io.vertx.core.Future-io.vertx.core.Handler-[setHandshake]` with a `Future`:
+调用 `link:../../apidocs/io/vertx/core/http/ServerWebSocket.html#setHandshake-io.vertx.core.Future-io.vertx.core.Handler-[setHandshake]` 并传入 `Future`， 可以实现异步处理WebSocket握手:
 
 [source,java]
 ----
@@ -2342,23 +2342,23 @@ server.webSocketHandler(webSocket -> {
   webSocket.setHandshake(promise.future());
   authenticate(webSocket.headers(), ar -> {
     if (ar.succeeded()) {
-      // Terminate the handshake with the status code 101 (Switching Protocol)
-      // Reject the handshake with 401 (Unauthorized)
+      // 用101状态码（协议切换）结束握手
+      // 或用401状态码（未鉴权）拒绝握手
       promise.complete(ar.succeeded() ? 101 : 401);
     } else {
-      // Will send a 500 error
+      // 发送500错误状态码
       promise.fail(ar.cause());
     }
   });
 });
 ----
 
-NOTE: the WebSocket will be automatically accepted after the handler is called unless the WebSocket's handshake has been set
+NOTE: 除非手动设置了WebSocket握手处理器，否则调用（webSocketHandler传入的）处理器后，将自动接受WebSocket握手。
 
-===== Upgrading to WebSocket
+===== 协议切换为 WebSocket
 
-The second way of handling WebSockets is to handle the HTTP Upgrade request that was sent from the client, and
-call `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#toWebSocket--[toWebSocket]` on the server request.
+处理 WebSocket 的第二种方法是处理从客户端发送的HTTP升级请求，调用服务器请求对象的 
+`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#toWebSocket--[toWebSocket]` 方法。
 
 [source,java]
 ----
@@ -2367,30 +2367,30 @@ server.requestHandler(request -> {
 
     Future<ServerWebSocket> fut = request.toWebSocket();
     fut.onSuccess(ws -> {
-      // Do something
+      // 处理逻辑
     });
 
   } else {
-    // Reject
+    // 拒绝切换WebSocket
     request.response().setStatusCode(400).end();
   }
 });
 ----
 
-===== The server WebSocket
+===== 服务端 WebSocket
 
-The `link:../../apidocs/io/vertx/core/http/ServerWebSocket.html[ServerWebSocket]` instance enables you to retrieve the `link:../../apidocs/io/vertx/core/http/WebSocketBase.html#headers--[headers]`,
-`link:../../apidocs/io/vertx/core/http/ServerWebSocket.html#path--[path]`, `link:../../apidocs/io/vertx/core/http/ServerWebSocket.html#query--[query]` and
-`link:../../apidocs/io/vertx/core/http/ServerWebSocket.html#uri--[URI]` of the HTTP request of the WebSocket handshake.
+您可以通过 `link:../../apidocs/io/vertx/core/http/ServerWebSocket.html[ServerWebSocket]` 实例读取在WebSocket 握手中HTTP请求的 `link:../../apidocs/io/vertx/core/http/WebSocketBase.html#headers--[headers]`，
+`link:../../apidocs/io/vertx/core/http/ServerWebSocket.html#path--[path]`， `link:../../apidocs/io/vertx/core/http/ServerWebSocket.html#query--[query]` 和
+`link:../../apidocs/io/vertx/core/http/ServerWebSocket.html#uri--[URI]` 。
 
-==== WebSockets on the client
+==== 客户端 WebSocket
 
-The Vert.x `link:../../apidocs/io/vertx/core/http/HttpClient.html[HttpClient]` supports WebSockets.
+Vert.x的 `link:../../apidocs/io/vertx/core/http/HttpClient.html[HttpClient]` 支持 WebSocket。
 
-You can connect a WebSocket to a server using one of the `link:../../apidocs/io/vertx/core/http/HttpClient.html#webSocket-int-java.lang.String-java.lang.String-io.vertx.core.Handler-[webSocket]` operations and
-providing a handler.
+您可以调用其中任意一个  `link:../../apidocs/io/vertx/core/http/HttpClient.html#webSocket-int-java.lang.String-java.lang.String-io.vertx.core.Handler-[webSocket]` 方法创建 WebSocket 连接到服务端，
+并提供回调函数。
 
-The handler will be called with an instance of `link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]` when the connection has been made:
+当连接建立时，处理器将被调用并且传入 `link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]` 实例：
 
 [source,java]
 ----
@@ -2402,40 +2402,40 @@ client.webSocket("/some-uri", res -> {
 });
 ----
 
-==== Writing messages to WebSockets
+==== 向 WebSocket 写入消息
 
-If you wish to write a single WebSocket message to the WebSocket you can do this with
-`link:../../apidocs/io/vertx/core/http/WebSocketBase.html#writeBinaryMessage-io.vertx.core.buffer.Buffer-[writeBinaryMessage]` or
-`link:../../apidocs/io/vertx/core/http/WebSocketBase.html#writeTextMessage-java.lang.String-[writeTextMessage]` :
+若您想将一个 WebSocket 消息写入 WebSocket，可使用 
+`link:../../apidocs/io/vertx/core/http/WebSocketBase.html#writeBinaryMessage-io.vertx.core.buffer.Buffer-[writeBinaryMessage]` 方法或 
+`link:../../apidocs/io/vertx/core/http/WebSocketBase.html#writeTextMessage-java.lang.String-[writeTextMessage]` 方法来执行该操作：
 
 [source,java]
 ----
 Buffer buffer = Buffer.buffer().appendInt(123).appendFloat(1.23f);
 webSocket.writeBinaryMessage(buffer);
 
-// Write a simple text message
+// 写一个简单文本消息
 String message = "hello";
 webSocket.writeTextMessage(message);
 ----
 
-If the WebSocket message is larger than the maximum WebSocket frame size as configured with
-`link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setMaxWebSocketFrameSize-int-[setMaxWebSocketFrameSize]`
-then Vert.x will split it into multiple WebSocket frames before sending it on the wire.
+若WebSocket 消息大于使用 
+`link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setMaxWebSocketFrameSize-int-[setMaxWebSocketFrameSize]` 
+设置的W ebSocket 的帧的最大值，则Vert.x在将其发送到报文之前将其拆分为多个WebSocket 帧。
 
-==== Writing frames to WebSockets
+==== 向 WebSocket 写入帧
 
-A WebSocket message can be composed of multiple frames. In this case the first frame is either a _binary_ or _text_ frame
-followed by zero or more _continuation_ frames.
+WebSocket 消息可以由多个帧组成，在这种情况下，第一帧是 _二进制_ （text）或 _文本_ （binary）帧，
+后边跟着零个或多个 _连续_ 帧。
 
-The last frame in the message is marked as _final_.
+消息中的最后一帧标记成 _final_ 。
 
-To send a message consisting of multiple frames you create frames using
+要发送多个帧组成的消息，请使用 
 `link:../../apidocs/io/vertx/core/http/WebSocketFrame.html#binaryFrame-io.vertx.core.buffer.Buffer-boolean-[WebSocketFrame.binaryFrame]`
-, `link:../../apidocs/io/vertx/core/http/WebSocketFrame.html#textFrame-java.lang.String-boolean-[WebSocketFrame.textFrame]` or
-`link:../../apidocs/io/vertx/core/http/WebSocketFrame.html#continuationFrame-io.vertx.core.buffer.Buffer-boolean-[WebSocketFrame.continuationFrame]` and write them
-to the WebSocket using `link:../../apidocs/io/vertx/core/http/WebSocketBase.html#writeFrame-io.vertx.core.http.WebSocketFrame-[writeFrame]`.
+， `link:../../apidocs/io/vertx/core/http/WebSocketFrame.html#textFrame-java.lang.String-boolean-[WebSocketFrame.textFrame]` 或 
+`link:../../apidocs/io/vertx/core/http/WebSocketFrame.html#continuationFrame-io.vertx.core.buffer.Buffer-boolean-[WebSocketFrame.continuationFrame]` 方法创建帧，
+并使用 `link:../../apidocs/io/vertx/core/http/WebSocketBase.html#writeFrame-io.vertx.core.http.WebSocketFrame-[writeFrame]` 方法将其写入WebSocket。
 
-Here's an example for binary frames:
+以下是二进制帧的示例：
 
 [source,java]
 ----
@@ -2445,34 +2445,34 @@ webSocket.writeFrame(frame1);
 WebSocketFrame frame2 = WebSocketFrame.continuationFrame(buffer2, false);
 webSocket.writeFrame(frame2);
 
-// Write the final frame
+// 写最终帧
 WebSocketFrame frame3 = WebSocketFrame.continuationFrame(buffer2, true);
 webSocket.writeFrame(frame3);
 ----
 
-In many cases you just want to send a WebSocket message that consists of a single final frame, so we provide a couple
-of shortcut methods to do that with `link:../../apidocs/io/vertx/core/http/WebSocketBase.html#writeFinalBinaryFrame-io.vertx.core.buffer.Buffer-[writeFinalBinaryFrame]`
-and `link:../../apidocs/io/vertx/core/http/WebSocketBase.html#writeFinalTextFrame-java.lang.String-[writeFinalTextFrame]`.
+许多情况下，您只需要发送一个包含了单个最终帧的 WebSocket 消息，因此我们提供了 
+`link:../../apidocs/io/vertx/core/http/WebSocketBase.html#writeFinalBinaryFrame-io.vertx.core.buffer.Buffer-[writeFinalBinaryFrame]`
+和 `link:../../apidocs/io/vertx/core/http/WebSocketBase.html#writeFinalTextFrame-java.lang.String-[writeFinalTextFrame]` 这两个快捷方法。
 
-Here's an example:
+下边是示例：
 
 [source,java]
 ----
 webSocket.writeFinalTextFrame("Geronimo!");
 
-// Send a WebSocket message consisting of a single final binary frame:
+// 发送由单个最终二进制帧组成的websocket消息：
 
 Buffer buff = Buffer.buffer().appendInt(12).appendString("foo");
 
 webSocket.writeFinalBinaryFrame(buff);
 ----
 
-==== Reading frames from WebSockets
+==== 从 WebSocket 读取帧
 
-To read frames from a WebSocket you use the `link:../../apidocs/io/vertx/core/http/WebSocket.html#frameHandler-io.vertx.core.Handler-[frameHandler]`.
+要 从WebSocket 读取帧，您可以使用 `link:../../apidocs/io/vertx/core/http/WebSocket.html#frameHandler-io.vertx.core.Handler-[frameHandler]` 方法。
 
-The frame handler will be called with instances of `link:../../apidocs/io/vertx/core/http/WebSocketFrame.html[WebSocketFrame]` when a frame arrives,
-for example:
+当帧到达时，会传入一个 `link:../../apidocs/io/vertx/core/http/WebSocketFrame.html[WebSocketFrame]` 实例给帧处理器，并调用它，
+例如：
 
 [source,java]
 ----
@@ -2481,17 +2481,17 @@ webSocket.frameHandler(frame -> {
 });
 ----
 
-==== Closing WebSockets
+==== 关闭 WebSocket
 
-Use `link:../../apidocs/io/vertx/core/http/WebSocketBase.html#close--[close]` to close the WebSocket connection when you have finished with it.
+处理完成之后，请使用 `link:../../apidocs/io/vertx/core/http/WebSocketBase.html#close--[close]` 方法关闭 WebSocket 连接。
 
-==== Piping WebSockets
+==== 流式 WebSocket
 
-The `link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]` instance is also a `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` and a
-`link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` so it can be used with pipes.
+`link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]` 也是 `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 和 
+`link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` 的实现类，因此可以和泵(pump)一起使用。
 
-When using a WebSocket as a write stream or a read stream it can only be used with WebSockets connections that are
-used with binary frames that are no split over multiple frames.
+当使用 WebSocket 作为可写流或可读流时，
+它只能用于不分割多个帧的二进制帧一起使用的 WebSocket 连接。
 
 ==== Event bus handlers
 
@@ -2504,18 +2504,18 @@ to the address of that handler.
 The addresses of the handlers are given by `link:../../apidocs/io/vertx/core/http/WebSocketBase.html#binaryHandlerID--[binaryHandlerID]` and
 `link:../../apidocs/io/vertx/core/http/WebSocketBase.html#textHandlerID--[textHandlerID]`.
 
-=== Using a proxy for HTTP/HTTPS connections
+=== 使用 HTTP/HTTPS 连接代理
 
-The http client supports accessing http/https URLs via a HTTP proxy (e.g. Squid) or _SOCKS4a_ or _SOCKS5_ proxy.
-The CONNECT protocol uses HTTP/1.x but can connect to HTTP/1.x and HTTP/2 servers.
+HTTP 客户端支持通过HTTP 代理（如Squid）或 _SOCKS4a_ 或 _SOCKS5_ 代理访问 HTTP/HTTPS 的 URL。
+CONNECT 协议使用 HTTP/1.x，但可以连接到 HTTP/1.x 和 HTTP/2 服务器。
 
-Connecting to h2c (unencrypted HTTP/2 servers) is likely not supported by http proxies since they will support
-HTTP/1.1 only.
+到 `h2c`（未加密HTTP/2服务器）的连接可能不受 HTTP 代理支持，因为代理
+仅支持 HTTP/1.1。
 
-The proxy can be configured in the `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html[HttpClientOptions]` by setting a
-`link:../../apidocs/io/vertx/core/net/ProxyOptions.html[ProxyOptions]` object containing proxy type, hostname, port and optionally username and password.
+您可以通过 `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html[HttpClientOptions]` 中的 
+`link:../../apidocs/io/vertx/core/net/ProxyOptions.html[ProxyOptions]` 对象配置来配置代理（包括代理类型、主机名、端口和可选用户名和密码）。
 
-Here's an example of using an HTTP proxy:
+以下是使用 HTTP 代理的例子：
 
 [source,java]
 ----
@@ -2526,13 +2526,13 @@ HttpClientOptions options = new HttpClientOptions()
 HttpClient client = vertx.createHttpClient(options);
 ----
 
-When the client connects to an http URL, it connects to the proxy server and provides the full URL in the
-HTTP request ("GET http://www.somehost.com/path/file.html HTTP/1.1").
+当客户端连接到HTTP URL时，它连接到代理服务器，并在HTTP请求中提供完整URL
+（ "GET http://www.somehost.com/path/file.html HTTP/1.1" ）。
 
-When the client connects to an https URL, it asks the proxy to create a tunnel to the remote host with
-the CONNECT method.
+当客户端连接到HTTPS URL时，它要求代理使用 CONNECT 方法创建到远程主机的
+通道。
 
-For a SOCKS5 proxy:
+对于 SOCKS5 代理：
 
 [source,java]
 ----
@@ -2543,8 +2543,8 @@ HttpClientOptions options = new HttpClientOptions()
 HttpClient client = vertx.createHttpClient(options);
 ----
 
-The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
-to resolve the DNS address locally.
+DNS 解析会一直在代理服务器上执行。为了实现 SOCKS4 客户端的功能，
+需要先在本地解析 DNS 地址。
 
 ==== Handling of other protocols
 
@@ -2605,7 +2605,7 @@ server.requestHandler(request -> {
 });
 ----
 
-=== Automatic clean-up in verticles
+=== Verticle 中自动清理
 
-If you're creating http servers and clients from inside verticles, those servers and clients will be automatically closed
-when the verticle is undeployed.
+如果您是在 Verticle 内部创建的 HTTP 服务端和客户端，
+则在撤销该Verticle时，它们将自动关闭。
