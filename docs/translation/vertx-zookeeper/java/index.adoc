@@ -19,7 +19,7 @@
 
 [source,groovy,subs="+attributes"]
 ----
-compile '${maven.groupId}:${maven.artifactId}:${maven.version}'
+compile 'io.vertx:vertx-zookeeper:4.0.0'
 ----
 
 Vert.x 集群管理器包含以下几个功能：
