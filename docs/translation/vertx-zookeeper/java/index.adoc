@@ -32,6 +32,7 @@ Vert.x 集群管理器包含以下几个功能：
 
 Vert.x 集群器并不处理节点之间的通信，在 Vert.x 中节点中的通信是直接由 TCP 链接处理的。
 
+[[_how_to_work]]
 == 工作原理
 `ZookeeperClusterManager` 使用 http://curator.apache.org/[Apache Curator] 框架而不是原生Zookeeper 客户端，因此
 需要添加 Curator 依赖的库到项目中，比如 `guava` 、 `slf4j` 、 `zookeeper` 等其他第三方 jar 包。
@@ -45,6 +46,7 @@ Vert.x 集群器并不处理节点之间的通信，在 Vert.x 中节点中的�
 `/io.vertx/locks/` :: 存储分布式锁
 `/io.vertx/counters/` :: 存储分布式计数器
 
+[[_using_this_cluster_manager]]
 == 使用 Zookeeper cluster manager
 
 如果您从命令行使用Vert.x，则应将此集群管理器对应的jar（将其命名为 `vertx-zookeeper-4.0.0.jar`
@@ -73,6 +75,7 @@ Vertx.clusteredVertx(options, res -> {
 });
 ----
 
+[[_configuring_this_cluster_manager]]
 == 配置 Zookeeper cluster manager
 
 通常情况下，`ZookeeperClusterManager` 使用 jar 包中内嵌的
@@ -156,5 +159,6 @@ java.util.logging.ConsoleHandler.level=INFO
 java.util.logging.FileHandler.level=INFO
 ----
 
+[[_about_zookeeper_version]]
 == Zookeeper 版本
 Vert.x 使用 4.3.0 版本的 Curator,其使用 3.4.8 版本的 Zookeeper，因此不支持 3.5.x 中的最新特性。
