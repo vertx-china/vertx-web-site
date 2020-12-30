@@ -1,24 +1,18 @@
 = Vert.x-Web
 :toc: left
 
-Vert.x-Web is a set of building blocks for building web applications with Vert.x. Think of it as a Swiss Army Knife for
-building modern, scalable, web apps.
+Vert.x-web是Vert.x中一组构建web应用的工具。你可以将它一把瑞士军刀，用于构建现代化的、可扩展的web应用。
 
-Vert.x core provides a fairly low level set of functionality for handling HTTP, and for some applications
-that will be sufficient.
+Vert.x core提供了一些比较低级的功能用于处理HTTP，这对一些应用而言足够了。
 
-Vert.x-Web builds on Vert.x core to provide a richer set of functionality for building real web applications, more
-easily.
+Vert.x-Web基于Vert.x core开发并提供了更多的功能，可以更加轻松地构建用于生产的web应用。
 
-It's the successor to http://pmlopes.github.io/yoke/[Yoke] in Vert.x 2.x, and takes inspiration from projects such
-as http://expressjs.com/[Express] in the Node.js world and http://www.sinatrarb.com/[Sinatra] in the Ruby world.
+它是Vert.x 2.x中http://pmlopes.github.io/yoke/[Yoke] 的接任者，并且从其他项目中汲取了灵感，包括Node.js的http://expressjs.com/[Express]
+和Ruby的http://www.sinatrarb.com/[Sinatra] 。
 
-Vert.x-Web is designed to be powerful, un-opionated and fully embeddable. You just use the parts you want and nothing more.
-Vert.x-Web is not a container.
+Vert.x-Web是一个强大的、没有固定范式的、可嵌入的组件。You just use the parts you want and nothing more. Vert.x不是一个容器（像Tomcat那样）。
 
-You can use Vert.x-Web to create classic server-side web applications, RESTful web applications, 'real-time' (server push)
-web applications, or any other kind of web application you can think of. Vert.x-Web doesn't care. It's up to you to chose
-the type of app you prefer, not Vert.x-Web.
+你可以使用Vert.x-web构建一些典型的后端web应用，比如RESTful web应用，实时web应用（服务端主动发送消息），或者其他你能想到的web应用。Vert.x-web并不关心你用它来构建何种应用。这完全取决于你想构建何种应用，而不是取决于Vert.x-web。
 
 Vert.x-Web is a great fit for writing RESTful HTTP micro-services**, but we don't force** you to write apps like that.
 
