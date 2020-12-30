@@ -29,7 +29,7 @@ windows系统需要修改package.json里的 `update-docs` 的命令为 `cd docs 
 > 精确定位。同时，为了确保中英文一致，建议这里的id使用官网上的id，具体方法就是点击官网上（或者在未翻译时在本地执行）的链接跳转后
 > 使用地址栏#后面的内容，比如上面的示例，在地址栏中的链接应该是 http://localhost:3000/docs/xxx/#id
 
-> 翻译完成后，需要执行 `npm run update-docs` 更新翻译文档。也可以手动将翻译的文件复制到 `docs/extracted` 目录
+如果是通过 `npm run dev` 来预览的话，翻译完成后，刷新即可看到翻译后的文档。
 
 ## 分支说明
 
