@@ -128,4 +128,4 @@ task copyTranslationDocs(type: Copy) {
   into "$projectDir/extracted"
 }
 
-defaultTasks 'extractDocs', 'copyApidocs', 'copyTranslationDocs'
+defaultTasks 'extractDocs', 'copyTranslationDocs'
