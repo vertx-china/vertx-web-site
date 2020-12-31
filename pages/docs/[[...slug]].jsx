@@ -190,8 +190,10 @@ export async function getStaticProps({ params }) {
 
   // check if generated asciidoc file is in cache
   let slug = params.slug.join("/")
-  if (cache[slug]) {
-    return cache[slug]
+  if (process.env.NODE_ENV === "production") {
+    if (cache[slug]) {
+      return cache[slug]
+    }
   }
 
   let { title, contents } = await compileAsciiDoc(
