@@ -1,37 +1,37 @@
-== Using the SharedData API
+== 使用共享数据的API
 
-As its name suggests, the `link:../../apidocs/io/vertx/core/shareddata/SharedData.html[SharedData]` API allows you to safely share data between:
+顾名思义，`link:../../apidocs/io/vertx/core/shareddata/SharedData.html[共享数据（SharedData）]` API允许您:
 
-- different parts of your application, or
-- different applications in the same Vert.x instance, or
-- different applications across a cluster of Vert.x instances.
+* 应用程序的不同部分之间，或者
+* 同一 Vert.x 实例中的不同应用程序之间，或者
+* Vert.x 集群中的不同实例之间，安全地共享数据。
 
-In practice, it provides:
+在实践中, 它提供了:
 
 - synchronous maps (local-only)
 - asynchronous maps
 - asynchronous locks
 - asynchronous counters
 
-IMPORTANT: The behavior of the distributed data structure depends on the cluster manager you use.
-Backup (replication) and behavior when a network partition is faced are defined by the cluster manager and its configuration.
-Please refer to the cluster manager documentation as well as to the underlying framework manual.
+IMPORTANT: 分布式数据结构的行为取决于您使用的集群管理器。
+网络分区面临的备份（复制）和行为由集群管理器和它的配置来定义。
+请参阅集群管理器文档以及底层框架手册。
 
 === Local maps
 
-`link:../../apidocs/io/vertx/core/shareddata/LocalMap.html[Local maps]` allow you to share data safely between different event loops (e.g. different verticles) in the same Vert.x instance.
+`link:../../apidocs/io/vertx/core/shareddata/LocalMap.html[Local maps]` 允许您在同一个 Vert.x 实例中的不同 event loops（如不同的 verticles 中）之间安全共享数据。
 
-They only allow certain data types to be used as keys and values:
+本地共享Map仅允许将某些数据类型作为键值和值：
 
-- immutable types (e.g. strings, booleans, ... etc), or
-- types implementing the `link:../../apidocs/io/vertx/core/shareddata/Shareable.html[Shareable]` interface (buffers, JSON arrays, JSON objects, or your own shareable objects).
+- 不可变的类型 （如 String、boolean，等等），或
+- 实现了 `link:../../apidocs/io/vertx/core/shareddata/Shareable.html[Shareable]` 接口的类型 （比如Buffer，JSON数组，JSON对象，或您编写的Shareable实现类).
 
-In the latter case the key/value will be copied before putting it into the map.
+在后一种情况中，键/值将被复制，然后再放到Map中。
 
-This way we can ensure there is no _shared access to mutable state_ between different threads in your Vert.x application.
-And you won't have to worry about protecting that state by synchronising access to it.
+这样，我们可以确保在Vert.x应用程序不同线程之间没有 _共享访问可变状态_ 。
+因此您不必担心需要通过同步访问来保护该状态。
 
-Here's an example of using a shared local map:
+以下是使用一个共享的 local map 的示例：
 
 [source,java]
 ----
@@ -39,13 +39,13 @@ SharedData sharedData = vertx.sharedData();
 
 LocalMap<String, String> map1 = sharedData.getLocalMap("mymap1");
 
-map1.put("foo", "bar"); // Strings are immutable so no need to copy
+map1.put("foo", "bar"); // String是不可变的，所以不需要复制
 
 LocalMap<String, Buffer> map2 = sharedData.getLocalMap("mymap2");
 
-map2.put("eek", Buffer.buffer().appendInt(123)); // This buffer will be copied before adding to map
+map2.put("eek", Buffer.buffer().appendInt(123)); // Buffer将会在添加到Map之前拷贝
 
-// Then... in another part of your application:
+// 之后... 在您应用的另外一部分
 
 map1 = sharedData.getLocalMap("mymap1");
 
@@ -56,13 +56,13 @@ map2 = sharedData.getLocalMap("mymap2");
 Buffer buff = map2.get("eek");
 ----
 
-=== Asynchronous shared maps
+=== 异步共享的 maps
 
-`link:../../apidocs/io/vertx/core/shareddata/AsyncMap.html[Asynchronous shared maps]` allow data to be put in the map and retrieved locally or from any other node.
+`link:../../apidocs/io/vertx/core/shareddata/AsyncMap.html[异步共享的 maps]` 允许数据被放到 map 中，并从本地或任何其他节点读取。
 
-This makes them really useful for things like storing session state in a farm of servers hosting a Vert.x Web application.
+这使得它们对于托管Vert.x Web应用程序的服务器场中的会话状态存储非常有用。
 
-Getting the map is asynchronous and the result is returned to you in the handler that you specify. Here's an example:
+获取Map的过程是异步的，返回结果可以传给您指定的处理器中。以下是一个例子：
 
 [source,java]
 ----
@@ -72,17 +72,17 @@ sharedData.<String, String>getAsyncMap("mymap", res -> {
   if (res.succeeded()) {
     AsyncMap<String, String> map = res.result();
   } else {
-    // Something went wrong!
+    // 发生错误
   }
 });
 ----
 
-When Vert.x is clustered, data that you put into the map is accessible locally as well as on any of the other cluster members.
+当 Vert.x 是集群模式时, 你放进map的数据既可本地访问也会保存在集群内其它的成员节点上。
 
-IMPORTANT: In clustered mode, asynchronous shared maps rely on distributed data structures provided by the cluster manager.
-Beware that the latency relative to asynchronous shared map operations can be much higher in clustered than in local mode.
+IMPORTANT: 在集群模式中, 异步共享的 maps 依靠于集群管理器提供的分布式数据结构。
+请注意，相对于异步共享map的操作，延迟在群集中可能比在本地模式下高得多。
 
-If your application doesn't need data to be shared with every other node, you can retrieve a local-only map:
+当你的应用不需要和其它任何节点共享数据, 你可以获取一个仅限本地的 map：
 
 [source,java]
 ----
@@ -90,68 +90,68 @@ SharedData sharedData = vertx.sharedData();
 
 sharedData.<String, String>getLocalAsyncMap("mymap", res -> {
   if (res.succeeded()) {
-    // Local-only async map
+    // 仅限本地的异步map
     AsyncMap<String, String> map = res.result();
   } else {
-    // Something went wrong!
+    // 发生错误
   }
 });
 ----
 
-==== Putting data in a map
+==== 将数据放入map
 
-You put data in a map with `link:../../apidocs/io/vertx/core/shareddata/AsyncMap.html#put-java.lang.Object-java.lang.Object-io.vertx.core.Handler-[put]`.
+您可以使用 `link:../../apidocs/io/vertx/core/shareddata/AsyncMap.html#put-java.lang.Object-java.lang.Object-io.vertx.core.Handler-[put]` 方法将数据放入map。
 
-The actual put is asynchronous and the handler is notified once it is complete:
+put 方法是异步的，一旦完成它会通知处理器：
 
 [source,java]
 ----
 map.put("foo", "bar", resPut -> {
   if (resPut.succeeded()) {
-    // Successfully put the value
+    // 成功放入值
   } else {
-    // Something went wrong!
+    // 发生错误
   }
 });
 ----
 
-==== Getting data from a map
+==== 从map中读取数据
 
-You get data from a map with `link:../../apidocs/io/vertx/core/shareddata/AsyncMap.html#get-java.lang.Object-io.vertx.core.Handler-[get]`.
+您可以使用  `link:../../apidocs/io/vertx/core/shareddata/AsyncMap.html#get-java.lang.Object-io.vertx.core.Handler-[get]` 方法从Map读取数据。
 
-The actual get is asynchronous and the handler is notified with the result some time later:
+get 方法是异步的，一段时间过后它会通知处理器并传入结果。
 
 [source,java]
 ----
 map.get("foo", resGet -> {
   if (resGet.succeeded()) {
-    // Successfully got the value
+    // 成功读取值
     Object val = resGet.result();
   } else {
-    // Something went wrong!
+    // 发生错误
   }
 });
 ----
 
-===== Other map operations
+===== 其他map操作
 
-You can also remove entries from an asynchronous map, clear them and get the size.
+您还可以从异步Map中删除条目、清除Map、读取它的大小。
 
-See the `link:../../apidocs/io/vertx/core/shareddata/AsyncMap.html[API docs]` for a detailed list of map operations.
+有关更多信息，请参阅  `link:../../apidocs/io/vertx/core/shareddata/AsyncMap.html[API docs]` 。
 
-=== Asynchronous locks
+=== 异步锁
 
-`link:../../apidocs/io/vertx/core/shareddata/Lock.html[Asynchronous locks]` allow you to obtain exclusive locks locally or across the cluster.
-This is useful when you want to do something or access a resource on only one node of a cluster at any one time.
+`link:../../apidocs/io/vertx/core/shareddata/Lock.html[异步锁]` 允许您在集群中获取独占锁。
+当您想要在任何时间只在集群一个节点上执行某些操作或访问资源时，这很有用。
 
-Asynchronous locks have an asynchronous API unlike most lock APIs which block the calling thread until the lock is obtained.
+集群范围锁具有异步API，它和大多数等待锁释放的阻塞调用线程的API锁不相同。
 
-To obtain a lock use `link:../../apidocs/io/vertx/core/shareddata/SharedData.html#getLock-java.lang.String-io.vertx.core.Handler-[getLock]`.
-This won't block, but when the lock is available, the handler will be called with an instance of `link:../../apidocs/io/vertx/core/shareddata/Lock.html[Lock]`, signalling that you now own the lock.
+可使用 `link:../../apidocs/io/vertx/core/shareddata/SharedData.html#getLock-java.lang.String-io.vertx.core.Handler-[getLock]` 方法获取锁。
+它不会阻塞，但当锁可用时，将 `link:../../apidocs/io/vertx/core/shareddata/Lock.html[Lock]` 的实例传入处理器并调用它，表示您现在拥有该锁。
 
-While you own the lock, no other caller, locally or on the cluster, will be able to obtain the lock.
+若您拥有的锁没有其他调用者，集群上的任何地方都可以获得该锁。
 
-When you've finished with the lock, you call `link:../../apidocs/io/vertx/core/shareddata/Lock.html#release--[release]` to release it, so another caller can obtain it:
+当您用完锁后，您可以调用 `link:../../apidocs/io/vertx/core/shareddata/Lock.html#release--[release]` 方法来释放它，以便另一个调用者可获得它。
 
 [source,java]
 ----
@@ -159,20 +159,20 @@ SharedData sharedData = vertx.sharedData();
 
 sharedData.getLock("mylock", res -> {
   if (res.succeeded()) {
-    // Got the lock!
+    // 获得锁
     Lock lock = res.result();
 
-    // 5 seconds later we release the lock so someone else can get it
+    // 5秒后我们释放该锁以便其他人可以得到它
 
     vertx.setTimer(5000, tid -> lock.release());
 
   } else {
-    // Something went wrong
+    // 发生错误
   }
 });
 ----
 
-You can also get a lock with a timeout. If it fails to obtain the lock within the timeout the handler will be called with a failure:
+您可以为锁设置一个超时，若在超时时间期间无法获取锁，将会进入失败状态，处理器会去处理对应的异常：
 
 [source,java]
 ----
@@ -180,21 +180,21 @@ SharedData sharedData = vertx.sharedData();
 
 sharedData.getLockWithTimeout("mylock", 10000, res -> {
   if (res.succeeded()) {
-    // Got the lock!
+    // 获得锁
     Lock lock = res.result();
 
   } else {
-    // Failed to get lock
+    // 获取锁失败
   }
 });
 ----
 
-See the `link:../../apidocs/io/vertx/core/shareddata/Lock.html[API docs]` for a detailed list of lock operations.
+有更多信息，请参阅  `link:../../apidocs/io/vertx/core/shareddata/Lock.html[API文档]` 。
 
-IMPORTANT: In clustered mode, asynchronous locks rely on distributed data structures provided by the cluster manager.
-Beware that the latency relative to asynchronous shared lock operations can be much higher in clustered than in local mode.
+IMPORTANT: 在集群模式中, 异步锁依靠于集群管理器提供的分布式数据结构。
+请注意，相对于异步共享锁的操作，延迟在群集中可能比在本地模式下高得多。
 
-If your application doesn't need the lock to be shared with every other node, you can retrieve a local-only lock:
+当你的应用不需要和其它任何节点共享锁，你可以获取一个仅限本地的锁：
 
 [source,java]
 ----
@@ -202,26 +202,26 @@ SharedData sharedData = vertx.sharedData();
 
 sharedData.getLocalLock("mylock", res -> {
   if (res.succeeded()) {
-    // Local-only lock
+    // 仅限本地的计数器
     Lock lock = res.result();
 
-    // 5 seconds later we release the lock so someone else can get it
+    // 5秒后我们释放该锁以便其他人可以得到它
 
     vertx.setTimer(5000, tid -> lock.release());
 
   } else {
-    // Something went wrong
+    // 发生错误
   }
 });
 ----
 
-=== Asynchronous counters
+=== 异步计数器
 
-It's often useful to maintain an atomic counter locally or across the different nodes of your application.
+在本地或跨越你应用程序的不同节点来维护一个原子计数器通常很有用。
 
-You can do this with `link:../../apidocs/io/vertx/core/shareddata/Counter.html[Counter]`.
+您可以用 `link:../../apidocs/io/vertx/core/shareddata/Counter.html[Counter]` 来做到这一点。
 
-You obtain an instance with `link:../../apidocs/io/vertx/core/shareddata/SharedData.html#getCounter-java.lang.String-io.vertx.core.Handler-[getCounter]`:
+您可以通过 `link:../../apidocs/io/vertx/core/shareddata/SharedData.html#getCounter-java.lang.String-io.vertx.core.Handler-[getCounter]` 方法获取一个实例：
 
 [source,java]
 ----
@@ -231,20 +231,20 @@ sharedData.getCounter("mycounter", res -> {
   if (res.succeeded()) {
     Counter counter = res.result();
   } else {
-    // Something went wrong!
+    // 发生错误
   }
 });
 ----
 
-Once you have an instance you can retrieve the current count, atomically increment it, decrement and add a value to
-it using the various methods.
+一旦您有了一个实例，您可以获取当前的计数，以原子方式递增、递减，
+并使用各种方法添加一个值。
 
-See the `link:../../apidocs/io/vertx/core/shareddata/Counter.html[API docs]` for a detailed list of counter operations.
+有更多信息，请参阅 `link:../../apidocs/io/vertx/core/shareddata/Counter.html[API文档]` 。
 
-IMPORTANT: In clustered mode, asynchronous counters rely on distributed data structures provided by the cluster manager.
-Beware that the latency relative to asynchronous shared counter operations can be much higher in clustered than in local mode.
+IMPORTANT: 在集群模式中, 异步计数器依靠于集群管理器提供的分布式数据结构。
+请注意，相对于异步共享计数器的操作，延迟在群集中可能比在本地模式下高得多。
 
-If your application doesn't need the counter to be shared with every other node, you can retrieve a local-only counter:
+当你的应用不需要和其它任何节点共享计数器, 你可以获取一个仅限本地的计数器：
 
 [source,java]
 ----
@@ -252,10 +252,10 @@ SharedData sharedData = vertx.sharedData();
 
 sharedData.getLocalCounter("mycounter", res -> {
   if (res.succeeded()) {
-    // Local-only counter
+    // 仅限本地的计数器
     Counter counter = res.result();
   } else {
-    // Something went wrong!
+    // 发生错误
   }
 });
 ----
