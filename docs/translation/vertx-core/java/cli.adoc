@@ -87,7 +87,7 @@ CLI cli = CLI.create("some-name")
         .setDescription("a mandatory option"));
 ----
 
-非必填选项可以拥有一个默认选项值，在用户没有输入对应的选项值时，
+非必填选项可以拥有一个 _缺省值_ ，在用户没有输入对应的选项值时，
 则会启用这个默认选项值：
 
 [source,java]

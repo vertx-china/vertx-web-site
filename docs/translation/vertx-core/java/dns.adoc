@@ -92,7 +92,7 @@ client.lookup6("vertx.io", ar -> {
 
 === resolveA
 
-尝试解析给定名称的所有A（ipv4）记录，这与在unix操作系统上
+尝试解析给定名称的所有A（ipv4）记录，这与在类unix操作系统上
 使用 "dig" 类似。
 
 要查找 "vertx.io" 的所有A记录，您通常会执行以下操作：
@@ -114,7 +114,7 @@ client.resolveA("vertx.io", ar -> {
 
 === resolveAAAA
 
-尝试解析给定名称的所有AAAA（ipv6）记录，这与在Unix操作系统上
+尝试解析给定名称的所有AAAA（ipv6）记录，这与在类unix操作系统上
 使用 "dig" 类似。
 
 要查找 "vertx.io" 的所有AAAA记录，您通常会执行以下操作：
@@ -136,7 +136,7 @@ client.resolveAAAA("vertx.io", ar -> {
 
 === resolveCNAME
 
-尝试解析给定名称的所有CNAME记录，这与在Unix操作系统上
+尝试解析给定名称的所有CNAME记录，这与在类unix操作系统上
 使用 "dig" 类似。
 
 要查找 "vertx.io" 的所有CNAME记录，您通常会执行以下操作：
@@ -270,7 +270,7 @@ record.service();
 record.target();
 ----
 
-有关详细信息，请参阅API文档。
+详细信息请参阅API文档
 
 === resolvePTR
 

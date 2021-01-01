@@ -421,7 +421,7 @@ Cookie的SameSite属性接受三个取值:
 * Lax - 在跨域的子请求（例如调用加载图像或iframe）不发送这种SameSite（设为Lax的）Cookie，
 但当用户从外部站点导航到URL时将发送该Cookie, 例如通过链接打开。
 
-下面是一个增加Cookie的例子：
+下面是一个查询并增加Cookie的例子：
 
 [source,java]
 ----
@@ -442,7 +442,7 @@ Vert.x 可以处理在客户端通过 _deflate_ 或 _gzip_ 算法压缩过的请
 若要启用解压缩功能则您要在创建服务器时调用 `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setDecompressionSupported-boolean-[setDecompressionSupported]` 
 方法设置配置项。
 
-默认情况下解压缩是被禁用的。
+默认情况下解压缩是并未被启用的。
 
 ==== 接收自定义 HTTP/2 帧
 
@@ -706,14 +706,14 @@ vertx.createHttpServer().requestHandler(request -> {
 }).listen(8080);
 ----
 
-==== Pumping 响应
+==== 管道式响应
 
 服务端响应 `HttpServerResponse` 也是一个 `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` 实例，因此您可以从任何 
-`link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 向其泵送数据，如 `link:../../apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]`， `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`，
+`link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 向其传送数据，如 `link:../../apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]`， `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`，
 `link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]` 或者 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html[HttpServerRequest]`。
 
 这儿有一个例子，它回应了任何 PUT 方法的响应中的请求体。
-它为请求体使用了 Pump，所以即使 HTTP 请求体很大并填满了内存，
+它为请求体使用了管道，所以即使 HTTP 请求体很大并填满了内存，
 任何时候它依旧会工作：
 
 [source,java]
@@ -848,7 +848,7 @@ response.sendFile("<html><head><script src=\"/main.js\"></script></head><body></
 
 ===  HTTP 压缩
 
-Vert.x 支持 HTTP 压缩，开箱即用。
+Vert.x 支持开箱即用的HTTP压缩。
 
 这意味着在响应发送回客户端之前，您可以将响应体自动压缩。
 
@@ -1245,7 +1245,7 @@ request.end(buffer);
 
 这意味着您可以从任何 `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 实例将数据泵入请求中。
 
-例如，您可以将磁盘上的文件直接泵送到HTTP 请求体中，如下所示：
+例如，您可以将磁盘上的文件直接管送到HTTP 请求体中，如下所示：
 
 [source,java]
 ----
@@ -1425,7 +1425,7 @@ client.request(HttpMethod.GET, "some-uri", ar1 -> {
 ----
 
 若您知道响应体不是很大，并想在处理之前在内存中聚合所有响应体数据，那么您可以
-自己聚合：
+自行聚合：
 
 [source,java]
 ----
@@ -2485,10 +2485,10 @@ webSocket.frameHandler(frame -> {
 
 处理完成之后，请使用 `link:../../apidocs/io/vertx/core/http/WebSocketBase.html#close--[close]` 方法关闭 WebSocket 连接。
 
-==== 流式 WebSocket
+==== 管道式 WebSocket
 
 `link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]` 也是 `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 和 
-`link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` 的实现类，因此可以和泵(pump)一起使用。
+`link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` 的实现类，因此可以和管道一起使用。
 
 当使用 WebSocket 作为可写流或可读流时，
 它只能用于不分割多个帧的二进制帧一起使用的 WebSocket 连接。
