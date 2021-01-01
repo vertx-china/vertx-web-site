@@ -813,14 +813,14 @@ include::parsetools.adoc[]
 
 == 线程安全
 
-大多数Vert.x 对象可以从被不同的线程安全地访问， _但_ 在
+大多数Vert.x 对象可以从被不同的线程安全地访问， _然而_ 在
 相同的上下文中访问它们时，性能才是最优的。
 
 例如，若您部署了一个创建 `link:../../apidocs/io/vertx/core/net/NetServer.html[NetServer]` 的Verticle，该`NetServer`在处理器中提供了 
 `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` 实例，则最好始终从
 该Verticle的Event Loop中访问Socket 实例。
 
-如您坚持使用标准的Vert.x Verticle部署模型，避免在 Verticle 之间分享对象，
+如您已经遵守了标准的Vert.x Verticle部署模型，并注意避免在 Verticle 之间分享对象，
 那这种情况您无需考虑。
 
 [[blocking_code]]
@@ -831,7 +831,7 @@ include::parsetools.adoc[]
 
 *但是……真实世界并非如此（您最近看新闻了吧？）*
 
-事实是，很多，也非所有的库，特别是在JVM生态系统中有很多同步API，这些API中许多方法都是
+事实是，很多，如果不是多数的库，特别是在JVM生态系统中有很多同步API，这些API中许多方法都是
 阻塞式的。一个很好的例子就是 JDBC API，它本质上是同步的，无论多么努力地去尝试，Vert.x
 都不能像魔法小精灵撒尘变法一样将它转换成异步API。
 
@@ -847,7 +847,7 @@ include::parsetools.adoc[]
 [source,java]
 ----
 vertx.executeBlocking(promise -> {
-  // Call some blocking API that takes a significant amount of time to return
+  // 调用阻塞的、需要消耗显著执行时间的API
   String result = someAPI.blockingMethod("hello");
   promise.complete(result);
 }, res -> {
@@ -865,7 +865,7 @@ WARNING: 阻塞式代码应该仅仅在合理的时间内阻塞（例如不超�
 默认情况下，如果 `executeBlocking` 在同一个上下文环境中（如：同一个 Verticle 实例）被调用了多次，那么
 这些不同的 `executeBlocking` 代码块会 _顺序执行_（一个接一个）。
 
-若您不需要关心您调用 `link:../../apidocs/io/vertx/core/Vertx.html#executeBlocking-io.vertx.core.Handler-boolean-io.vertx.core.Handler-[executeBlocking]` 的顺序，
+若您不关心您调用 `link:../../apidocs/io/vertx/core/Vertx.html#executeBlocking-io.vertx.core.Handler-boolean-io.vertx.core.Handler-[executeBlocking]` 的顺序，
 可以将 `ordered` 参数的值设为 `false`。这样任何 `executeBlocking` 都会
 在 Worker Pool 中并行执行。
 
@@ -875,13 +875,13 @@ WARNING: 阻塞式代码应该仅仅在合理的时间内阻塞（例如不超�
 
 默认情况下，阻塞式代码会在 Vert.x 的 Worker Pool 中执行，通过 `link:../../apidocs/io/vertx/core/VertxOptions.html#setWorkerPoolSize-int-[setWorkerPoolSize]` 配置。
 
-可以为不同的用途创建不同的池：
+可以为不同的用途创建不同的池（pool）：
 
 [source,java]
 ----
 WorkerExecutor executor = vertx.createSharedWorkerExecutor("my-worker-pool");
 executor.executeBlocking(promise -> {
-  // Call some blocking API that takes a significant amount of time to return
+  // 调用阻塞的、需要消耗显著执行时间的API
   String result = someAPI.blockingMethod("hello");
   promise.complete(result);
 }, res -> {
@@ -908,7 +908,7 @@ Worker Executor 可以在创建的时候配置：
 ----
 int poolSize = 10;
 
-// 2 minutes
+// 2分钟
 long maxExecuteTime = 2;
 TimeUnit maxExecuteTimeUnit = TimeUnit.MINUTES;
 
@@ -935,7 +935,7 @@ NOTE: 这些配置信息在 worker pool 创建的时候设置。
 
 NOTE: `PATH` 中的JDK是用于支持Java代码的快速编译。
 
-=== 运行 Verticle
+=== 运行 Verticles
 
 您可以使用 `vertx run` 从命令行直接运行Vert.x 的 Verticle，以下是 
 `run` _命令_ 的几个示例：
