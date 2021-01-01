@@ -393,44 +393,44 @@ request.uploadHandler(upload -> {
 WARNING: 确保您检查了生产系统的文件名，以避免恶意客户将文件上传
 到文件系统中的任意位置。有关详细信息，参阅  <<Security notes, 安全说明>>。
 
-==== Handling cookies
+==== 处理cookies
 
-You use `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#getCookie-java.lang.String-[getCookie]` to retrieve
-a cookie by name, or use `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#cookieMap--[cookieMap]` to retrieve all the cookies.
+使用 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#getCookie-java.lang.String-[getCookie]` 可以按Cookie名读取Cookie，
+或使用 `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#cookieMap--[cookieMap]` 获取所有Cookie。
 
-To remove a cookie, use `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#removeCookie-java.lang.String-[removeCookie]`.
+使用 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#removeCookie-java.lang.String-[removeCookie]` 删除Cookie。
 
-To add a cookie use `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#addCookie-io.vertx.core.http.Cookie-[addCookie]`.
+使用 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#addCookie-io.vertx.core.http.Cookie-[addCookie]` 增加Cookie。
 
-The set of cookies will be written back in the response automatically when the response headers are written so the
-browser can store them.
+增加的Cookie会在响应的时候自动写到响应头，随后浏览器可以获取到设置的Cookie并
+存储起来。
 
-Cookies are described by instances of `link:../../apidocs/io/vertx/core/http/Cookie.html[Cookie]`. This allows you to retrieve the name,
-value, domain, path and other normal cookie properties.
+（Vert.x的）cookie是 `link:../../apidocs/io/vertx/core/http/Cookie.html[Cookie]` 的实例。可以从中获取cookie的名字、
+取值、域名、路径以及其他cooki的常规属性。
 
-Same Site Cookies let servers require that a cookie shouldn't be sent with cross-site (where Site is defined by the
-registrable domain) requests, which provides some protection against cross-site request forgery attacks. This kind
-of cookies are enabled using the setter: `link:../../apidocs/io/vertx/core/http/Cookie.html#setSameSite-io.vertx.core.http.CookieSameSite-[setSameSite]`.
+设置了SameSite的Cookie禁止服务器在发送跨域请求时带上发送
+（站点是否跨域，取决于可注册域），从而为伪造跨域请求攻击提供了一些保护。
+这种Cookie可以通过 `link:../../apidocs/io/vertx/core/http/Cookie.html#setSameSite-io.vertx.core.http.CookieSameSite-[setSameSite]` 设置
 
-Same site cookies can have one of 3 values:
+Cookie的SameSite属性接受三个取值:
 
-* None - The browser will send cookies with both cross-site requests and same-site requests.
-* Strict - he browser will only send cookies for same-site requests (requests originating from the site that set the
- cookie). If the request originated from a different URL than the URL of the current location, none of the cookies
- tagged with the Strict attribute will be included.
-* Lax - Same-site cookies are withheld on cross-site subrequests, such as calls to load images or frames, but will be
- sent when a user navigates to the URL from an external site; for example, by following a link.
+* None - 允许在跨域请求和非跨域请求中发送
+* Strict - 只能在同站点的请求中发送（请求到设置该Cookie的站点）。
+如果设置Cookie的站点与当前请求的站点不一致，
+则不会发送SameSite设置为Strict的Cookie
+* Lax - 在跨域的子请求（例如调用加载图像或iframe）不发送这种SameSite（设为Lax的）Cookie，
+但当用户从外部站点导航到URL时将发送该Cookie, 例如通过链接打开。
 
-Here's an example of querying and adding cookies:
+下面是一个增加Cookie的例子：
 
 [source,java]
 ----
 Cookie someCookie = request.getCookie("mycookie");
 String cookieValue = someCookie.getValue();
 
-// Do something with cookie...
+// 处理Cookie的逻辑
 
-// Add a cookie - this will get written back in the response automatically
+// 增加Cookie - 会自动写入响应头
 request.response().addCookie(Cookie.cookie("othercookie", "somevalue"));
 ----
 
@@ -729,10 +729,10 @@ vertx.createHttpServer().requestHandler(request -> {
 }).listen(8080);
 ----
 
-You can also use the `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#send-io.vertx.core.streams.ReadStream-[send]` method to send a `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]`.
+还可以使用 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#send-io.vertx.core.streams.ReadStream-[send]` 方法发送  `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 。
 
-Sending a stream is a pipe operation, however as this is a method of `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html[HttpServerResponse]`, it
-will also take  care of chunking the response when the `content-length` is not set.
+发送流是一个管道操作，但由于这方法是 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html[HttpServerResponse]` 的，
+当 `content-length` 响应头未设置时，此方法可以处理分块响应。
 
 [source,java]
 ----
@@ -840,11 +840,11 @@ response.sendFile("<html><head><script src=\"/main.js\"></script></head><body></
 您必须在响应结束之前调用 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#push-io.vertx.core.http.HttpMethod-java.lang.String-java.lang.String-io.vertx.core.Handler-[push]` 方法，但是
 在推送响应过后依然可以写响应。
 
-==== Handling exceptions
+==== 处理异常
 
-You can set an `link:../../apidocs/io/vertx/core/http/HttpServer.html#exceptionHandler-io.vertx.core.Handler-[exceptionHandler]` to receive any
-exceptions that happens before the connection is passed to the `link:../../apidocs/io/vertx/core/http/HttpServer.html#requestHandler-io.vertx.core.Handler-[requestHandler]`
-or to the `link:../../apidocs/io/vertx/core/http/HttpServer.html#webSocketHandler-io.vertx.core.Handler-[webSocketHandler]`, e.g during the TLS handshake.
+调用 `link:../../apidocs/io/vertx/core/http/HttpServer.html#exceptionHandler-io.vertx.core.Handler-[exceptionHandler]` 可以设置一个处理器，用于接收
+连接传递给 `link:../../apidocs/io/vertx/core/http/HttpServer.html#requestHandler-io.vertx.core.Handler-[requestHandler]` 之前发生的异常，
+或者是传递给 `link:../../apidocs/io/vertx/core/http/HttpServer.html#webSocketHandler-io.vertx.core.Handler-[webSocketHandler]` 之前发生的异常，如TLS握手期间发生的异常。
 
 ===  HTTP 压缩
 
@@ -1478,45 +1478,45 @@ request.send(ar1 -> {
 当整个响应体被完全读取或者无响应体的响应头被完全读取时，响应的 `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#endHandler-io.vertx.core.Handler-[endHandler]` 
 就会被调用。
 
-==== Request and response composition
+==== 请求和响应组合使用
 
-The client interface is very simple and follows this pattern:
+http客户端接口可以按下面的模式使用，非常简单：
 
-1. `request` a connection
-2. `send` or `write`/`end` the request to the server
-3. handle the beginning of the `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]`
-4. process the response events
+1. 调用 `request` 打开连接
+2. 调用 `send` 或 `write`/`end` 发送请求到服务器
+3. 处理 `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]` 响应的开始
+4. 处理响应事件
 
-You can use Vert.x future composition methods to make your code simpler, however the API is event driven
-and you need to understand it otherwise you might experience possible data races (i.e loosing events
-leading to corrupted data).
+您可以使用Vert.x的Future组合的方式来简化代码，但是API是事件驱动的，
+因此您需要充分了解它的，否则可能会遇到数据争夺
+（即丢失事件导致数据损坏）的情况。
 
-NOTE: https://vertx.io/docs/vertx-web-client/java/[Vert.x Web Client] is a higher level API alternative (in fact it is built
-on top of this client) you might consider if this client is too low level for your use cases
+NOTE: https://vertx.io/docs/vertx-web-client/java/[Vert.x Web Client] 是比HttpClient更高级别的替代品（实际上
+它也是基于HttpClient构建的），如果HttpClient对于你的使用场景来说太底层，可以考虑WebClient。
 
-The client API intentionally does not return a `Future<HttpClientResponse>` because setting a completion
-handler on the future can be racy when this is set outside of the event-loop.
+HttpClient客户端有意地避免返回 `Future<HttpClientResponse>` ，
+因为如果在event-loop之外设置Future的完成处理器可能会很麻烦。
 
 [source,java]
 ----
 Future<HttpClientResponse> get = client.get("some-uri");
 
-// Assuming we have a client that returns a future response
-// assuging this is *not* on the event-loop
-// introduce a potential data race for the sake of this example
+// 假设客户端返回的响应是Future
+//（假设此事件 *不* 在event-loop中）
+// 在这个例子里，会引入潜在的数据竞争
 Thread.sleep(100);
 
 get.onSuccess(response -> {
 
-  // Response events might have happen already
+  // 响应事件此时可能已经发生
   response.body(ar -> {
 
   });
 });
 ----
 
-Confining the `HttpClientRequest` usage within a verticle is the easiest solution as the Verticle
-will ensure that events are processed sequentially avoiding races.
+将 `HttpClientRequest` 的使用限制在一个verticle的范围内是最简单的解决方案，
+因为Verticle为避免数据竞争，会确保按顺序处理事件。
 
 [source,java]
 ----
@@ -1531,8 +1531,8 @@ vertx.deployVerticle(() -> new AbstractVerticle() {
 }, new DeploymentOptions());
 ----
 
-When you interacting with the client possibly outside a verticle then you  you can safely perform
-composition as long as you do not delay the response events, e.g processing  directly the response on the event-loop.
+在verticle外使用HttpClient进行交互时，可以安全地组合使用，
+只要不延迟响应事件即可。例如，直接在event-loop上处理响应。
 
 [source,java]
 ----
@@ -1560,8 +1560,8 @@ future.onSuccess(json -> {
 });
 ----
 
-If you need to delay the response processing then you need to `pause` the response or use a `pipe`, this
-might be necessary when another asynchronous operation is involved.
+如果需要延迟响应处理，则需要 `pause` （暂停）响应或使用 `pipe`，
+当涉及另一个异步操作时，这可能是必需的。
 
 [source,java]
 ----
@@ -1570,13 +1570,13 @@ Future<Void> future = client
   .compose(request -> request
     .send()
     .compose(response -> {
-      // Process the response on the event-loop which guarantees no races
+      // 在event-loop上处理响应，从而确保没有数据竞争
       if (response.statusCode() == 200) {
 
-        // Create a pipe, this pauses the response
+        // 创建一个管道，会暂停响应
         Pipe<Buffer> pipe = response.pipe();
 
-        // Write the file on the disk
+        // 把文件写入磁盘
         return fileSystem
           .open("/some/large/file", new OpenOptions().setWrite(true))
           .onFailure(err -> pipe.close())
@@ -2288,11 +2288,11 @@ client.request(new RequestOptions()
 同样， `link:../../apidocs/io/vertx/core/http/RequestOptions.html#setAbsoluteURI-java.lang.String-[setAbsoluteURI]` 方法也会
 （在调用时）覆盖默认客户端设置。
 
-==== Server Name Indication (SNI)
+==== 服务器名称指示（SNI）
 
-Vert.x http servers can be configured to use SNI in exactly the same way as {@linkplain io.vertx.core.net net servers}.
+vert.x的Http服务器可以设置为使用SNI，与 {@linkplain io.vertx.core.net net servers} 的方法一样。
 
-Vert.x http client will present the actual hostname as _server name_ during the TLS handshake.
+vert.x的HttpClient在TLS握手过程中会将实际的主机名作为 _服务名_ 。
 
 === WebSockets
 
@@ -2493,16 +2493,16 @@ webSocket.frameHandler(frame -> {
 当使用 WebSocket 作为可写流或可读流时，
 它只能用于不分割多个帧的二进制帧一起使用的 WebSocket 连接。
 
-==== Event bus handlers
+==== Event bus处理器
 
-Every WebSocket automatically registers two handler on the event bus, and when any data are received in this handler,
-it writes them to itself. Those are local subscriptions not routed on the cluster.
+每个WebSocket都会在事件总线上自动注册两个处理器，当此处理器中接收到任何数据时，
+它会将数据写入WebSocket。这两个处理器是本地订阅，不会路由到集群上。
 
-This enables you to write data to a WebSocket which is potentially in a completely different verticle sending data
-to the address of that handler.
+基于这个特性，你可以将数据写入WebSocket（可能在完全不同的verticle中），
+只要将数据发送到这两个处理器监听的地址。
 
-The addresses of the handlers are given by `link:../../apidocs/io/vertx/core/http/WebSocketBase.html#binaryHandlerID--[binaryHandlerID]` and
-`link:../../apidocs/io/vertx/core/http/WebSocketBase.html#textHandlerID--[textHandlerID]`.
+这两个处理器的监听地址由 `link:../../apidocs/io/vertx/core/http/WebSocketBase.html#binaryHandlerID--[binaryHandlerID]` 和 
+`link:../../apidocs/io/vertx/core/http/WebSocketBase.html#textHandlerID--[textHandlerID]` 给出。
 
 === 使用 HTTP/HTTPS 连接代理
 
@@ -2546,13 +2546,13 @@ HttpClient client = vertx.createHttpClient(options);
 DNS 解析会一直在代理服务器上执行。为了实现 SOCKS4 客户端的功能，
 需要先在本地解析 DNS 地址。
 
-==== Handling of other protocols
+==== 处理其他协议
 
-The HTTP proxy implementation supports getting ftp:// urls if the proxy supports
-that.
+如果代理支持，HTTP代理的实现支持获取 ftp:// 协议的
+url。
 
-When the HTTP request URI contains contains the full URL then the client will not compute a full HTTP url and instead
-use the full URL specified in the request URI:
+当HTTP请求URI包含完整URL时，HttpClient不会计算完整的HTTP URL，
+而是直接使用请求URI中指定的完整URL：
 
 [source,java]
 ----
@@ -2572,21 +2572,21 @@ client.request(HttpMethod.GET, "ftp://ftp.gnu.org/gnu/", ar -> {
 });
 ----
 
-=== Using HA PROXY protocol
+=== 使用HA代理协议
 
-https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt[HA PROXY protocol] provides a convenient way to safely transport connection
-information such as a client's address across multiple layers of NAT or TCP
-proxies.
+https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt[HA PROXY 协议] 提供了一种便捷的安全传输连接信息（例如客户端的地址）的方式，
+可以跨多层NAT或TCP
+代理传输。
 
-HA PROXY protocol can be enabled by setting the option `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setUseProxyProtocol-boolean-[setUseProxyProtocol]`
-and adding the following dependency in your classpath:
+HA PROXY 协议通过 `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setUseProxyProtocol-boolean-[setUseProxyProtocol]` 方法设置启用，
+同时需要在classpath中增加以下依赖：
 
 [source,xml]
 ----
 <dependency>
  <groupId>io.netty</groupId>
  <artifactId>netty-codec-haproxy</artifactId>
- <!--<version>Should align with netty version that Vert.x uses</version>-->
+ <!--<version>必须和 Vert.x 所使用的 netty 的版本一致</version>-->
 </dependency>
 ----
 
@@ -2597,10 +2597,10 @@ HttpServerOptions options = new HttpServerOptions()
 
 HttpServer server = vertx.createHttpServer(options);
 server.requestHandler(request -> {
-  // Print the actual client address provided by the HA proxy protocol instead of the proxy address
+  // 打印HA代理协议提供的真实地址，而不是代理的地址
   System.out.println(request.remoteAddress());
 
-  // Print the address of the proxy
+  // 打印代理的地址
   System.out.println(request.localAddress());
 });
 ----

@@ -476,17 +476,17 @@ NetServerOptions options = new NetServerOptions().
 NetServer server = vertx.createNetServer(options);
 ----
 
-Vert.x supports reading of unencrypted RSA and/or ECC based private keys from PKCS8 PEM files.
-RSA based private keys can also be read from PKCS1 PEM files.
-X.509 certificates can be read from PEM files containing a textual encoding of the certificate as defined by
-https://tools.ietf.org/html/rfc7468#section-5[RFC 7468, Section 5].
+Vert.x支持从PKCS8 PEM文件中读取未加密的基于RSA和/或ECC的私钥。
+也可以从PKCS1 PEM文件中读取基于RSA的私钥。
+若PEM文件包含由 https://tools.ietf.org/html/rfc7468#section-5[RFC 7468, Section 5] 定义的文本编码证书，
+可以从该PEM文件中读取X.509证书。
 
-WARNING: Keep in mind that the keys contained in an unencrypted PKCS8 or a PKCS1 PEM file can be extracted by
-anybody who can read the file. Thus, make sure to put proper access restrictions on such PEM files in order to
-prevent misuse.
+WARNING: 请记住，未加密的PKCS8或PKCS1 PEM文件中包含的密钥，可以被
+有这些文件读取权限的人提取出来。因此，请确保对此类PEM文件设置适当的访问限制，
+以防止滥用。
 
-Finally you can also load generic Java keystore, it is useful for using other KeyStore implementations
-like Bouncy Castle:
+最后，您还可以加载通用Java密钥库，使用其他密钥库实现时非常有用，
+比如使用Bouncy Castle时：
 
 [source,java]
 ----
@@ -971,31 +971,31 @@ options = new NetServerOptions().
   setOpenSslEngineOptions(new OpenSSLEngineOptions());
 ----
 
-==== Server Name Indication (SNI)
+==== 服务器名称指示（SNI）
 
-Server Name Indication (SNI) is a TLS extension by which a client specifies a hostname attempting to connect: during
-the TLS handshake the client gives a server name and the server can use it to respond with a specific certificate
-for this server name instead of the default deployed certificate.
-If the server requires client authentication the server can use a specific trusted CA certificate depending on the
-indicated server name.
+服务器名称指示（英語：Server Name Indication，缩写：SNI）是TLS的一个扩展协议，需要指定尝试连接的主机名：
+TLS握手开始时客户端提供要连接的服务器名称，服务端根据该服务器名称，返回主机名对应的证书，
+而非默认部署的证书。
+如果服务器要求客户端身份验证，则服务器可以根据指定的服务器名称，
+使用特定的受信任CA证书。
 
-When SNI is active the server uses
+当SNI可用时，服务器使用以下规则匹配证书：
 
-* the certificate CN or SAN DNS (Subject Alternative Name with DNS) to do an exact match, e.g `www.example.com`
-* the certificate CN or SAN DNS certificate to match a wildcard name, e.g `*.example.com`
-* otherwise the first certificate when the client does not present a server name or the presented server name cannot be matched
+* 服务器名称完全匹配的证书CN（Common Name，通用名称）或SAN DNS（带有DNS的主题备用名称），例如 `www.example.com`
+* 带匹配通配符的服务器名称匹配的证书CN或SAN DNS证书，例如 `* .example.com` 
+* 否则，当客户端不提供服务器名称或提供的服务器名称无法匹配时，返回第一个证书
 
-When the server additionally requires client authentication:
+当服务器另外要求客户端身份验证时：
 
-* if `link:../../apidocs/io/vertx/core/net/JksOptions.html[JksOptions]` were used to set the trust options
-(`link:../../apidocs/io/vertx/core/net/NetServerOptions.html#setTrustOptions-io.vertx.core.net.TrustOptions-[options]`) then an exact match with the trust store
-alias is done
-* otherwise the available CA certificates are used in the same way as if no SNI is in place
+*如果使用 `link:../../apidocs/io/vertx/core/net/JksOptions.html[JksOptions]` 设置信任选项
+（ `link:../../apidocs/io/vertx/core/net/NetServerOptions.html#setTrustOptions-io.vertx.core.net.TrustOptions-[options]` ），则将与信任库
+别名完全匹配
+*否则，将使用无SNI的方式处理可用的CA证书
 
-You can enable SNI on the server by setting `link:../../apidocs/io/vertx/core/net/NetServerOptions.html#setSni-boolean-[setSni]` to `true` and
-configured the server with multiple key/certificate pairs.
+通过设置 `link:../../apidocs/io/vertx/core/net/NetServerOptions.html#setSni-boolean-[setSni]` 为 `true`，可以在服务器上启用SNI，
+并为服务器配置多个密钥/证书对。
 
-Java KeyStore files or PKCS12 files can store multiple key/cert pairs out of the box.
+Java KeyStore文件，或PKCS12文件可以开箱即用地存储多个密钥/证书对。
 
 [source,java]
 ----
@@ -1024,9 +1024,9 @@ NetServer netServer = vertx.createNetServer(new NetServerOptions()
 );
 ----
 
-The client implicitly sends the connecting host as an SNI server name for Fully Qualified Domain Name (FQDN).
+客户端默认使用连接的主机名的完全限定域名（Fully Qualified Domain Name，缩写：FQDN）作为SNI服务器名称。
 
-You can provide an explicit server name when connecting a socket
+您可以在连接socket时，可以提供明确的服务器名称
 
 [source,java]
 ----
@@ -1035,7 +1035,7 @@ NetClient client = vertx.createNetClient(new NetClientOptions()
     .setSsl(true)
 );
 
-// Connect to 'localhost' and present 'server.name' server name
+// 连接到 'localhost'，并以 'server.name'为服务器名
 client.connect(1234, "localhost", "server.name", res -> {
   if (res.succeeded()) {
     System.out.println("Connected!");
@@ -1046,11 +1046,11 @@ client.connect(1234, "localhost", "server.name", res -> {
 });
 ----
 
-It can be used for different purposes:
+可以用于以下目的：
 
-* present a server name different than the server host
-* present a server name while connecting to an IP
-* force to present a server name when using shortname
+* 指定与服务器主机不一样的服务器名称
+* 使用IP进行连接时，指定服务器名称
+* 使用短名称进行连接时，强制指定服务器名称
 
 ==== 应用层协议协商
 

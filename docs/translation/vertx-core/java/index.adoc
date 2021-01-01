@@ -512,14 +512,18 @@ vertx.deployVerticle("verticles/my_verticle.rb");
 
 Verticle 名称可以增加一个以冒号结尾的前缀，这个前缀用于查找Factory，如：
 
+----
 js:foo.js // 使用JavaScript的Factory
 groovy:com.mycompany.SomeGroovyCompiledVerticle // 用Groovy的Factory
 service:com.mycompany:myorderservice // 用Service的Factory
+----
 
 如果不指定前缀，Vert.x将根据Verticle名称的后缀来查找对应Factory，如：
 
+----
 foo.js // 将使用JavaScript的Factory
 SomeScript.groovy // 将使用Groovy的Factory
+----
 
 若前缀后缀都没指定，Vert.x将假定Verticle名称是一个Java 全限定类名（FQCN），并尝试
 实例化它。
