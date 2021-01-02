@@ -243,4 +243,4 @@ router.errorHandler(400, routingContext -> {
 
 `BadRequestException` 也提供一个方便的函数，叫做 `link:../../apidocs/io/vertx/ext/web/validation/BadRequestException.html#toJson--[toJson]` ，这个函数将异常转换成了Json。
 
-请注意 `ValidationHandler` 的设计目的在于 _fail-fast_ ，即一旦遇到错误，`ValidationHandler` 将让  `RoutingContext` 失败。
+请注意 `ValidationHandler` 的设计目的在于 _迅速失败_ ，即一旦遇到错误，`ValidationHandler` 将让  `RoutingContext` 失败。
