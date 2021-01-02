@@ -1,9 +1,9 @@
 = Vert.x Web Validation
 :toc: left
 
-Vert.x Web Validation可以帮助你解析校验你的参数以及来自请求体中的内容
+Vert.x Web Validation可以帮助您解析校验您的参数以及来自请求体中的内容
 
-你可以做到如下事情：
+您可以做到如下事情：
 
 * 解析校验请求参数,也可以序列化和分解
 * 解析和校验请求体(包括json和form格式)
@@ -12,11 +12,11 @@ Vert.x Web Validation可以帮助你解析校验你的参数以及来自请求�
 * 自定义解析校验规则
 * 管理解析校验失败的处理逻辑
 
-它用 https://vertx.io/docs/vertx-json-schema/java/[Vert.x Json Schema] 来定义你的请求参数和请求体
+它用 https://vertx.io/docs/vertx-json-schema/java/[Vert.x Json Schema] 来定义您的请求参数和请求体
 
 == 使用 Vert.x Web Validation
 
-为了使用Vert.x Web Validation，请在你的build模块中添加如下的依赖：
+为了使用Vert.x Web Validation，请在您的build模块中添加如下的依赖：
 
 * Maven (`pom.xml`文件):
 
@@ -40,7 +40,7 @@ dependencies {
 
 == 不使用 Vert.x Web Validation 时
 
-当你接收到一个HTTP请求时，你经常需要解析请求中的参数以及请求体：
+当您接收到一个HTTP请求时，您经常需要解析请求中的参数以及请求体：
 
 [source,java]
 ----
@@ -103,11 +103,11 @@ router
 
 === 定义参数
 
-你可以在请求中4个不同的位置来定义参数: query, cookie, header, path。
+您可以在请求中4个不同的位置来定义参数: query, cookie, header, path。
 
 每个参数都由一个 `link:../../apidocs/io/vertx/ext/web/validation/impl/parameter/ParameterProcessor.html[ParameterProcessor]` 所接收,
 
-你可以用 `link:../../apidocs/io/vertx/ext/web/validation/builder/Parameters.html[Parameters]` 中提供的方法来创建这个 `Processor`：
+您可以用 `link:../../apidocs/io/vertx/ext/web/validation/builder/Parameters.html[Parameters]` 中提供的方法来创建这个 `Processor`：
 
 [source,java]
 ----
@@ -142,7 +142,7 @@ ValidationHandler
 
 每个body类型都被 `link:../../apidocs/io/vertx/ext/web/validation/impl/parameter/ParameterProcessor.html[ParameterProcessor]` 所抽象 （即符合某个 `Content-type` 请求头）。如果没有找到匹配的body处理器，除非您指定了下述的解析器，否则验证**不会**失败
 
-你可以用 `link:../../apidocs/io/vertx/ext/web/validation/builder/Bodies.html[Bodies]` 提供的函数来轻松创建这些解析器。
+您可以用 `link:../../apidocs/io/vertx/ext/web/validation/builder/Bodies.html[Bodies]` 提供的函数来轻松创建这些解析器。
 
 [source,java]
 ----
@@ -157,13 +157,13 @@ ValidationHandler
 
 这个例子中 `ValidationHandler` 可以管理两个不同的body类型(同时解析校验)
 
-尤其是form类型的请求体 会被转换成json。当你接收解析后的结果时，不需要关心请求体时form还是json。
+尤其是form类型的请求体 会被转换成json。当您接收解析后的结果时，不需要关心请求体时form还是json。
 
 关于body解析器的更多信息，见于 `link:../../apidocs/io/vertx/ext/web/validation/builder/Bodies.html[Bodies]`
 
-=== 定义request predicates
+=== 定义请求断言
 
-你可以在 `ValidationHandler` 中用 `link:../../apidocs/io/vertx/ext/web/validation/RequestPredicate.html[RequestPredicate]` 来定义请求断言 ，例如 定义一个 "request body required" 请求断言：
+您可以在 `ValidationHandler` 中用 `link:../../apidocs/io/vertx/ext/web/validation/RequestPredicate.html[RequestPredicate]` 来定义请求断言 ，例如 定义一个 "request body required" 请求断言：
 
 [source,java]
 ----
@@ -174,7 +174,7 @@ ValidationHandler
 
 === 构建 `ValidationHandler`
 
-在你配置了所有的 '参数'、'请求体'、'断言'之后， 你可以创建 `ValidationHandler`:
+在您配置了所有的 '参数'、'请求体'、'断言'之后， 您可以创建 `ValidationHandler`:
 
 [source,java]
 ----
