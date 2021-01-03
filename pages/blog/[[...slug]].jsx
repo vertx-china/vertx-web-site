@@ -57,7 +57,6 @@ async function compileAllPosts() {
   }
 
   let files = (await readdir("blog")).filter(f => {
-    console.log(f)
     let e = f.match(pattern)
     if (e === null) {
       return false

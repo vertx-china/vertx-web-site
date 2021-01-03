@@ -203,7 +203,7 @@ const Docs = ({ metadata, allVersions, fallbackGitHubStars, toc, contents }) => 
                 <div className="docs-content-metadata-left">
                   {repository && <div className="docs-content-metadata-repo">{repository}</div>}
                   <div>
-                    <Link href={`/docs/${currentVersion.version ? `${currentVersion.version}/` : ""}apidocs`}>
+                    <Link href={`https://vertx.io/docs/${currentVersion.version ? `${currentVersion.version}/` : ""}apidocs`}>
                       <a><Book className="feather" /> API</a>
                     </Link>
                   </div>

@@ -80,7 +80,7 @@ const Docs = ({ metadata, version }) => {
 
             <div className="docs-index-content-heading-right">
               <span className="docs-index-api">
-                <Link href={`/docs/${version ? `${version}/` : ""}apidocs`}>
+                <Link href={`https://vertx.io/docs/${version ? `${version}/` : ""}apidocs`}>
                   <a><Book className="feather" />API</a>
                 </Link>
               </span>
