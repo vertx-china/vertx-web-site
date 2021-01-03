@@ -1,8 +1,8 @@
 == 记录解析器（Record Parser）
 
-记录解析器（Record Parser）允许您轻松解析由字节序列或固定长度带分隔符的记录的协议。
-它将输入缓冲区序列转换为已配置的缓冲区序列（固定大小
-或带分隔符的记录）。
+记录解析器（Record Parser）允许您轻松解析由字节序列分割的协议，或者固定长度的协议。
+它将输入缓冲区序列转换为按照配置重组后的缓冲区序列
+（固定大小或带分隔符的记录）。
 
 例如，若您使用 `\n` 分割的简单ASCII文本协议，并输入如下：
 
@@ -49,11 +49,11 @@ RecordParser.newFixed(4, h -> {
 
 == Json 解析器
 
-你可以很容易的解析JSON格式的内容，但是这就要求一次性提供整个JSON内容，
-而如果你要提供一个非常大的JSON，JSON解析器恐怕就不是个方便的方式。
+解析JSON结构很容易，但这要求你一次性提供完整的JSON，
+而对于非常大的JSON结构，则并不是特别适合使用JSON解析器来处理。
 
 非阻塞JSON解析器 则是一个事件驱动的解析器, 它可以处理体积非常大的JSON。
-它将传输一系列`input buffer`到一系列JSON解析器事件。
+它会将一系列输入的buffer转换为一系列的JSON解析器事件。
 
 [source, java]
 ----
@@ -63,24 +63,24 @@ JsonParser parser = JsonParser.newParser();
 parser.handler(event -> {
   switch (event.type()) {
     case START_OBJECT:
-      // Start an objet
+      // Json对象的开始
       break;
     case END_OBJECT:
-      // End an objet
+      // Json对象的结束
       break;
     case START_ARRAY:
-      // Start an array
+      // Json数组的开始
       break;
     case END_ARRAY:
-      // End an array
+      // Json数组的结束
       break;
     case VALUE:
-      // Handle a value
+      // 处理一个取值
       String field = event.fieldName();
       if (field != null) {
-        // In an object
+        // 当前处于Json对象内
       } else {
-        // In an array or top level
+        // 当前处于Json数组内，或Json最顶层
         if (event.isString()) {
 
         } else {
@@ -92,7 +92,7 @@ parser.handler(event -> {
 });
 ----
 
-该解析器是非阻塞的，并且由 `input buffer` 驱动触发的事件
+该解析器是非阻塞的，并且事件由输入的buffer来驱动触发。
 
 [source, java]
 ----
@@ -120,8 +120,8 @@ parser.handle(Buffer.buffer("]"));
 parser.end();
 ----
 
-事件驱动的解析操作提供了更多的控制，但代价就是要处理非常细粒度的事件（`event-mode`），这有时
-是不方便的。当你需要的时候，JSON解析器允许你将JSON做为值(`value-mode`)处理。
+事件驱动的解析过程提供了更多的控制能力，同时带来了“需要处理细粒度事件”的缺点，有时候不太方便。
+当你需要的时候，JSON解析器允许你将JSON结构作为值处理。
 
 [source, java]
 ----
@@ -147,8 +147,8 @@ parser.handle(Buffer.buffer("[{\"firstName\":\"Bob\"},\"lastName\":\"Morane\"),.
 parser.end();
 ----
 
-`value-mode` 可以在解析时启用或停用，并允许你在 
-`event-mode` 事件和 JSONObject的 `value-mode` 事件之间自由切换。
+`value-mode` 可以在解析过程中启用或停用，
+允许你在细粒度事件与JSON对象事件之间自由切换。
 
 [source, java]
 ----
@@ -186,7 +186,7 @@ parser.end();
 JsonParser parser = JsonParser.newParser();
 
 parser.handler(event -> {
-  // Start the object
+  // Json对象的开始
 
   switch (event.type()) {
     case START_OBJECT:
@@ -209,7 +209,7 @@ parser.handle(Buffer.buffer("[0,1,2,3,4,...]"));
 parser.end();
 ----
 
-你也可以反解析到POJO。
+你也可以解码为POJO。
 
 [source, java]
 ----
@@ -229,7 +229,7 @@ parser.handler(event -> {
 JsonParser parser = JsonParser.newParser();
 
 parser.exceptionHandler(err -> {
-  // 捕捉所有的解析/反解析异常
+  // 捕捉所有的解析/解码异常
 });
 ----
 

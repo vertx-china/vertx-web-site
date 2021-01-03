@@ -1,13 +1,13 @@
 
 == 流
 
-Vert.x有多个对象可以用于文件的读取和写入。
+在Vert.x中，有许多对象可以用于读取和写入。
 
 在 Vert.x 中，写调用是立即返回的，而写操作的实际是在内部队列中排队写入。
 
 不难看出，若写入对象的速度比实际写入底层数据资源速度快，
-那么写入队列就会无限增长，最终导致
-内存耗尽。
+那么写入队列就会无限增长，
+最终导致内存耗尽。
 
 为了解决这个问题，Vert.x API中的一些对象提供了简单的流程控制（ _回压 back-pressure_ ）功能。
 
@@ -16,13 +16,13 @@ Vert.x有多个对象可以用于文件的读取和写入。
 
 让我们举个例子，我们要从 `ReadStream` 中读取数据，然后将数据写入 `WriteStream` 。
 
-一个非常简单的例子是从 `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` 读取然后写回到
-同一个`NetSocket` —— 因为 `NetSocket` 既实现了 `ReadStream` 也实现了 `WriteStream` 接口。请注意，这些操作适用于
-任何实现了 `ReadStream` 和 `WriteStream` 接口的对象，包括HTTP 请求、HTTP 响应、
-异步文件 I/O 和 WebSocket等。
+一个非常简单的例子是从 `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` 读取然后写回到同一个 `NetSocket`
+—— 因为 `NetSocket` 既实现了 `ReadStream` 也实现了 `WriteStream` 接口。
+请注意，这些操作适用于任何实现了 `ReadStream` 和 `WriteStream` 接口的对象，
+包括HTTP 请求、HTTP 响应、异步文件 I/O 和 WebSocket等。
 
-一个最简单的方法是直接获取已经读取的数据，并立即将其
-写入 `NetSocket` ：
+一个最简单的方法是直接获取已经读取的数据，并立即将其写入
+`NetSocket` ：
 
 [source,java]
 ----
@@ -31,18 +31,18 @@ NetServer server = vertx.createNetServer(
 );
 server.connectHandler(sock -> {
   sock.handler(buffer -> {
-    // Write the data straight back
+    // 直接把数据写回
     sock.write(buffer);
   });
 }).listen();
 ----
 
 上面的例子有一个问题：如果从Socket读取数据的速度比写回Socket的速度快，
-那么它将在 `NetSocket` 的写队列中不断堆积，最终
-耗尽内存。这是有可能会发生的，例如，若Socket另一端的客户端读取速度
-不够快，无法快速地向连接的另一端回压。
+那么它将在 `NetSocket` 的写队列中不断堆积，
+最终耗尽内存。这是有可能会发生的，例如，若Socket另一端的客户端读取速度不够快，
+无法快速地向连接的另一端回压。
 
-由于 `NetSocket` 实现了 `WriteStream` 接口，我们可以在写入之前检查 `WriteStream` 
+由于 `NetSocket` 实现了 `WriteStream` 接口，我们可以在写入之前检查 `WriteStream`
 是否已满：
 
 [source,java]
@@ -78,8 +78,8 @@ server.connectHandler(sock -> {
 }).listen();
 ----
 
-我们已经快达到我们的目标，但还没有完全实现。现在 `NetSocket` 在文件已满时会暂停，但是
-当写队列处理完成时，我们需要取消暂停：
+我们已经快达到我们的目标，但还没有完全实现。现在 `NetSocket` 在文件已满时会暂停，
+但是当写队列处理完成时，我们需要取消暂停：
 
 [source,java]
 ----
@@ -99,12 +99,12 @@ server.connectHandler(sock -> {
 }).listen();
 ----
 
-至此，我们的目标实现了。当写队列准备好接收更多的数据时，`link:../../apidocs/io/vertx/core/streams/WriteStream.html#drainHandler-io.vertx.core.Handler-[drainHandler]` 事件处理器将
-被调用，它会恢复 `NetSocket` 的状态，
+至此，我们的目标实现了。当写队列准备好接收更多的数据时，`link:../../apidocs/io/vertx/core/streams/WriteStream.html#drainHandler-io.vertx.core.Handler-[drainHandler]`
+事件处理器将被调用，它会恢复 `NetSocket` 的状态，
 允许读取更多的数据。
 
-在编写Vert.x 应用程序时，这样做是很常见的，因此我们提供了一个
-名为 `link:../../apidocs/io/vertx/core/streams/ReadStream.html#pipeTo-io.vertx.core.streams.WriteStream-[pipeTo]` 方法替你完成这些繁杂的工作。
+在编写Vert.x 应用程序时，这样做是很常见的，因此我们提供了一个名为
+`link:../../apidocs/io/vertx/core/streams/ReadStream.html#pipeTo-io.vertx.core.streams.WriteStream-[pipeTo]` 的方法替你完成这些繁杂的工作。
 您只需要把 `WriteStream` 传给它并调用：
 
 [source,java]
@@ -117,8 +117,8 @@ server.connectHandler(sock -> {
 }).listen();
 ----
 
-以上和下面更详细的例子完全一样，额外加上stream对于`失败`和`结束`的处理：
-最终 当pipe最终成功或失败时， `WriteStream` 就会停止。
+以上和下面更详细的例子完全一样，额外加上stream对于失败和结束的处理：
+当pipe最终成功或失败时， `WriteStream` 就会停止。
 
 当读写操作结束时会发起通知：
 
@@ -137,22 +137,22 @@ server.connectHandler(sock -> {
 }).listen();
 ----
 
-当你想要异步处理`源文件`时，你可以创建一个 `link:../../apidocs/io/vertx/core/streams/Pipe.html[Pipe]` 对象，
-这个对象会暂停源文件流，并在源文件流通过pipe传输到目标时恢复源文件流：
+当你处理异步目标时，你可以创建一个 `link:../../apidocs/io/vertx/core/streams/Pipe.html[Pipe]` 对象，
+这个对象会暂停源流，并在源流通过pipe传输到目标时恢复源流：
 
 [source,java]
 ----
 server.connectHandler(sock -> {
 
-  // Create a pipe to use asynchronously
+  // 创建异步操作管道
   Pipe<Buffer> pipe = sock.pipe();
 
-  // Open a destination file
+  // 打开目标文件
   fs.open("/path/to/file", new OpenOptions(), ar -> {
     if (ar.succeeded()) {
       AsyncFile file = ar.result();
 
-      // Pipe the socket to the file and close the file at the end
+      // 用管道传输socket当中的信息到文件中，并最终关闭文件
       pipe.to(file);
     } else {
       sock.close();
@@ -171,12 +171,12 @@ vertx.createHttpServer()
     // 创建异步操作管道
     Pipe<Buffer> pipe = request.pipe();
 
-    // 打开源文件流
+    // 打开目标文件
     fs.open("/path/to/file", new OpenOptions(), ar -> {
       if (ar.succeeded()) {
         AsyncFile file = ar.result();
 
-        // 用管道传输socket当中的信息到源文件流 并最终关闭源文件流
+        // 用管道传输socket当中的信息到文件中，并最终关闭文件
         pipe.to(file);
       } else {
         // 关闭管道，恢复请求，body当中的缓冲数据被丢弃
@@ -191,7 +191,7 @@ vertx.createHttpServer()
 
 当pipe关闭，steams的handler会被重置，`ReadStream` 恢复工作。
 
-由以上看来，默认情况下，stream传输完毕之后，源文件流都会停止。你可以
+从上面可以看出，默认情况下，stream传输完毕之后，目标流都会停止。你可以
 用pipe对象控制这些行为：
 
 * `link:../../apidocs/io/vertx/core/streams/Pipe.html#endOnFailure-boolean-[endOnFailure]` 控制失败时的操作
@@ -210,30 +210,30 @@ src.pipe()
 });
 ----
 
-现在我们来看看 `ReadStream` 和 `WriteStream` 的方法。
+让我们更进一步，看看 `ReadStream` 和 `WriteStream` 的细节。
 
 === ReadStream
 
-`ReadStream`（可读流） 接口的实现类包括： `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]`, `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]`,
-`link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]`, `link:../../apidocs/io/vertx/core/http/HttpServerFileUpload.html[HttpServerFileUpload]`,
-`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html[HttpServerRequest]`, `link:../../apidocs/io/vertx/core/eventbus/MessageConsumer.html[MessageConsumer]`,
-`link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`, `link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]`, `link:../../apidocs/io/vertx/core/TimeoutStream.html[TimeoutStream]`,
-`link:../../apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]`.
+`ReadStream`（可读流） 接口的实现类包括： `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]`， `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]`，
+`link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]`， `link:../../apidocs/io/vertx/core/http/HttpServerFileUpload.html[HttpServerFileUpload]`，
+`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html[HttpServerRequest]`， `link:../../apidocs/io/vertx/core/eventbus/MessageConsumer.html[MessageConsumer]`，
+`link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`， `link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]`， `link:../../apidocs/io/vertx/core/TimeoutStream.html[TimeoutStream]`，
+`link:../../apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]`。
 
 - `link:../../apidocs/io/vertx/core/streams/ReadStream.html#handler-io.vertx.core.Handler-[handler]`：
-设置一个处理器，它将从`ReadStream`读取对象
+设置一个处理器，它将从 `ReadStream` 读取对象
 - `link:../../apidocs/io/vertx/core/streams/ReadStream.html#pause--[pause]`：
 暂停处理器，暂停时，处理器中将不会收到任何对象
 - `link:../../apidocs/io/vertx/core/streams/ReadStream.html#fetch-long-[fetch]`：
-从stream中抓取指定数量的对象，这些对象中任意一个到达目的地之后，都会触发handler，fetch操作
-是累积的。
+从stream中抓取指定数量的对象，任意对象抵达stream时，都会触发handler，
+fetch操作是累积的。
 - `link:../../apidocs/io/vertx/core/streams/ReadStream.html#resume--[resume]`：
 恢复处理器，若任何对象到达目的地则handler将被触发；等价于 `fetch(Long.MAX_VALUE)` 
 - `link:../../apidocs/io/vertx/core/streams/ReadStream.html#exceptionHandler-io.vertx.core.Handler-[exceptionHandler]`：
 若ReadStream发生异常，将被调用
 - `link:../../apidocs/io/vertx/core/streams/ReadStream.html#endHandler-io.vertx.core.Handler-[endHandler]`：
-当流的数据读取完毕时将被调用。触发原因是读取到了`EOF`，可能分别来自如下：与`ReadStream`关联的文件、
-HTTP请求、或TCP Socket的连接被关闭
+当流的数据读取完毕时将被调用。触发原因是读取到了`EOF`，可能分别来自如下：
+与`ReadStream`关联的文件、HTTP请求、或TCP Socket的连接被关闭
 
 可读流有 _flowing_ 和 _fetch_ 两个模式：
 
@@ -256,16 +256,16 @@ HTTP请求、或TCP Socket的连接被关闭
 函数：
 
 - `link:../../apidocs/io/vertx/core/streams/WriteStream.html#write-java.lang.Object-[write]`：
-往WriteStream写入一个对象，该方法将永远不会阻塞，内部是排队写入并且
-底层资源是异步写入。
+往WriteStream写入一个对象，该方法将永远不会阻塞，
+内部是排队写入并且底层资源是异步写入。
 - `link:../../apidocs/io/vertx/core/streams/WriteStream.html#setWriteQueueMaxSize-int-[setWriteQueueMaxSize]`：
-设置写入队列容量—— `link:../../apidocs/io/vertx/core/streams/WriteStream.html#writeQueueFull--[writeQueueFull]` 在队列 _写满_ 时
-返回`true`。注意，当写队列已满时，调用写（操作）时 数据依然会被接收和
-排队。实际数量取决于流的实现，对于 `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]` ，size代表
-实际写入的字节数，而并非缓冲区的数量。
+设置写入队列容量—— `link:../../apidocs/io/vertx/core/streams/WriteStream.html#writeQueueFull--[writeQueueFull]` 在队列 _写满_ 时返回 `true`。
+注意，当写队列已满时，调用写（操作）时 数据依然会被接收和排队。
+实际数量取决于流的实现，对于 `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]` ，
+size代表实际写入的字节数，而并非缓冲区的数量。
 - `link:../../apidocs/io/vertx/core/streams/WriteStream.html#writeQueueFull--[writeQueueFull]`：
 若写队列被认为已满，则返回 `true` 。
 - `link:../../apidocs/io/vertx/core/streams/WriteStream.html#exceptionHandler-io.vertx.core.Handler-[exceptionHandler]`：
 `WriteStream` 发生异常时调用。
 - `link:../../apidocs/io/vertx/core/streams/WriteStream.html#drainHandler-io.vertx.core.Handler-[drainHandler]`：
-判定 `WriteStream` 不会再满时调用。
+判定 `WriteStream` 有剩余空间时调用。

@@ -1,8 +1,8 @@
 == DNS 客户端
 
 通常情况下，您需要以异步方式来获取DNS信息。
-但不幸的是，Java 虚拟机本身附带的API是不可能的，因此
-Vert.x提供了它自己的完全异步解析DNS的API。
+但不幸的是，Java 虚拟机本身附带的API是不可能的，
+因此Vert.x提供了它自己的完全异步解析DNS的API。
 
 若要获取DnsClient实例，您可以通过Vertx实例来创建一个。
 
@@ -92,8 +92,8 @@ client.lookup6("vertx.io", ar -> {
 
 === resolveA
 
-尝试解析给定名称的所有A（ipv4）记录，这与在类unix操作系统上
-使用 "dig" 类似。
+尝试解析给定名称的所有A（ipv4）记录，
+这与在类unix操作系统上使用 "dig" 类似。
 
 要查找 "vertx.io" 的所有A记录，您通常会执行以下操作：
 
@@ -114,8 +114,8 @@ client.resolveA("vertx.io", ar -> {
 
 === resolveAAAA
 
-尝试解析给定名称的所有AAAA（ipv6）记录，这与在类unix操作系统上
-使用 "dig" 类似。
+尝试解析给定名称的所有AAAA（ipv6）记录，
+这与在类unix操作系统上使用 "dig" 类似。
 
 要查找 "vertx.io" 的所有AAAA记录，您通常会执行以下操作：
 
@@ -136,8 +136,8 @@ client.resolveAAAA("vertx.io", ar -> {
 
 === resolveCNAME
 
-尝试解析给定名称的所有CNAME记录，这与在类unix操作系统上
-使用 "dig" 类似。
+尝试解析给定名称的所有CNAME记录，
+这与在类unix操作系统上使用 "dig" 类似。
 
 要查找 "vertx.io" 的所有CNAME记录，您通常会执行以下操作：
 
@@ -158,10 +158,10 @@ client.resolveCNAME("vertx.io", ar -> {
 
 === resolveMX
 
-尝试解析给定名称的所有MX记录，MX记录用于定义哪个邮件服务器去接受
-指定域的电子邮件。
+尝试解析给定名称的所有MX记录，
+MX记录用于定义哪个邮件服务器去接受指定域的电子邮件。
 
-要查找您常用执行的 "vertx.io" 的所有MX记录：
+要查找 "vertx.io" 的所有MX记录，您通常会执行以下操作：
 
 [source,java]
 ----
@@ -178,8 +178,8 @@ client.resolveMX("vertx.io", ar -> {
 });
 ----
 
-请注意，列表将包含按照它们优先级排序的 `link:../../apidocs/io/vertx/core/dns/MxRecord.html[MxRecord]` ，这
-意味着列表中优先级低的MX记录会第一个优先出现在列表中。
+请注意，列表将包含按照它们优先级排序的 `link:../../apidocs/io/vertx/core/dns/MxRecord.html[MxRecord]`
+，这意味着列表中优先级低的MX记录会第一个优先出现在列表中。
 
 `link:../../apidocs/io/vertx/core/dns/MxRecord.html[MxRecord]` 允许您通过下边提供的方法访问MX记录的优先级和名称：
 
@@ -212,8 +212,8 @@ client.resolveTXT("vertx.io", ar -> {
 
 === resolveNS
 
-尝试解析给定名称的所有NS记录，NS记录指定一个DNS服务器，这个服务器管理
-指定域的DNS信息。
+尝试解析给定名称的所有NS记录，NS记录指定一个DNS服务器，
+这个服务器管理指定域的DNS信息。
 
 要解析 "vertx.io" 的所有NS记录，您可以使用下边几行：
 
@@ -234,8 +234,8 @@ client.resolveNS("vertx.io", ar -> {
 
 === resolveSRV
 
-尝试解析给定名称的所有SRV记录，SRV记录用于定义服务端口和
-主机名等额外信息。一些协议需要这些额外信息。
+尝试解析给定名称的所有SRV记录，SRV记录用于定义服务端口和主机名等额外信息。
+一些协议需要这些额外信息。
 
 要查找 "vertx.io" 的所有SRV记录，您通常会执行以下操作：
 
@@ -254,8 +254,8 @@ client.resolveSRV("vertx.io", ar -> {
 });
 ----
 
-请注意，列表将包含按照它们优先级排序的 `SrvRecord` ，这意味着
-优先级低的记录会第一个优先出现在列表中。
+请注意，列表将包含按照它们优先级排序的 `SrvRecord`
+，这意味着优先级低的记录会第一个优先出现在列表中。
 
 `link:../../apidocs/io/vertx/core/dns/SrvRecord.html[SrvRecord]` 允许您访问SRV记录本身中包含的所有信息：
 
@@ -274,7 +274,7 @@ record.target();
 
 === resolvePTR
 
-尝试解析给定名称的PTR记录，PTR记录将 `ipaddress` 映射到名称。
+尝试解析给定名称的PTR记录，PTR记录将ip地址映射到名称。
 
 要解析IP地址 10.0.0.1 的PTR记录，您将使用 "1.0.0.10.in-addr.arpa"¸的PTR概念。
 
@@ -293,10 +293,10 @@ client.resolvePTR("1.0.0.10.in-addr.arpa", ar -> {
 
 === reverseLookup
 
-尝试对ipaddress进行反向查找，这与解析PTR记录类似。但是允许您
-传递非有效PTR查询字符串的ipaddress。
+尝试对ipaddress进行反向查找，这与解析PTR记录类似。
+但是允许您传递非有效PTR查询字符串的ip地址。
 
-要做ipaddress 10.0.0.1的反向查找类似的事：
+按照类似于下面这种方式来进行ip地址 10.0.0.1 的反向查找：
 
 [source,java]
 ----

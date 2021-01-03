@@ -51,8 +51,8 @@ Buffer buff = Buffer.buffer(10000);
 === 向Buffer写入数据
 
 向Buffer写入数据的方式有两种：追加和随机访问。
-任何一种情况下 Buffer都会自动进行扩容，所以你不会
-在使用Buffer时遇到 `IndexOutOfBoundsException`。
+任何一种情况下 Buffer都会自动进行扩容，
+所以你不会在使用Buffer时遇到 `IndexOutOfBoundsException`。
 
 ==== 追加到Buffer
 
@@ -73,8 +73,8 @@ socket.write(buff);
 ==== 随机访问写Buffer
 
 您还可以指定一个索引值，通过 `setXXX` 方法写入数据到 `Buffer`。
-`setXXX` 也为各种不同数据类型提供了对应的方法。所有的 set 方法都会将索引值作为第一个参数 —— 
-这表示Buffer中开始写入数据的位置。
+`setXXX` 也为各种不同数据类型提供了对应的方法。所有的 set 方法都会将索引值作为第一个参数
+—— 这表示Buffer中开始写入数据的位置。
 
 Buffer始终根据需要进行自动扩容。
 
@@ -102,8 +102,8 @@ for (int i = 0; i < buff.length(); i += 4) {
 === 使用无符号数
 
 可使用 `getUnsignedXXX`、
-`appendUnsignedXXX` 和 `setUnsignedXXX` 方法将无符号数从Buffer中读取或追加/设置到Buffer里。这对于实现一个
-致力于优化带宽占用的网络协议的编解码器是非常有用的。
+`appendUnsignedXXX` 和 `setUnsignedXXX` 方法将无符号数从Buffer中读取或追加/设置到Buffer里。
+这对于实现一个致力于优化带宽占用的网络协议的编解码器是非常有用的。
 
 下边例子中，值 200 被设置到了仅占用一个字节的特定位置：
 

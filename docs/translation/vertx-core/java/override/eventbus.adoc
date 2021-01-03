@@ -26,5 +26,5 @@ eventBus.send("orders", new MyPOJO());
 
 您可以通过 `link:../../apidocs/io/vertx/core/eventbus/EventBus.html#unregisterCodec-java.lang.String-[unregisterCodec]` 方法注销某个消息编解码器。
 
-消息编解码器的编码输入和解码输出不一定使用同一个类型。例如您可以编写一个编解码器
-来发送 MyPOJO 类的对象，但是当消息发送给处理器后解码成 MyOtherPOJO 对象。
+消息编解码器的编码输入和解码输出不一定使用同一个类型。
+例如您可以编写一个编解码器来发送 MyPOJO 类的对象，但是当消息发送给处理器后解码成 MyOtherPOJO 对象。

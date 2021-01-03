@@ -2,10 +2,10 @@
 
 上述的 `link:../../apidocs/io/vertx/core/cli/Option.html[Option]` 和 `link:../../apidocs/io/vertx/core/cli/Argument.html[Argument]` 类是 _无类型_ 的，
 意味着只能从中获取到字符串类型的值。 
-`link:../../apidocs/io/vertx/core/cli/TypedOption.html[TypedOption]` 和 `link:../../apidocs/io/vertx/core/cli/TypedArgument.html[TypedArgument]` 能让您对其赋予一个 _类型_ ，这样
-（字符串类型的）原始值将被转换成对应的类型。
+`link:../../apidocs/io/vertx/core/cli/TypedOption.html[TypedOption]` 和 `link:../../apidocs/io/vertx/core/cli/TypedArgument.html[TypedArgument]` 能让您对其赋予一个 _类型_ ，
+这样（字符串类型的）原始值将被转换成对应的类型。
 
-在 
+在
 `link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` 对象的定义中使用 `link:../../apidocs/io/vertx/core/cli/TypedOption.html[TypedOption]` 和 `link:../../apidocs/io/vertx/core/cli/TypedArgument.html[TypedArgument]` 来取代
  `link:../../apidocs/io/vertx/core/cli/Option.html[Option]` 和 `link:../../apidocs/io/vertx/core/cli/Argument.html[Argument]` ：
 
@@ -62,12 +62,12 @@ CLI cli = CLI.create("some-name")
 
 对于布尔类型而言，这些值将被视为 `true` ：`on`， `yes`， `1`， `true` 。
 
-如果您的命令行选项存在 `enum` 类型，则会自动计算出一组选择范围。
+如果您的命令行选项存在 `enum` 类型，则会自动计算出一组可选值。
 
 === 注解的使用
 
-您也可以使用注解来定义CLI对象。可以通过在类和 _setter_ 方法上使用注解来完成
-定义：
+您也可以使用注解来定义CLI对象。可以通过在类和 _setter_
+方法上使用注解来完成定义：
 
 [source, java]
 ----

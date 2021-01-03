@@ -2,8 +2,8 @@
 
 Verticle 的实现类必须实现 `link:../../apidocs/io/vertx/core/Verticle.html[Verticle]` 接口。
 
-如果您喜欢的话，可以直接实现该接口，但是通常直接从
-抽象类 `link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]` 继承更简单。
+如果您喜欢的话，可以直接实现该接口，但是通常直接从抽象类
+`link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]` 继承更简单。
 
 这儿有一个例子：
 
@@ -23,16 +23,16 @@ public class MyVerticle extends AbstractVerticle {
 
 通常您需要像上边例子一样重写 `start` 方法。
 
-当 Vert.x 部署 Verticle 时，它的 `start` 方法将被调用，这个方法执行完成后 Verticle 就
-变成已启动状态。
+当 Vert.x 部署 Verticle 时，它的 `start` 方法将被调用，这个方法执行完成后 Verticle 
+就变成已启动状态。
 
-您同样可以重写 `stop` 方法，当Vert.x 撤销一个 Verticle 时它会被调用，这个
-方法执行完成后 Verticle 就变成已停止状态了。
+您同样可以重写 `stop` 方法，当Vert.x 撤销一个 Verticle 时它会被调用，
+这个方法执行完成后 Verticle 就变成已停止状态了。
 
 === Verticle 异步启动和停止
 
-有些时候您的 Verticle 启动会耗费一些时间，您想要在这个过程做一些事，并且您做的这些事并不想等到Verticle
-部署完成过后再发生。如：您想在 `start` 方法中部署其他的 Verticle。
+有些时候您的 Verticle 启动会耗费一些时间，您想要在这个过程做一些事，
+并且您做的这些事并不想等到Verticle部署完成过后再发生。如：您想在 `start` 方法中部署其他的 Verticle。
 
 您不能在您的 `start` 方法中阻塞等待其他的 Verticle 部署完成，这样做会破坏 <<golden_rule, Golden Rule>>。
 
@@ -70,8 +70,8 @@ public class MyVerticle extends AbstractVerticle {
 }
 ----
 
-同样的，这儿也有一个异步版本的 `stop` 方法，如果您想做一些耗时的 Verticle
-清理工作，您可以使用它。
+同样的，这儿也有一个异步版本的 `stop` 方法，如果您想做一些耗时的 Verticle清理工作，
+您可以使用它。
 
 ----
 public class MyVerticle extends AbstractVerticle {

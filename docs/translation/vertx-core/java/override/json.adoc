@@ -1,8 +1,8 @@
 == JSON
 :toc: left
 
-和其他一些语言不同，Java 没有对 http://json.org/[JSON] 做原生支持（first class support），因此我们提供了
-两个类，以便在 Vert.x 应用中更方便地处理 JSON。
+和其他一些语言不同，Java 没有对 http://json.org/[JSON] 做原生支持（first class support），
+因此我们提供了两个类，以便在 Vert.x 应用中更方便地处理 JSON。
 
 === JSON objects
 
@@ -71,15 +71,15 @@ request.bodyHandler(buff -> {
 });
 ----
 
-请注意上述代码直接使用了 Jackson 的 `ObjectMapper#convertValue()` 来执行
-映射。关于字段和构造函数的可见性的影响、对象引用的
-序列化和反序列化的问题等等可参考 Jackson 的文档获取更多信息。
+请注意上述代码直接使用了 Jackson 的 `ObjectMapper#convertValue()` 来执行映射。
+关于字段和构造函数的可见性的影响、对象引用的序列化和反序列化等等的问题，
+可参考 Jackson 的文档获取更多信息。
 
 在最简单的情况下，如果 Java 类中所有的字段都是 
 `public`（或者有 `public` 的 getter/setter）时，并且有一个 `public` 的默认构造函数（或不定义构造函数），`mapFrom` 和 `mapTo` 都应该成功。
 
-只要不存在对象的循环引用，嵌套的 Java 对象就可以和嵌套的 JSON 对象
-相互序列化/反序列化。
+只要不存在对象的循环引用，嵌套的 Java 对象就可以和嵌套的 JSON 
+对象相互序列化/反序列化。
 
 ==== 将 JSON 对象编码成字符串
 
