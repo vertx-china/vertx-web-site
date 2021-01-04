@@ -95,7 +95,12 @@ async function compileAsciiDoc(filename) {
       "source-highlighter": "highlightjs-ext",
       "showtitle": true,
       "toc": "left",
-      "sectanchors": true
+      "sectanchors": true,
+      "important-caption": "重要",
+      "note-caption": "注意",
+      "tip-caption": "提示",
+      "warning-caption": "警告",
+      "caution-caption": "小心"
     }
   }
 
