@@ -1,7 +1,8 @@
+[[_typed_options_and_arguments]]
 === 类型化的选项和参数
 
 上述的 `link:../../apidocs/io/vertx/core/cli/Option.html[Option]` 和 `link:../../apidocs/io/vertx/core/cli/Argument.html[Argument]` 类是 _无类型_ 的，
-意味着只能从中获取到字符串类型的值。 
+意味着只能从中获取到字符串类型的值。
 `link:../../apidocs/io/vertx/core/cli/TypedOption.html[TypedOption]` 和 `link:../../apidocs/io/vertx/core/cli/TypedArgument.html[TypedArgument]` 能让您对其赋予一个 _类型_ ，
 这样（字符串类型的）原始值将被转换成对应的类型。
 
@@ -48,7 +49,7 @@ Vert.x CLI 可以转换具有如下特征的类：
 * 拥有一个名为 `from` 或者 `fromString` 的静态方法
 * 拥有一个静态的 `valueOf` 方法，例如原始类型和枚举类型
 
-此外您也可以实现自定义的 `link:../../apidocs/io/vertx/core/cli/converters/Converter.html[Converter]` 
+此外您也可以实现自定义的 `link:../../apidocs/io/vertx/core/cli/converters/Converter.html[Converter]`
 并在 `CLI` 对象使用它：
 
 [source,java]
@@ -64,6 +65,7 @@ CLI cli = CLI.create("some-name")
 
 如果您的命令行选项存在 `enum` 类型，则会自动计算出一组可选值。
 
+[[_using_annotations]]
 === 注解的使用
 
 您也可以使用注解来定义CLI对象。可以通过在类和 _setter_

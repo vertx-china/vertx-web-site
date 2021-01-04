@@ -212,6 +212,7 @@ src.pipe()
 
 让我们更进一步，看看 `ReadStream` 和 `WriteStream` 的细节。
 
+[[_readstream]]
 === ReadStream
 
 `ReadStream`（可读流） 接口的实现类包括： `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]`， `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]`，
@@ -248,6 +249,7 @@ fetch操作是累积的。
 * `pause()` 设置ReadStream 为 _fetch_ 模式 并设置demand值为0
 * `fetch(long)` 请求指定数量的stream元素并将该数量加到目前的demand值当中
 
+[[_writestream]]
 === WriteStream
 
 `WriteStream`（可写流）接口的实现类包括：`link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]`，`link:../../apidocs/io/vertx/core/http/HttpServerResponse.html[HttpServerResponse]`

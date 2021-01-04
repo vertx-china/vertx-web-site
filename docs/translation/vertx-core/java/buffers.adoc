@@ -1,3 +1,4 @@
+[[_buffers]]
 == Buffers
 :toc: left
 
@@ -6,6 +7,7 @@
 `Buffer` 是一个可以被读取或写入的，包含0个或多个字节的序列，并且能够根据写入的字节自动扩容。
 您也可以将 `Buffer` 想象成一个智能的字节数组。
 
+[[_creating_buffers]]
 === 创建 Buffer
 
 可以使用静态方法 `link:../../apidocs/io/vertx/core/buffer/Buffer.html#buffer--[Buffer.buffer]` 来创建 Buffer。
@@ -48,12 +50,14 @@ include::override/buffer_from_bytes.adoc[]
 Buffer buff = Buffer.buffer(10000);
 ----
 
+[[_writing_to_a_buffer]]
 === 向Buffer写入数据
 
 向Buffer写入数据的方式有两种：追加和随机访问。
 任何一种情况下 Buffer都会自动进行扩容，
 所以你不会在使用Buffer时遇到 `IndexOutOfBoundsException`。
 
+[[_appending_to_a_buffer]]
 ==== 追加到Buffer
 
 您可以使用 `appendXXX` 方法追加数据到Buffer。
@@ -70,6 +74,7 @@ buff.appendInt(123).appendString("hello\n");
 socket.write(buff);
 ----
 
+[[_random_access_buffer_writes]]
 ==== 随机访问写Buffer
 
 您还可以指定一个索引值，通过 `setXXX` 方法写入数据到 `Buffer`。
@@ -86,6 +91,7 @@ buff.setInt(1000, 123);
 buff.setString(0, "hello");
 ----
 
+[[_reading_from_a_buffer]]
 === 从Buffer中读取
 
 可使用 `getXXX` 方法从 Buffer 中读取数据，`getXXX` 为各种不同数据类型提供了对应的方法，
@@ -99,6 +105,7 @@ for (int i = 0; i < buff.length(); i += 4) {
 }
 ----
 
+[[_working_with_unsigned_numbers]]
 === 使用无符号数
 
 可使用 `getUnsignedXXX`、
@@ -117,20 +124,24 @@ System.out.println(buff.getUnsignedByte(pos));
 
 控制台中显示 "200"。
 
+[[_buffer_length]]
 === Buffer长度
 
 可使用 `link:../../apidocs/io/vertx/core/buffer/Buffer.html#length--[length]` 方法获取Buffer长度，
 Buffer的长度值是Buffer中包含的字节的最大索引 + 1。
 
+[[_copying_buffers]]
 === 拷贝Buffer
 
 可使用 `link:../../apidocs/io/vertx/core/buffer/Buffer.html#copy--[copy]` 方法创建一个Buffer的副本。
 
+[[_slicing_buffers]]
 === 裁剪Buffer
 
 裁剪得到的Buffer是完全依赖于原始Buffer的一个新的Buffer，换句话说，它不会对Buffer中的数据做拷贝。
 使用 `link:../../apidocs/io/vertx/core/buffer/Buffer.html#slice--[slice]` 方法裁剪一个Buffer。
 
+[[_buffer_re_use]]
 === Buffer 重用
 
 将Buffer写入到一个Socket或其他类似位置后，Buffer就不可被重用了。

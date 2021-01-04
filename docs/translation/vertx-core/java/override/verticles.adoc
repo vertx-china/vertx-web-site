@@ -1,3 +1,4 @@
+[[_writing_verticles]]
 === 编写 Verticle
 
 Verticle 的实现类必须实现 `link:../../apidocs/io/vertx/core/Verticle.html[Verticle]` 接口。
@@ -29,6 +30,7 @@ public class MyVerticle extends AbstractVerticle {
 您同样可以重写 `stop` 方法，当Vert.x 撤销一个 Verticle 时它会被调用，
 这个方法执行完成后 Verticle 就变成已停止状态了。
 
+[[_asynchronous_verticle_start_and_stop]]
 === Verticle 异步启动和停止
 
 有些时候您的 Verticle 启动会耗费一些时间，您想要在这个过程做一些事，

@@ -1,3 +1,4 @@
+[[_in_the_beginning_there_was_vert_x]]
 == 故事从 Vert.x 开始
 
 使用Vert.x进行开发离不开 `link:../../apidocs/io/vertx/core/Vertx.html[Vertx]` 对象。
@@ -17,6 +18,7 @@ Vertx vertx = Vertx.vertx();
 NOTE: 大部分应用将只会需要一个Vert.x实例，但如果您有需要也可创建多个Vert.x实例，
 如：隔离的事件总线或不同组的客户端和服务器。
 
+[[_specifying_options_when_creating_a_vertx_object]]
 === 创建 Vertx 对象时指定配置项
 
 如果缺省的配置不适合您，可在创建 `Vertx` 对象的同时指定配置项：
@@ -28,6 +30,7 @@ Vertx vertx = Vertx.vertx(new VertxOptions().setWorkerPoolSize(40));
 
 `link:../../apidocs/io/vertx/core/VertxOptions.html[VertxOptions]` 对象有很多配置，包括集群、高可用、池大小等。在Javadoc中描述了所有配置的细节。
 
+[[_creating_a_clustered_vert_x_object]]
 === 创建集群模式的 Vert.x 对象
 
 如果您想创建一个 *集群模式的 Vert.x* 对象（参考 <<event_bus, event bus>> 章节了解更多事件总线集群细节），

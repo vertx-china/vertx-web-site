@@ -1,8 +1,9 @@
+[[_message_codecs]]
 ==== 消息编解码器
 
 您可以在 Event Bus 中发送任何对象，只需为这个对象类型注册一个编解码器 `link:../../apidocs/io/vertx/core/eventbus/MessageCodec.html[message codec]` 即可。
 
-每个消息编解码器都有一个名称，您需要在发送或发布消息时通过 `link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]` 
+每个消息编解码器都有一个名称，您需要在发送或发布消息时通过 `link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]`
 来指定：
 
 [source,java]
