@@ -14,6 +14,7 @@ Vert.x Web Validation可以帮助您解析校验您的参数以及来自请求�
 
 它用 https://vertx.io/docs/vertx-json-schema/java/[Vert.x Json Schema] 来定义您的请求参数和请求体
 
+[[_using_vert_x_web_validation]]
 == 使用 Vert.x Web Validation
 
 为了使用Vert.x Web Validation，请在您的build模块中添加如下的依赖：
@@ -38,6 +39,7 @@ dependencies {
 }
 ----
 
+[[_without_vert_x_web_validation]]
 == 不使用 Vert.x Web Validation 时
 
 当您接收到一个HTTP请求时，您经常需要解析请求中的参数以及请求体：
@@ -92,6 +94,7 @@ router
   });
 ----
 
+[[_creating_the_validationhandler]]
 == 创建 `ValidationHandler`
 
 这个模块提供了一个简单好用的builder API 来创建 `link:../../apidocs/io/vertx/ext/web/validation/ValidationHandler.html[ValidationHandler]` ，
@@ -101,6 +104,7 @@ router
 
 `link:../../apidocs/io/vertx/json/schema/SchemaParser.html[SchemaParser]` 用来解析所有由 https://vertx.io/docs/vertx-json-schema/java/[Vert.x Json Schema DSL] 定义的schema
 
+[[_defining_parameters]]
 === 定义参数
 
 您可以在请求中4个不同的位置来定义参数: query， cookie， header， path。
@@ -136,6 +140,7 @@ ValidationHandler
 
 更多关于参数的文档 可见于 `link:../../apidocs/io/vertx/ext/web/validation/builder/Parameters.html[Parameters]`
 
+[[_defining_request_bodies]]
 === 定义请求体
 
 每个请求体类型都被符合某个 `Content-type` 请求头的 `link:../../apidocs/io/vertx/ext/web/validation/impl/parameter/ParameterProcessor.html[ParameterProcessor]` 所解析。如果没有找到匹配的请求体处理器，除非您指定了下述的解析器，否则验证**不会**失败
@@ -157,6 +162,7 @@ ValidationHandler
 
 关于请求体解析器的更多信息，见于 `link:../../apidocs/io/vertx/ext/web/validation/builder/Bodies.html[Bodies]`
 
+[[_defining_request_predicates]]
 === 定义请求断言
 
 您可以在 `ValidationHandler` 中用 `link:../../apidocs/io/vertx/ext/web/validation/RequestPredicate.html[RequestPredicate]` 来定义请求断言 ，例如 断言请求体非空：
@@ -168,6 +174,7 @@ ValidationHandler
   .predicate(RequestPredicate.BODY_REQUIRED);
 ----
 
+[[_building_the_validationhandler]]
 === 构建 `ValidationHandler`
 
 在您配置了所有的 '参数'、'请求体'、'断言'之后， 您可以创建 `ValidationHandler` :
@@ -183,6 +190,7 @@ router
   );
 ----
 
+[[_using_the_parsed_parameters_and_body]]
 == 使用解析的参数和请求体
 
 `ValidationHandler` 会把解析到的参数放入 `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]` :
@@ -208,6 +216,7 @@ router
   });
 ----
 
+[[_manage_the_failures]]
 == 处理失败
 
 `ValidationHandler` 每次遇到解析错误或者校验错误，它会让 `RoutingContext` 以400的状态码结束请求，
