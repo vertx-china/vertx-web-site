@@ -228,12 +228,12 @@ src.pipe()
 从stream中抓取指定数量的对象，任意对象抵达stream时，都会触发handler，
 fetch操作是累积的。
 - `link:../../apidocs/io/vertx/core/streams/ReadStream.html#resume--[resume]`：
-恢复处理器，若任何对象到达目的地则handler将被触发；等价于 `fetch(Long.MAX_VALUE)` 
+恢复处理器，若任何对象到达目的地则handler将被触发；等价于 `fetch(Long.MAX_VALUE)`
 - `link:../../apidocs/io/vertx/core/streams/ReadStream.html#exceptionHandler-io.vertx.core.Handler-[exceptionHandler]`：
 若ReadStream发生异常，将被调用
 - `link:../../apidocs/io/vertx/core/streams/ReadStream.html#endHandler-io.vertx.core.Handler-[endHandler]`：
-当流的数据读取完毕时将被调用。触发原因是读取到了`EOF`，可能分别来自如下：
-与`ReadStream`关联的文件、HTTP请求、或TCP Socket的连接被关闭
+当流的数据读取完毕时将被调用。触发原因是读取到了 `EOF` ，可能分别来自如下：
+与 `ReadStream` 关联的文件、HTTP请求、或TCP Socket的连接被关闭
 
 可读流有 _flowing_ 和 _fetch_ 两个模式：
 

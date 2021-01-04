@@ -49,7 +49,7 @@ CLI cli = CLI.create("copy")
 创建之后，可以给它设置摘要和描述。一般来说，摘要是指一行简短的文字说明，
 描述是指篇幅较长的详细说明。每个选项和参数可以使用
 `link:../../apidocs/io/vertx/core/cli/CLI.html#addArgument-io.vertx.core.cli.Argument-[addArgument]` 和
-`link:../../apidocs/io/vertx/core/cli/CLI.html#addOption-io.vertx.core.cli.Option-[addOption]` 方法加入到`CLI`对象中。
+`link:../../apidocs/io/vertx/core/cli/CLI.html#addOption-io.vertx.core.cli.Option-[addOption]` 方法加入到 `CLI` 对象中。
 
 ==== 选项列表
 
@@ -225,7 +225,7 @@ CommandLine commandLine = cli.parse(userCommandLineArguments);
 [[query_interrogation_stage]]
 === 查询/问答交互阶段
 
-命令行解析完成之后，您可以从 
+命令行解析完成之后，您可以从
 `link:../../apidocs/io/vertx/core/cli/CLI.html#parse-java.util.List-[parse]` 方法返回的 `link:../../apidocs/io/vertx/core/cli/CommandLine.html[CommandLine]`
 对象中获取到选项值和参数值：
 

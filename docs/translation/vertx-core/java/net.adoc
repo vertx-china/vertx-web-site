@@ -187,7 +187,7 @@ socket.sendFile("myfile.dat");
 
 === 流式的Socket
 
-`link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` 接口继承了 link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 和
+`link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` 接口继承了 `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 和
 `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` 接口，因此您可以将它套用（pipe）到其他的
 读写流上。
 
@@ -291,7 +291,7 @@ NetClient client = vertx.createNetClient();
 
 === 配置 TCP 客户端
 
-如果您不想使用默认值，则可以在创建实例时传入 `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` 
+如果您不想使用默认值，则可以在创建实例时传入 `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]`
 给客户端：
 
 [source,java]
@@ -303,7 +303,7 @@ NetClient client = vertx.createNetClient(options);
 === 创建连接
 
 您可以使用 `link:../../apidocs/io/vertx/core/net/NetClient.html#connect-int-java.lang.String-io.vertx.core.Handler-[connect]` 方法创建到服务器的连接。
-请指定服务器的端口和主机，以及用于处理 
+请指定服务器的端口和主机，以及用于处理
 `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` 的处理器。当连接成功或失败时处理器会被调用。
 
 [source,java]
@@ -372,7 +372,7 @@ Netty 使用 `DEBUG` 级别和 `io.netty.handler.logging.LoggingHandler` 名称�
 [[ssl]]
 === 配置服务端和客户端以使用SSL/TLS
 
-TCP 客户端和服务端可以通过配置来使用 [TLS（传输层安全性协议）]http://en.wikipedia.org/wiki/Transport_Layer_Security[Transport Layer Security] 
+TCP 客户端和服务端可以通过配置来使用 [TLS（传输层安全性协议）]http://en.wikipedia.org/wiki/Transport_Layer_Security[Transport Layer Security]
 ——早期版本的TLS被称为SSL。
 
 无论是否使用SSL/TLS，服务器和客户端的API都是相同的。通过创建客户端/服务器时使用的
@@ -944,7 +944,7 @@ NetServer server = vertx.createNetServer(options);
 
 ==== SSL引擎
 
-引擎实现可以配置为使用 https://www.openssl.org[OpenSSL] 而不是JDK实现（来支持SSL）。 
+引擎实现可以配置为使用 https://www.openssl.org[OpenSSL] 而不是JDK实现（来支持SSL）。
 OpenSSL提供比JDK引擎更好的性能和CPU使用率、以及JDK版本独立性。
 
 引擎选项可使用：
@@ -982,7 +982,7 @@ TLS握手开始时客户端提供要连接的服务器名称，服务端根据�
 当SNI可用时，服务器使用以下规则匹配证书：
 
 * 服务器名称完全匹配的证书CN（Common Name，通用名称）或SAN DNS（带有DNS的主题备用名称），例如 `www.example.com`
-* 带匹配通配符的服务器名称匹配的证书CN或SAN DNS证书，例如 `* .example.com` 
+* 带匹配通配符的服务器名称匹配的证书CN或SAN DNS证书，例如 `* .example.com`
 * 否则，当客户端不提供服务器名称或提供的服务器名称无法匹配时，返回第一个证书
 
 当服务器另外要求客户端身份验证时：
@@ -1076,7 +1076,7 @@ Java 9 支持HTTP/2，可以开箱即用，无需其他步骤。
 
 OpenSSL提供了原生的ALPN支持。
 
-OpenSSL需要配置 `link:../../apidocs/io/vertx/core/net/TCPSSLOptions.html#setOpenSslEngineOptions-io.vertx.core.net.OpenSSLEngineOptions-[setOpenSslEngineOptions]` 
+OpenSSL需要配置 `link:../../apidocs/io/vertx/core/net/TCPSSLOptions.html#setOpenSslEngineOptions-io.vertx.core.net.OpenSSLEngineOptions-[setOpenSslEngineOptions]`
 并在类路径上使用 http://netty.io/wiki/forked-tomcat-native.html[netty-tcnative] 的jar库。
 依赖于tcnative的实现，需要OpenSSL安装在您的操作系统中。
 
