@@ -1,23 +1,22 @@
 = Vert.x Circuit Breaker
 
-Vert.x Circuit Breaker is an implementation of the Circuit Breaker _pattern_ for Vert.x. It keeps track of the
-number of failures and _opens the circuit_ when a threshold is reached. Optionally, a fallback is executed.
+Vert.x Circuit Breaker 是Vert.x熔断模式的实现。
 
-Supported failures are:
+它用来追踪故障，当失败次数达到阈值时触发熔断，并且可选择性提供失败回调，以保证服务可用或长时间等待。
 
-* failures reported by your code in a `link:../../apidocs/io/vertx/core/Future.html[Future]`
-* exception thrown by your code
-* uncompleted futures (timeout)
+支持以下故障:
 
-Operations guarded by a circuit breaker are intended to be non-blocking and asynchronous in order to benefit from
-the Vert.x execution model.
+* 使用 `link:../../apidocs/io/vertx/core/Future.html[Future]` 时失败
+* 代码里主动抛出异常
+* 没有完成的``Future``,例如:超时.
 
-== Using the vert.x circuit breaker
+熔断器要旨是保护 Vert.x 的 非阻塞 和 异步 的行为，以便受益于Vert.x 执行模型。
 
-To use the Vert.x Circuit Breaker, add the following dependency to the _dependencies_ section of your build
-descriptor:
+== 准备工作
 
-* Maven (in your `pom.xml`):
+使用Vert.x Circuit Breaker之前，你必须在你得项目当中添加依赖。
+
+* Maven (在 `pom.xml` 文件中):
 
 [source,xml,subs="+attributes"]
 ----
@@ -28,33 +27,33 @@ descriptor:
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle (在 `build.gradle` 文件中):
 
 [source,groovy,subs="+attributes"]
 ----
 compile 'io.vertx:vertx-circuit-breaker:4.0.0'
 ----
 
-== Using the circuit breaker
+== 开始 The circuit breaker 之旅
 
-To use the circuit breaker you need to:
+为了使用熔断器我们需要以下的步骤：
 
-1. Create a circuit breaker, with the configuration you want (timeout, number of failure before opening the circuit)
-2. Execute some code using the breaker
+* 创建一个熔断器，并配置成你所需要的超时，最大故障次数等参数
 
-**Important**: Don't recreate a circuit breaker on every call. A circuit breaker is a staful entity. It is recommended
-to store the circuit breaker instance in a field.
+* 使用熔断器执行代码
 
-Here is an example:
+**重要！！！**: 熔断器应该是稳定的单例，而不是每次使用就重新创建它。
+
+例子:
 
 [source,java]
 ----
 CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
     new CircuitBreakerOptions()
-        .setMaxFailures(5) // number of failure before opening the circuit
-        .setTimeout(2000) // consider a failure if the operation does not succeed in time
-        .setFallbackOnFailure(true) // do we call the fallback on failure
-        .setResetTimeout(10000) // time spent in open state before attempting to re-try
+        .setMaxFailures(5) // 最大失败数
+        .setTimeout(2000) // 超时时间
+        .setFallbackOnFailure(true) // 失败后是否调用回调
+        .setResetTimeout(10000) // 从，状态重置时间
 );
 
 // ---
@@ -62,17 +61,16 @@ CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
 // ---
 
 breaker.execute(promise -> {
-  // some code executing with the breaker
-  // the code reports failures or success on the given promise.
-  // if this promise is marked as failed, the breaker increased the
-  // number of failures
+  // 在熔断器中执行的代码
+  // 这里的代码可以成功或者失败，
+  // 如果future在这里被标记为失败，熔断器将自增失败数
 }).onComplete(ar -> {
-  // Get the operation result.
+  // 处理结果.
 });
 ----
 
 The executed block receives a `link:../../apidocs/io/vertx/core/Future.html[Future]` object as parameter, to denote the
-success or failure of the operation as well as the result. For example in the following example, the result is the
+success or failure of the operation as well as the result.For example in the following example, the result is the
 output of a REST endpoint invocation:
 
 [source,java]
@@ -140,8 +138,8 @@ breaker.executeWithFallback(
 ----
 
 The fallback is called whenever the circuit is open, or if the
-`link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#isFallbackOnFailure--[isFallbackOnFailure]` is enabled. When a fallback is
-set, the result is using the output of the fallback function. The fallback function takes as parameter a
+`link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#isFallbackOnFailure--[isFallbackOnFailure]` is enabled.When a fallback is
+set, the result is using the output of the fallback function.The fallback function takes as parameter a
 `link:../../apidocs/java/lang/Throwable.html[Throwable]` object and returns an object of the expected type.
 
 The fallback can also be set on the `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreaker.html[CircuitBreaker]` object directly:
