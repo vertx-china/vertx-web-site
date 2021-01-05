@@ -79,10 +79,10 @@ const entries = [
   {
     id: "vertx-core",
     name: "Vert.x Core",
-    description: `The Vert.x core APIs contain the backbone for writing Vert.x
-      applications and low-level support for HTTP, TCP, UDP, file system,
-      asynchronous streams and many other building blocks. It is also used by
-      many other components of Vert.x.`,
+    description: `Vert.x core是编写Vert.x应用程序的核心依赖，
+    它对HTTP，TCP，UDP，文件系统，
+    异步流及许多其他功能模块提供了底层支持。
+    许多Vert.x组件也依赖于Vert.x core。`,
     category: "core",
     href: "/vertx-core/java/",
     repository: "https://github.com/eclipse-vertx/vert.x",
