@@ -80,7 +80,7 @@ const entries = [
     id: "vertx-core",
     name: "Vert.x Core",
     description: `Vert.x core是编写Vert.x应用程序的核心依赖，
-    它对HTTP，TCP，UDP，文件系统，
+    它为HTTP，TCP，UDP，文件系统，
     异步流及许多其他功能模块提供了底层支持。
     许多Vert.x组件也依赖于Vert.x core。`,
     category: "core",
