@@ -105,7 +105,7 @@ const entries = [
   {
     id: "vertx-web-client",
     name: "Web Client",
-    description: "An easy-to-use client for HTTP and HTTP/2 with many advanced features.",
+    description: "一款具有许多先进功能且易于使用的HTTP和HTTP/2客户端。",
     category: "web",
     href: "/vertx-web-client/java/",
     repository: "https://github.com/vert-x3/vertx-web",
