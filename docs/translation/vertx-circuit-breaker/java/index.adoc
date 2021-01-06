@@ -69,9 +69,9 @@ breaker.execute(promise -> {
 });
 ----
 
-The executed block receives a `link:../../apidocs/io/vertx/core/Future.html[Future]` object as parameter, to denote the
-success or failure of the operation as well as the result.For example in the following example, the result is the
-output of a REST endpoint invocation:
+执行结果以 `link:../../apidocs/io/vertx/core/Future.html[Future]` 对象返回,其 `link:../../apidocs/io/vertx/core/Future.html[Future]` 对象,封装了成功结果集或失败结果集
+
+例如:在下面的例子中，对应的结果就是REST调用的输出：
 
 [source,java]
 ----
@@ -95,16 +95,16 @@ breaker.<String>execute(promise -> {
         }
       })).onComplete(promise);
 }).onComplete(ar -> {
-  // Do something with the result
+  // 处理结果
 });
 ----
 
-The result of the operation is provided using the:
+操作的结果以下面的方式提供:
 
-* returned `link:../../apidocs/io/vertx/core/Future.html[Future]` when calling `execute` methods
-* provided `link:../../apidocs/io/vertx/core/Future.html[Future]` when calling the `executeAndReport` methods
+* 调用 `execute` 方法时,返回 link:../../apidocs/io/vertx/core/Future.html[Future]`
+* 调用 `executeAndReport` 方法时,提供 `link:../../apidocs/io/vertx/core/Future.html[Future]` 参数
 
-Optionally, you can provide a fallback which is executed when the circuit is open:
+也可以增加一个可选参数,用于熔断时进行失败回调(fallback):
 
 [source,java]
 ----
@@ -113,7 +113,7 @@ CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
 );
 
 // ---
-// Store the circuit breaker in a field and access it as follows
+// 熔断器会临时存储该次运行结果,用于熔断判断
 // ---
 
 breaker.executeWithFallback(
@@ -129,27 +129,26 @@ breaker.executeWithFallback(
             }
           })).onComplete(promise);
       }, v -> {
-      // Executed when the circuit is opened
+      // 当熔断器熔断时,返回Hello
       return "Hello";
     })
     .onComplete(ar -> {
-      // Do something with the result
+        // 处理结果
     });
 ----
 
-The fallback is called whenever the circuit is open, or if the
-`link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#isFallbackOnFailure--[isFallbackOnFailure]` is enabled.When a fallback is
-set, the result is using the output of the fallback function.The fallback function takes as parameter a
-`link:../../apidocs/java/lang/Throwable.html[Throwable]` object and returns an object of the expected type.
+每当熔断器熔断的时候,都会调用失败回调(fallback), 或者调用
+`link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#isFallbackOnFailure--[isFallbackOnFailure]` 方法用于开启(关闭)失败回调.
+调用失败回调的时候,其结果会以 `link:../../apidocs/java/lang/Throwable.html[Throwable]` 为参数返回预期对象.
 
-The fallback can also be set on the `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreaker.html[CircuitBreaker]` object directly:
+通过 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreaker.html[CircuitBreaker]` 设置全局的失败回调方法:
 
 [source,java]
 ----
 CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
     new CircuitBreakerOptions().setMaxFailures(5).setTimeout(2000)
 ).fallback(v -> {
-  // Executed when the circuit is opened.
+  //  当熔断器熔断时将调用此处代码
   return "hello";
 });
 
@@ -168,23 +167,21 @@ breaker.<String>execute(
     });
 ----
 
-== Retries
+== 重试（Retries）
 
-You can also specify how often the circuit breaker should try your code before failing with
-`link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#setMaxRetries-int-[setMaxRetries]`.
-If you set this to something higher than 0 your code gets executed several times before finally failing
-in the last execution. If the code succeeded in one of the retries your handler gets notified and any
-retries left are skipped. Retries are only supported when the circuit is closed.
+还可以通过 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#setMaxRetries-int-[setMaxRetries]`.
+设置重试次数,如果你设置大于0的数值,在失败的情况下,会重试到该数值，如果在最后一次执行得到正确的结果，
+那么处理结果可以被正确的调用，剩下的重试次数将被跳过
 
-Notice that if you set `maxRetries` to 2 for instance, your operation may be called 3 times: the initial attempt
-and 2 retries.
+*注意* 如果你设置最大重试次数 `maxRetries` 为2, 那么你得代码在失败的情况将会执行3次，三次分别为初次请求，2次重试次数。
 
-By default the timeout between retries is set to 0 which means that retries will be executed one after another without
-any delay. This, however, will result in increased load on the called service and may delay it's recovery.
-In order to mitigate this problem it is recommended to execute retries with delays. `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreaker.html#retryPolicy-java.util.function.Function-[retryPolicy]`
-method can be used to specify retry policy. Retry policy is a function which receives retry count as single argument
-and returns timeout in milliseconds before retry is executed and allows to implement a more complex policy, e.g.
-exponential backoff with jitter. Below is an example of retry timeout which grows linearly with each retry count:
+在默认情况下超时时间(timeout)和重试次数(retries)为0,那么将会无延时的一直请求下去,这会导致调用服务负载增加
+导致服务恢复时间延长。所以为了减少这种情况设置延时和重试次数。
+方法 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreaker.html#retryPolicy-java.util.function.Function-[retryPolicy]`
+用于设置重试策略。 该方法接收一个Function<Integer,Long>的函数体(传入参数为重试次数,返回具体超时时间,单位:毫秒),
+允许用户定制更加复杂的延时策略(例如:带抖动的延时补偿)
+
+下面是设置了重试策略的例子，重试超时时间与重试时间呈线指数增长。
 
 [source,java]
 ----
@@ -211,9 +208,9 @@ breaker.<String>execute(
   });
 ----
 
-== Callbacks
+== 回调（Callbacks）
 
-You can also configures callbacks invoked when the circuit is opened or closed:
+你可以配置熔断全开(open)/关闭(close)时回调。
 
 [source,java]
 ----
@@ -240,24 +237,23 @@ breaker.<String>execute(
     });
 ----
 
-You can also be notified when the circuit breaker decides to attempt to reset (half-open state). You can register
-such a callback with `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreaker.html#halfOpenHandler-io.vertx.core.Handler-[halfOpenHandler]`.
+当熔断器决定尝试复位的时候（ half-open 状态），我们也可以注册 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreaker.html#halfOpenHandler-io.vertx.core.Handler-[halfOpenHandler]` 的回调从而得到回调通知。
 
-== Event bus notification
+== Event bus notification(事件总线通知)
 
-Every time the circuit state changes, an event is published on the event bus. The address on which the events are
-sent is configurable with
+每当熔断器发生状态改变的时候,熔断器都会在事件总线上推送通知，总线通默认地址为：`vertx.circuit-breaker`。
+当然这个也是可以配置的，调用方法
 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#setNotificationAddress-java.lang.String-[setNotificationAddress]`. If `null` is
-passed to this method, the notifications are disabled. By default, the used address is `vertx.circuit-breaker`.
+你可以设置总线通知地址。如果设置为 `null` 那么总线通知将被禁用。
 
-Each event contains a Json Object with:
+每个总线通知都会包含一个 Json Object对象，该对象包括以下字段：
 
-* `state` : the new circuit breaker state (`OPEN`, `CLOSED`, `HALF_OPEN`)
-* `name` : the name of the circuit breaker
-* `failures` : the number of failures
-* `node` : the identifier of the node (`local` if Vert.x is not running in cluster mode)
+* `state` : 熔断器最新的状态 (`OPEN`, `CLOSED`, `HALF_OPEN`)
+* `name` : 熔断器的名称
+* `failures` : 错误次数
+* `node` : 节点标识 (如果事件总线运行在单节模式，那么该值为：`local`)
 
-== The half-open state
+== 半开状态（half-open）
 
 When the circuit is "open", calls to the circuit breaker fail immediately, without any attempt to execute the real
 operation. After a suitable amount of time (configured from
