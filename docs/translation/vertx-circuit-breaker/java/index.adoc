@@ -34,7 +34,7 @@ Vert.x Circuit Breaker 是Vert.x熔断模式的实现。
 compile 'io.vertx:vertx-circuit-breaker:4.0.0'
 ----
 
-== 开始 The circuit breaker 之旅
+== 使用熔断器
 
 为了使用熔断器我们需要以下的步骤：
 
@@ -42,7 +42,7 @@ compile 'io.vertx:vertx-circuit-breaker:4.0.0'
 
 * 使用熔断器执行代码
 
-**重要！！！**: 熔断器应该是稳定的单例，而不是每次使用就重新创建它。
+**重要！！！** 熔断器应该是稳定的单例，而不是每次使用就重新创建它。
 
 例子:
 
@@ -210,7 +210,7 @@ breaker.<String>execute(
 
 == 回调（Callbacks）
 
-你可以配置熔断开路(OPEN)/关闭(CLOSE)时回调。
+你可以配置熔断开路(OPEN)/闭路(CLOSE)时回调。
 
 [source,java]
 ----
@@ -239,7 +239,7 @@ breaker.<String>execute(
 
 当熔断器决定尝试复位的时候（ half-open 状态），我们也可以注册 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreaker.html#halfOpenHandler-io.vertx.core.Handler-[halfOpenHandler]` 的回调从而得到回调通知。
 
-== Event bus notification(事件总线通知)
+== 事件总线通知
 
 每当熔断器发生状态改变的时候,熔断器都会在事件总线上推送通知，总线通默认地址为：`vertx.circuit-breaker`。
 当然这个也是可以配置的，调用方法
@@ -255,13 +255,11 @@ breaker.<String>execute(
 
 == 半开状态（half-open）
 
-When the circuit is "open", calls to the circuit breaker fail immediately, without any attempt to execute the real
-operation. After a suitable amount of time (configured from
-`link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#setResetTimeout-long-[setResetTimeout]`, the circuit breaker decides that the
-operation has a chance of succeeding, so it goes into the `half-open` state. In this state, the next call to the
-circuit breaker is allowed to execute the dangerous operation. Should the call succeed, the circuit breaker resets
-and returns to the `closed` state, ready for more routine operation. If this trial call fails, however, the circuit
-breaker returns to the `open` state until another timeout elapses.
+当熔断器处于开路状态时，对其调用会立即失败，不会执行实际操作。经过适当的时间 (通过
+`link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#setResetTimeout-long-[setResetTimeout]` 配置）,
+熔断器决定是否恢复状态，此时进入半开启状态（half-open state）。在这种状态下，
+允许下一次熔断器的调用实际调用如果成功，熔断器将复位并返回到关闭状态，
+回归正常的模式；但是如果这次调用失败，则熔断器返回到熔断状态，直到下次半开状态。
 
 == 异常
 
