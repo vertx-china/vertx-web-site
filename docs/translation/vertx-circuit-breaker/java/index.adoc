@@ -210,7 +210,7 @@ breaker.<String>execute(
 
 == 回调（Callbacks）
 
-你可以配置熔断全开(open)/关闭(close)时回调。
+你可以配置熔断开路(OPEN)/关闭(CLOSE)时回调。
 
 [source,java]
 ----
@@ -263,19 +263,18 @@ circuit breaker is allowed to execute the dangerous operation. Should the call s
 and returns to the `closed` state, ready for more routine operation. If this trial call fails, however, the circuit
 breaker returns to the `open` state until another timeout elapses.
 
-== Reported exceptions
+== 异常
 
-The fallback receives a:
+异常状态:
 
-* `link:../../apidocs/io/vertx/circuitbreaker/OpenCircuitException.html[OpenCircuitException]` when the circuit breaker is opened
-* `link:../../apidocs/io/vertx/circuitbreaker/TimeoutException.html[TimeoutException]` when the operation timed out
+* 当熔断器开路(OPEN)的情况,会抛出 `link:../../apidocs/io/vertx/circuitbreaker/OpenCircuitException.html[OpenCircuitException]` 异常
+* 当操作超时的时候,会抛出`link:../../apidocs/io/vertx/circuitbreaker/TimeoutException.html[TimeoutException]`
 
-== Pushing circuit breaker metrics to the Hystrix Dashboard
+== 将熔断器指标推送到Hystrix看板（Dashboard）
 
-Netflix Hystrix comes with a dashboard to present the current state of the circuit breakers. The Vert.x circuit
-breakers can publish their metrics in order to be consumed by this Hystrix Dashboard. The Hystrix dashboard requires
-a SSE stream sending the metrics. This stream is provided by the
-`link:../../apidocs/io/vertx/circuitbreaker/HystrixMetricHandler.html[HystrixMetricHandler]` Vert.x Web Handler:
+Netflix Hystrix带有一个看板（dashboard），用于显示熔断器的当前状态。 Vert.x 熔断器可以发布其指标（metric），以供Hystrix 仪表板使用。 Hystrix 仪表板需要一个发送指标的SSE流，
+此流由 `link:../../apidocs/io/vertx/circuitbreaker/HystrixMetricHandler.html[HystrixMetricHandler]`
+这个 Vert.x Web Handler 提供
 
 
 [source,java]
@@ -283,32 +282,29 @@ a SSE stream sending the metrics. This stream is provided by the
 CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx);
 CircuitBreaker breaker2 = CircuitBreaker.create("my-second-circuit-breaker", vertx);
 
-// Create a Vert.x Web router
+// 创建 Vert.x Web 路由
 Router router = Router.router(vertx);
-// Register the metric handler
+// 注册指标Handler
 router.get("/hystrix-metrics").handler(HystrixMetricHandler.create(vertx));
 
-// Create the HTTP server using the router to dispatch the requests
+// / 创建HTTP服务器，并分配路由
 vertx.createHttpServer()
   .requestHandler(router)
   .listen(8080);
 ----
 
-In the Hystrix Dashboard, configure the stream url like: `http://localhost:8080/metrics`. The dashboard now consumes
-the metrics from the Vert.x circuit breakers.
+在Hystrix 看板, 配置 stream url 地址,例如: `http://localhost:8080/metrics`. 现在就可以获取Vert.x的熔断器指标了。
 
-Notice that the metrics are collected by the Vert.x Web handler using the event bus notifications. If you don't use
-the default notification address, you need to pass it when creating the metrics handler.
+*注意*：这些指标量是由 Vert.x Web Handler 使用 Event Bus 事件通知收集的。
+如果你不想使用默认的通知地址，请在创建的时候设置。
 
-== Using Netflix Hystrix
+== 使用 Netflix Hystrix
 
-https://github.com/Netflix/Hystrix[Hystrix] provides an implementation of the circuit breaker pattern. You can use
-Hystrix with Vert.x instead of this circuit breaker or in combination of. This section describes the tricks
-to use Hystrix in a vert.x application.
+https://github.com/Netflix/Hystrix[Hystrix] 提供了熔断器模式的实现。可以在Vert.x中使用Hystrix提供的熔断器或组合使用。
+本节介绍在Vert.x应用程序中使用Hystrix的技巧。
 
-First you would need to add the Hystrix dependency to your classpath or build descriptor. Refer to the Hystrix
-page for details. Then, you need to isolate the "protected" call in a `Command`. Once you have your command, you
-can execute it:
+首先，您需要将Hystrix添加到你的依赖中。详细信息请参阅Hystrix页面。然后，您需要使用 Command 隔离“受保护的”调用。
+你可以这样执行它：
 
 [source, java]
 ----
@@ -316,8 +312,7 @@ HystrixCommand<String> someCommand = getSomeCommandInstance();
 String result = someCommand.execute();
 ----
 
-However, the command execution is blocking, so have to call the command execution either in an `executeBlocking`
-block or in a worker verticle:
+但是，代码执行是阻塞的，必须使用 `executeBlocking` 方法去执行，或者在Worker Verticle中调用：
 
 [source, java]
 ----
@@ -325,28 +320,28 @@ HystrixCommand<String> someCommand = getSomeCommandInstance();
 vertx.<String>executeBlocking(
 future -> future.complete(someCommand.execute()),
 ar -> {
-// back on the event loop
+// 回到Event Loop线程中
 String result = ar.result();
 }
 );
 ----
 
-If you use the async support of Hystrix, be careful that callbacks are not called in a vert.x thread and you have
-to keep a reference on the context before the execution (with `link:../../apidocs/io/vertx/core/Vertx.html#getOrCreateContext--[getOrCreateContext]`,
-and in the callback, switch back to the event loop using
-`link:../../apidocs/io/vertx/core/Vertx.html#runOnContext-io.vertx.core.Handler-[runOnContext]`. Without this, you are loosing the Vert.x
-concurrency model and have to manage the synchronization and ordering yourself:
+如果你使用了Hystrix异步方法, 对应回调函数是不会在Vert.x的线程中执行的,因此我们必须在执行前保持上下的引用,
+（使用 `link:../../apidocs/io/vertx/core/Vertx.html#getOrCreateContext--[getOrCreateContext]` 方法），
+执行
+`link:../../apidocs/io/vertx/core/Vertx.html#runOnContext-io.vertx.core.Handler-[runOnContext]` 方法将当前线程切换回Event Loop线程。
+不这样做的话，您将失去Vert.x异步模型的优势，并且必须自行管理线程同步和执行顺序：
 
 [source, java]
 ----
 vertx.runOnContext(v -> {
-Context context = vertx.getOrCreateContext();
-HystrixCommand<String> command = getSomeCommandInstance();
-command.observe().subscribe(result -> {
-context.runOnContext(v2 -> {
-// Back on context (event loop or worker)
-String r = result;
-});
-});
+    Context context = vertx.getOrCreateContext();
+    HystrixCommand<String> command = getSomeCommandInstance();
+    command.observe().subscribe(result -> {
+        context.runOnContext(v2 -> {
+            // 回到Vert.x Context下(Event Loop线程或Worker线程)
+            String r = result;
+        });
+    });
 });
 ----
