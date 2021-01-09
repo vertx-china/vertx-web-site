@@ -572,7 +572,7 @@ const entries = [
   {
     id: "vertx-hazelcast",
     name: "Hazelcast Clustering",
-    description: "Cluster manager implementation that uses Hazelcast.",
+    description: "基于Hazelcast实现的集群管理器。",
     category: "clustering",
     href: "/vertx-hazelcast/java/",
     repository: "https://github.com/vert-x3/vertx-hazelcast",
