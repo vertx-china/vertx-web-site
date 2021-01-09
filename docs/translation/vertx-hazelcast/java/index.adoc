@@ -1,10 +1,10 @@
-= Hazelcast Cluster Manager
+= Hazelcast 集群管理器
 
-This is a cluster manager implementation for Vert.x that uses https://hazelcast.com[Hazelcast].
+Vert.x 基于 https://hazelcast.com[Hazelcast] 实现了一个集群管理器。
 
-It is the default cluster manager used in the Vert.x CLI, but it can be replaced with another implementation as Vert.x cluster managers are pluggable.
+这是 Vert.x CLI默认的集群管理器。由于 Vert.x 集群管理器的可插拔性，可轻易切换至其它的集群管理器。
 
-This implementation is packaged inside:
+这个集群管理器由以下依赖引入：
 
 [source,xml,subs="+attributes"]
 ----
@@ -15,30 +15,26 @@ This implementation is packaged inside:
 </dependency>
 ----
 
-In Vert.x a cluster manager is used for various functions including:
+Vert.x 集群管理器包含以下几项功能：
 
-* Discovery and group membership of Vert.x nodes in a cluster
-* Maintaining cluster wide topic subscriber lists (so we know which nodes are interested in which event bus addresses)
-* Distributed Map support
-* Distributed Locks
-* Distributed Counters
+* 发现并管理集群中的节点
+* 管理集群的 EventBus 话题订阅清单（这样就可以轻松得知集群中的哪些节点订阅了哪些 EventBus 地址）
+* 分布式 Map 支持
+* 分布式锁
+* 分布式计数器
 
-Cluster managers do *not* handle the event bus inter-node transport, this is done directly by Vert.x with TCP connections.
+Vert.x 集群器 *并不* 处理节点之间的通信。在 Vert.x 中，集群节点间通信是直接由 TCP 连接处理的。
 
-== Using this cluster manager
+[[_using_this_cluster_manager]]
+== 使用集群管理器
 
-If you are using Vert.x from the command line, the jar corresponding to this cluster manager (it will be named `vertx-hazelcast-4.0.0.jar`
-should be in the `lib` directory of the Vert.x installation.
+如果通过命令行来使用 Vert.x，对应集群管理器 `jar` 包（名为 `vertx-hazelcast-4.0.0.jar` ） 应该在 Vert.x 中安装目录的 `lib` 目录中。
 
-If you want clustering with this cluster manager in your Vert.x Maven or Gradle project then just add a dependency to
-the artifact: `io.vertx:vertx-hazelcast:4.0.0` in your project.
+如果在 Maven 或者 Gradle 工程中使用 Vert.x， 只需要在工程依赖中加上依赖：`io.vertx:vertx-hazelcast:4.0.0`。
 
-If the jar is on your classpath as above then Vert.x will automatically detect this and use it as the cluster manager.
-Please make sure you don't have any other cluster managers on your classpath or Vert.x might
-choose the wrong one.
+如果（集群管理器的）jar 包在 classpath 中，Vert.x将自动检测到，并将其作为集群管理器。 需要注意的是，要确保 Vert.x 的 classpath 中没有其它的集群管理器实现，否则会使用错误的集群管理器。
 
-You can also specify the cluster manager programmatically if you are embedding Vert.x by specifying it on the options
-when you are creating your Vert.x instance, for example:
+在内嵌 Vert.x 时，可以在创建 Vert.x 实例时通过编程的方式显式配置 Vert.x 集群管理器， 比如：
 
 [source,java]
 ----
@@ -50,63 +46,61 @@ Vertx.clusteredVertx(options, res -> {
   if (res.succeeded()) {
     Vertx vertx = res.result();
   } else {
-    // failed!
+    // 失败
   }
 });
 ----
 
 [[configcluster]]
-== Configuring this cluster manager
+== 配置集群管理器
 
-=== Configuring with XML
+[[_configuring_with_xml]]
+=== 使用XML文件配置
 
-Usually the cluster manager is configured by a file
+通常情况下，集群管理器的相关配置是通过打包在jar中的默认配置文件
 https://github.com/vert-x3/vertx-hazelcast/blob/master/src/main/resources/default-cluster.xml[`default-cluster.xml`]
-which is packaged inside the jar.
+配置的。
 
-If you want to override this configuration you can provide a file called `cluster.xml` on your classpath and this will be used instead.If you want to embed the `cluster.xml` file in a fat jar, it must be located at the root of the fat jar.If it's an external file, the **directory** containing the file must be added to the classpath.For example, if you are using the _launcher_ class from Vert.x, the classpath enhancement can be done as follows:
+如果要覆盖此配置，可以在 classpath 中添加一个 `cluster.xml` 文件。如果想在 fat jar 中内嵌 `cluster.xml` ，此文件必须在 fat jar 的根目录中。如果此文件是一个外部文件，则必须将其所在的 **目录** 添加至 classpath 中。举个例子，如果使用 Vert.x 的 _launcher_ 类，则 classpath 应该设置为：
 
 [source]
 ----
-# If the cluster.xml is in the current directory:
+# 如果 cluster.xml 在当前目录：
 java -jar ... -cp . -cluster
 vertx run MyVerticle -cp . -cluster
 
-# If the cluster.xml is in the conf directory
+# 如果 cluster.xml 在 conf 目录：
 java -jar ... -cp conf -cluster
 ----
 
-Another way to override the configuration is by providing the system property `vertx.hazelcast.config` with a
-location:
+还可以通过系统配置 `vertx.hazelcast.config`
+来覆盖默认的配置文件：
 
 [source]
 ----
-# Use a cluster configuration located in an external file
+# 指定一个外部文件为自定义配置文件
 java -Dvertx.hazelcast.config=./config/my-cluster-config.xml -jar ... -cluster
 
-# Or use a custom configuration from the classpath
+# 从 classpath 中加载一个文件为自定义配置文件
 java -Dvertx.hazelcast.config=classpath:my/package/config/my-cluster-config.xml -jar ... -cluster
 ----
 
-The `vertx.hazelcast.config` system property, when present, overrides any `cluster.xml` on the classpath, but if
-loading
-from this system property fails, then loading falls back to either `cluster.xml` or the Hazelcast default configuration.
+如果 `vertx.hazelcast.config` 值不为空时，将覆盖 classpath 中所有的 `cluster.xml` 文件， 但是如果加载 `vertx.hazelcast.config` 系统配置失败时， 系统将选取 classpath 任意一个 `cluster.xml` ，甚至直接使用默认配置。
 
-CAUTION: Configuration of Hazelcast the `-Dhazelcast.config` system property is not supported by Vert.x and should
-not be used.
+CAUTION: Vert.x 并不支持 `-Dhazelcast.config` 设置方式， 请不要使用。
 
-The xml file is a Hazelcast configuration file and is described in detail in the documentation on the Hazelcast
-web-site.
+这里的 xml 是 Hazelcast 的配置文件， 可以在 Hazelcast 官网找到详细的配置文档。
 
-=== Configuring programmatically
+[[_configuring_programmatically]]
+=== 通过编程配置
 
-You can specify configuration programmatically if embedding:
+您也可以通过编程的形式配置集群管理器：
 
 [source,java]
 ----
 Config hazelcastConfig = new Config();
 
-// Now set some stuff on the config (omitted)
+// 设置相关的hazlcast配置，在这里省略掉，不再赘述
 
 ClusterManager mgr = new HazelcastClusterManager(hazelcastConfig);
 
@@ -116,13 +110,12 @@ Vertx.clusteredVertx(options, res -> {
   if (res.succeeded()) {
     Vertx vertx = res.result();
   } else {
-    // failed!
+    // 失败！
   }
 });
 ----
 
-It might also be useful to customize an existing XML configuration.
-For example, you might want to change the cluster name:
+您也可以对已存在的XML配置进行修改。 比如修改集群名：
 
 [source,java]
 ----
@@ -138,39 +131,39 @@ Vertx.clusteredVertx(options, res -> {
   if (res.succeeded()) {
     Vertx vertx = res.result();
   } else {
-    // failed!
+    // 失败！
   }
 });
 ----
 
-`ConfigUtil#loadConfig` loads Hazelcast config XML and transform it into a `Config` object.
-The content is read from:
+`ConfigUtil#loadConfig` 方法加载 Hazelcast 的XML配置文件并将其转换为 `Config` 对象。 读取的XML配置文件来自：
 
-. the location denoted by the `vertx.hazelcast.config` sysprop, if present, or
-. the `cluster.xml` file on the classpath, if present, or
-. the default config file
+. `vertx.hazelcast.config` 系统配置指定的文件（若存在），或
+. classpath 内的 `cluster.xml` 文件（若存在），或
+. 默认的配置文件
 
-=== Discovery options
+[[_discovery_options]]
+=== 发现配置
 
-Hazelcast supports several different discovery options.
-The default configuration uses multicast so you must have multicast enabled on your network for this to work.
+Hazelcast 支持几种不同的发现配置。 Hazelcast 默认配置使用多播，因此您必须在网络上启用多播才能正常工作。
 
-For full documentation on how to configure discovery differently please consult the Hazelcast documentation.
+有关如何配置不同的发现方式，请查阅 Hazelcast 文档。
 
-=== Changing local and public address with system properties
+[[_changing_local_and_public_address_with_system_properties]]
+=== 通过系统配置改变本地地址及公共地址
 
-Sometimes, cluster nodes must bind to an address that is not reachable by other members.
-For example, this may happen when nodes are not in the same network area, or on certain clouds with specific firewall configurations.
+有时，群集节点必须绑定到其他集群成员无法访问的地址。 例如，节点不在同一网络区域中，或在某些具有特定防火墙配置的云服务中时，可能会发生这种情况。
 
-The bind address and public address (the address advertised to other members) can be set with system properties:
+可以使用以下系统属性设置绑定本地地址和公共地址（向其他成员发布的地址）：
 
 ----
 -Dhazelcast.local.localAddress=172.16.5.131 -Dhazelcast.local.publicAddress=104.198.78.81
 ----
 
-== Using an existing Hazelcast cluster
+[[_using_an_existing_hazelcast_cluster]]
+== 使用已存在的 Hazelcast 集群
 
-You can pass an existing `HazelcastInstance` in the cluster manager to reuse an existing cluster:
+可以向集群管理器传入 `HazelcastInstance` 来复用现有集群：
 
 [source,java]
 ----
@@ -180,14 +173,14 @@ Vertx.clusteredVertx(options, res -> {
   if (res.succeeded()) {
     Vertx vertx = res.result();
   } else {
-    // failed!
+    // 失败！
   }
 });
 ----
 
-In this case, Vert.x is not the cluster owner and so do not shutdown the cluster on close.
+在这种情况下，Vert.x不是 Hazelcast 群集的所有者，所以不要关闭 Vert.x 时关闭 Hazlecast 集群。
 
-Notice that the custom Hazelcast instance need to be configured with:
+请注意，自定义 Hazelcast 实例需要以下配置：
 
 [source,xml]
 ----
@@ -216,40 +209,42 @@ Notice that the custom Hazelcast instance need to be configured with:
 </cp-subsystem>
 ----
 
-IMPORTANT: Hazelcast clients or smart clients are not supported.
+IMPORTANT: 不支持 Hazelcast 客户端及智能客户端。
 
-IMPORTANT: Make sure Hazelcast is started before and shut down after Vert.x.
-Also, the Hazelcast shutdown hook should be disabled (see xml example, or via system property).
+IMPORTANT: 要确保 Hazelcast 集群 先于 Vert.x 集群启动，后于 Vert.x 集群关闭。 同时需要禁用 `shutdown hook` （参考上述的 xml 配置，或通过系统变量来实现）。
 
-== Changing timeout for failed nodes
+[[_changing_timeout_for_failed_nodes]]
+== 修改故障节点的超时配置
 
-By default a node will be removed from the cluster if Hazelcast didn't receive a heartbeat for 300 seconds. To change
-this value `hazelcast.max.no.heartbeat.seconds` system property such as in:
+缺省情况下，Hazelcast 会移除集群中超过300秒没收到心跳的节点。 通过系统配置 `hazelcast.max.no.heartbeat.seconds` 可以修改这个超时时间，如:
 
 ----
 -Dhazelcast.max.no.heartbeat.seconds=5
 ----
 
-Afterwards a node will be removed from the cluster after 5 seconds without a heartbeat.
+修改后，超过5秒没发出心跳的节点会被移出集群。
 
-See https://docs.hazelcast.org/docs/latest/manual/html-single/#system-properties[Hazelcast system-properties].
+请参考 https://docs.hazelcast.org/docs/latest/manual/html-single/#system-properties[Hazelcast 系统配置] 。
 
-== Trouble shooting clustering
+[[_trouble_shooting_clustering]]
+== 集群故障排除
 
-If the default multicast configuration is not working here are some common causes:
+如果默认的组播配置不能正常运行，通常有以下原因：
 
-=== Multicast not enabled on the machine.
+[[_multicast_not_enabled_on_the_machine]]
+=== 机器禁用组播
 
-It is quite common in particular on OSX machines for multicast to be disabled by default. Please google for
-information on how to enable this.
+通常来说，OSX 默认禁用组播。 请自行Google一下如何启用组播。
 
-=== Using wrong network interface
+[[_using_wrong_network_interface]]
+=== 使用错误的网络接口
 
-If you have more than one network interface on your machine (and this can also be the case if you are running
-VPN software on your machine), then Hazelcast may be using the wrong one.
+如果机器上有多个网络接口（也有可能是在运行 VPN 的情况下），那么 Hazelcast 很有可能是使用了错误的网络接口。
 
-To tell Hazelcast to use a specific interface you can provide the IP address of the interface in the `interfaces`
-element of the configuration. Make sure you set the `enabled` attribute to `true`. For example:
+为了确保 Hazelcast 使用正确的网络接口，在配置文件中将 `interface`
+设置为指定IP地址.
+同时确保 `enabled` 属性设置为 `true` 。
+例如：
 
 ----
 <interfaces enabled="true">
@@ -257,61 +252,66 @@ element of the configuration. Make sure you set the `enabled` attribute to `true
 </interfaces>
 ----
 
-=== Using a VPN
+[[_using_a_vpn]]
+=== 使用VPN
 
-This is a variation of the above case. VPN software often works by creating a virtual network interface which often
-doesn't support multicast. If you have a VPN running and you do not specify the correct interface to use in both the
-hazelcast configuration and to Vert.x then the VPN interface may be chosen instead of the correct interface.
+VPN 软件工作时通常会创建虚拟网络接口，往往不支持组播。
+在 VPN 环境中，如果 Hazelcast 与 Vert.x 不正确配置的话，
+将会选择 VPN 创建的网络接口，而不是正确的网络接口。
 
-So, if you have a VPN running you may have to configure both the Hazelcast and Vert.x to use the correct interface as
-described in the previous section.
+所以，如果你的应用运行在 VPN 环境中，参考上述章节，
+设置正确的网络接口。
 
-=== When multicast is not available
+[[_when_multicast_is_not_available]]
+=== 组播不可用
 
-In some cases you may not be able to use multicast as it might not be available in your environment. In that case
-you should configure another transport, e.g. TCP  to use TCP sockets, or AWS when running on Amazon EC2.
+在某些情况下，因为特殊的运行环境，可能无法使用组播。
+在这种情况下，应该配置其他网络传输，例如使用 TCP 套接字，在亚马逊云 EC2 上使用AWS。
 
-For more information on available Hazelcast transports and how to configure them please consult the Hazelcast
-documentation.
+有关 Hazelcast 更多传输方式，以及如何配置它们，
+请查询 Hazelcast 文档。
 
-=== Enabling logging
+[[_enabling_logging]]
+=== 开启日志
 
-When trouble-shooting clustering issues with Hazelcast it's often useful to get some logging output from Hazelcast
-to see if it's forming a cluster properly. You can do this (when using the default JUL logging) by adding a file
-called `vertx-default-jul-logging.properties` on your classpath. This is a standard java.util.logging (JUL)
-configuration file. Inside it set:
+在排除故障时，开启 Hazelcast 日志很有帮助，可以观察是否组成了集群。
+使用默认的 JUL 日志时，在 classpath 中添加 `vertx-default-jul-logging.properties` 文件可开启 Hazelcast 日志。
+这是一个标准 java.util.logging（JUL） 配置文件。
+具体配置如下：
 
 ----
 com.hazelcast.level=INFO
 ----
 
-and also
+以及
 
 ----
 java.util.logging.ConsoleHandler.level=INFO
 java.util.logging.FileHandler.level=INFO
 ----
 
-== Hazelcast logging
+[[_hazelcast_logging]]
+== Hazelcast 日志配置
 
-The logging backend used by Hazelcast is `jdk` by default (understand JUL). If you want to redirect the logging to
-another library, you need to set the `hazelcast.logging.type` system property such as in:
+Hazelcast 的日志默认采用 `JDK` 的实现（即 JUL）。
+如果想切换至其他日志库，通过设置系统配置 `hazelcast.logging.type` 即可：
 
 ----
 -Dhazelcast.logging.type=slf4j
 ----
 
-See the http://docs.hazelcast.org/docs/3.6.1/manual/html-single/index.html#logging-configuration[hazelcast documentation] for more details.
+详细文档请参考 http://docs.hazelcast.org/docs/3.6.1/manual/html-single/index.html#logging-configuration[hazelcast 文档] 。
 
-== Using a different Hazelcast version
+[[_using_a_different_hazelcast_version]]
+== 使用其他 Hazelcast 版本
 
-You may want to use a different version of Hazelcast. The default version is `4.0.2`. To do so, you
-need to:
+当前的 Vert.x HazelcastClusterManager 使用的 Hazelcast 版本为 `4.0.2` 。
+如果开发者想使用其他版本的 Hazelcast，需要做以下工作：
 
-* put the version you want in the application classpath
-* if you are running a fat jar, configure your build manager to use the right version
+* 将目标版本的 Hazelcast 依赖添加至 classpath 中
+* 如果是 fat jar 的形式，在构建工具中使用正确的版本
 
-In this later case, you would need in Maven:
+使用 Maven 时可参考下面代码：
 
 [source,xml,subs="+attributes"]
 ----
@@ -327,9 +327,9 @@ In this later case, you would need in Maven:
 </dependency>
 ----
 
-Depending on the version, you may need to exclude some transitive dependencies.
+对于某些版本，您可能需要排除掉一些（冲突的）依赖。
 
-On Gradle, you can achieve the same overloading using:
+对于 Gradle 可以使用下面代码:
 
 [source]
 ----
