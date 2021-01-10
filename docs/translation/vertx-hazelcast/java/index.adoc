@@ -28,13 +28,18 @@ Vert.x 集群器 *并不* 处理节点之间的通信。在 Vert.x 中，集群�
 [[_using_this_cluster_manager]]
 == 使用集群管理器
 
-如果通过命令行来使用 Vert.x，对应集群管理器的 `jar` 包（名为 `vertx-hazelcast-4.0.0.jar` ） 应该在 Vert.x 中安装路径的 `lib` 目录中。
+如果通过命令行来使用 Vert.x，对应集群管理器的 `jar` 包（名为 `vertx-hazelcast-4.0.0.jar` ）
+应该在 Vert.x 中安装路径的 `lib` 目录中。
 
-如果在 Maven 或者 Gradle 工程中使用 Vert.x， 只需要在工程依赖中加上依赖：`io.vertx:vertx-hazelcast:4.0.0`。
+如果在 Maven 或者 Gradle 工程中使用 Vert.x， 只需要在工程依赖中加上依赖：
+`io.vertx:vertx-hazelcast:4.0.0`。
 
-如果（集群管理器的）jar 包在 classpath 中，Vert.x将自动检测到并将其作为集群管理器。需要注意的是，要确保 Vert.x 的 classpath 中没有其它的集群管理器实现，否则会使用错误的集群管理器。
+如果（集群管理器的）jar 包在 classpath 中，Vert.x将自动检测到并将其作为集群管理器。
+需要注意的是，要确保 Vert.x 的 classpath 中没有其它的集群管理器实现，
+否则会使用错误的集群管理器。
 
-编程内嵌 Vert.x 时，可以在创建 Vert.x 实例时，通过编程的方式显式配置 Vert.x 集群管理器， 比如：
+编程内嵌 Vert.x 时，可以在创建 Vert.x 实例时，
+通过编程的方式显式配置 Vert.x 集群管理器， 比如：
 
 [source,java]
 ----
@@ -85,9 +90,12 @@ java -Dvertx.hazelcast.config=./config/my-cluster-config.xml -jar ... -cluster
 java -Dvertx.hazelcast.config=classpath:my/package/config/my-cluster-config.xml -jar ... -cluster
 ----
 
-如果 `vertx.hazelcast.config` 值不为空时，将用其覆盖 classpath 中所有的 `cluster.xml` 文件；但是如果加载 `vertx.hazelcast.config` 系统配置失败时，系统将选取 classpath 任意一个 `cluster.xml` ，甚至直接使用默认配置。
+如果 `vertx.hazelcast.config` 值不为空时，将用其覆盖 classpath 中所有的 `cluster.xml` 文件；
+但是如果加载 `vertx.hazelcast.config` 系统配置失败时，
+系统将选取 classpath 任意一个 `cluster.xml` ，甚至直接使用默认配置。
 
-CAUTION: Vert.x 并不支持 `-Dhazelcast.config` 设置方式， 请不要使用。
+CAUTION: Vert.x 并不支持 `-Dhazelcast.config` 设置方式，
+请不要使用。
 
 这里的 xml 是 Hazelcast 的配置文件， 可以在 Hazelcast 官网找到详细的配置文档。
 
@@ -115,7 +123,8 @@ Vertx.clusteredVertx(options, res -> {
 });
 ----
 
-您也可以对已存在的XML配置进行修改。 比如修改集群名：
+您也可以对已存在的XML配置进行修改。
+比如修改集群名：
 
 [source,java]
 ----
@@ -136,7 +145,8 @@ Vertx.clusteredVertx(options, res -> {
 });
 ----
 
-`ConfigUtil#loadConfig` 方法会加载 Hazelcast 的XML配置文件，并将其转换为 `Config` 对象。 读取的XML配置文件来自：
+`ConfigUtil#loadConfig` 方法会加载 Hazelcast 的XML配置文件，并将其转换为 `Config` 对象。
+读取的XML配置文件来自：
 
 . `vertx.hazelcast.config` 系统配置指定的文件，若不存在则
 . classpath 内的 `cluster.xml` 文件，若不存在则
@@ -145,14 +155,16 @@ Vertx.clusteredVertx(options, res -> {
 [[_discovery_options]]
 === 发现配置
 
-Hazelcast 支持几种不同的发现配置。 Hazelcast 默认配置使用多播，因此您必须在网络上启用多播才能正常工作。
+Hazelcast 支持几种不同的发现配置。
+Hazelcast 默认配置使用多播，因此您必须在网络上启用多播才能正常工作。
 
 有关如何配置不同的发现方式，请查阅 Hazelcast 文档。
 
 [[_changing_local_and_public_address_with_system_properties]]
 === 通过系统配置改变本地地址及公共地址
 
-有时，集群节点必须绑定到其他集群成员无法访问的地址。 例如，节点不在同一网络区域中，或在某些具有特定防火墙配置的云服务中时，可能会发生这种情况。
+有时，集群节点必须绑定到其他集群成员无法访问的地址。
+例如，节点不在同一网络区域中，或在某些具有特定防火墙配置的云服务中时，可能会发生这种情况。
 
 可以使用以下系统属性设置绑定的本地地址和公共地址（向其他成员发布的地址）：
 
@@ -216,7 +228,8 @@ IMPORTANT: 要确保 Hazelcast 集群 先于 Vert.x 集群启动，后于 Vert.x
 [[_changing_timeout_for_failed_nodes]]
 == 修改故障节点的超时配置
 
-缺省情况下，Hazelcast 会移除集群中超过300秒没收到心跳的节点。 通过系统配置 `hazelcast.max.no.heartbeat.seconds` 可以修改这个超时时间，如:
+缺省情况下，Hazelcast 会移除集群中超过300秒没收到心跳的节点。
+通过系统配置 `hazelcast.max.no.heartbeat.seconds` 可以修改这个超时时间，如:
 
 ----
 -Dhazelcast.max.no.heartbeat.seconds=5
@@ -234,17 +247,17 @@ IMPORTANT: 要确保 Hazelcast 集群 先于 Vert.x 集群启动，后于 Vert.x
 [[_multicast_not_enabled_on_the_machine]]
 === 机器禁用组播
 
-通常来说，OSX 默认禁用组播。 请自行Google一下如何启用组播。
+通常来说，OSX 默认禁用组播。
+请自行Google一下如何启用组播。
 
 [[_using_wrong_network_interface]]
 === 使用错误的网络接口
 
-如果机器上有多个网络接口（也有可能是在运行 VPN 的情况下），那么 Hazelcast 很有可能是使用了错误的网络接口。
+如果机器上有多个网络接口（也有可能是在运行 VPN 的情况下），
+那么 Hazelcast 很有可能是使用了错误的网络接口。
 
-为了确保 Hazelcast 使用正确的网络接口，在配置文件中将 `interface`
-设置为指定IP地址.
-同时确保 `enabled` 属性设置为 `true` 。
-例如：
+为了确保 Hazelcast 使用正确的网络接口，在配置文件中将 `interface`设置为指定IP地址.
+同时确保 `enabled` 属性设置为 `true` 。例如：
 
 ----
 <interfaces enabled="true">
