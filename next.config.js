@@ -6,6 +6,7 @@ const mdxOptions = require("./components/lib/mdx-options")
 const withPlugins = require("next-compose-plugins")
 
 const isProd = process.env.NODE_ENV === "production"
+const buildSite = process.env.BUILD_SITE
 
 const mdx = require("@next/mdx")({
   options: mdxOptions
@@ -27,7 +28,7 @@ const config = {
   env: {
     basePath,
     // URL to the website. MUST NOT end with a slash.
-    baseUrl: isProd ? `https://vertx-china.github.io${basePath}` : `http://localhost:3000${basePath}`
+    baseUrl: isProd ?  (buildSite ? `${buildSite}${basePath}` : `https://vertx-china.github.io${basePath}`) : `http://localhost:3000${basePath}`
   },
 
   // also render markdown pages

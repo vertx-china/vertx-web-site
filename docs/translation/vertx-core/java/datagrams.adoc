@@ -1,3 +1,4 @@
+[[_datagram_sockets_udp]]
 == 数据报套接字（UDP）
 
 在Vert.x中使用用户数据报协议（UDP）就是小菜一碟。
@@ -24,6 +25,7 @@ UDP是无连接的传输，这意味着您与远程客户端没有建立持续�
 其优点是与TCP相比具有更少的开销，
 而且可以由NetServer和NetClient处理（参考前文）。
 
+[[_creating_a_datagramsocket]]
 === 创建 DatagramSocket
 
 要使用UDP，您首先要创建一个 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]` 实例，
@@ -37,6 +39,7 @@ DatagramSocket socket = vertx.createDatagramSocket(new DatagramSocketOptions());
 返回的 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]` 实例不会绑定到特定端口。
 如果您只想发送数据（如作为客户端）的话，这是没问题的，但更多详细的内容在下一节。
 
+[[_sending_datagram_packets]]
 === 发送数据报包
 
 如上所述，用户数据报协议（UDP）将数据分组发送给远程对等体，
@@ -60,6 +63,7 @@ socket.send("A string used as content", 1234, "10.0.0.1", asyncResult -> {
 });
 ----
 
+[[_receiving_datagram_packets]]
 === 接收数据报包
 
 若您想要接收数据包，则您需要调用 `listen(...)` 方法绑定
@@ -96,8 +100,10 @@ socket.listen(1234, "0.0.0.0", asyncResult -> {
 
 若您需要这样的保证，您可在TCP之上建立一些握手逻辑。
 
+[[_multicast]]
 === 多播
 
+[[_sending_multicast_packets]]
 ==== 发送多播数据包
 
 多播允许多个Socket接收相同的数据包，
@@ -122,6 +128,7 @@ socket.send(buffer, 1234, "230.0.0.1", asyncResult -> {
 
 所有已经加入多播组 230.0.0.1 的Socket都将收到该报文。
 
+[[_receiving_multicast_packets]]
 ===== 接收多播数据包
 
 若要接收特定多播组的数据包，您需要通过调用 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]` 的 `listen(...)`
@@ -159,6 +166,7 @@ socket.listen(1234, "0.0.0.0", asyncResult -> {
 });
 ----
 
+[[_unlisten_leave_a_multicast_group]]
 ===== 取消订阅/离开多播组
 
 有时候您想只在特定时间内接收多播组的数据包。
@@ -196,6 +204,7 @@ socket.listen(1234, "0.0.0.0", asyncResult -> {
 });
 ----
 
+[[_blocking_multicast]]
 ===== 屏蔽多播
 
 除了取消监听一个多播地址以外，也可以做到屏蔽指定发送者地址的多播。
@@ -220,9 +229,10 @@ socket.blockMulticastGroup("230.0.0.1", "10.0.0.2", asyncResult -> {
 });
 ----
 
+[[_datagramsocket_properties]]
 ==== DatagramSocket 属性
 
-当创建 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]` 时，您可以通过 
+当创建 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]` 时，您可以通过
 `link:../../apidocs/io/vertx/core/datagram/DatagramSocketOptions.html[DatagramSocketOptions]` 对象来设置多个属性以更改它的功能。这些（属性）如下：
 
 - `link:../../apidocs/io/vertx/core/datagram/DatagramSocketOptions.html#setSendBufferSize-int-[setSendBufferSize]` 以字节为单位设置发送缓冲区的大小。
@@ -241,12 +251,14 @@ TTL表示“活动时间”，单这种情况下，它指定允许数据包经�
 转发数据包的每个路由器或网关会递减TTL，
 如果路由器将TTL递减为0，则不会再转发。
 
+[[_datagramsocket_local_address]]
 ==== DatagramSocket本地地址
 
 您可以通过调用 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html#localAddress--[localAddress]` 来查找套接字的本地地址（即UDP Socket这边的地址）。
-若您在调用 `listen(...)` 之前已经绑定了 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]` 
+若您在调用 `listen(...)` 之前已经绑定了 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]`
 ，则它将返回一个InetSocketAddress，否则返回null。
 
+[[_closing_a_datagramsocket]]
 ==== 关闭DatagramSocket
 
 您可以通过调用 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html#close-io.vertx.core.Handler-[close]` 方法来关闭Socket，它将关闭

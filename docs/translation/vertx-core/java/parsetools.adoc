@@ -1,3 +1,4 @@
+[[_record_parser]]
 == 记录解析器（Record Parser）
 
 记录解析器（Record Parser）允许您轻松解析由字节序列分割的协议，或者固定长度的协议。
@@ -47,6 +48,7 @@ RecordParser.newFixed(4, h -> {
 
 有关更多详细信息，请查看 `link:../../apidocs/io/vertx/core/parsetools/RecordParser.html[RecordParser]` 类。
 
+[[_json_parser]]
 == Json 解析器
 
 解析JSON结构很容易，但这要求你一次性提供完整的JSON，

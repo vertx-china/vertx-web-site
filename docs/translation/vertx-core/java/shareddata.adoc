@@ -1,3 +1,4 @@
+[[_using_the_shareddata_api]]
 == 使用共享数据的API
 
 顾名思义，`link:../../apidocs/io/vertx/core/shareddata/SharedData.html[共享数据（SharedData）]` API允许您在如下组件中安全地共享数据：
@@ -17,6 +18,7 @@ IMPORTANT: 分布式数据结构的行为取决于您使用的集群管理器。
 网络分区面临的备份（复制）以及当出现网络分区时的行为，由集群管理器和其配置来决定。
 请参阅集群管理器文档以及底层框架手册。
 
+[[_local_maps]]
 === Local maps
 
 `link:../../apidocs/io/vertx/core/shareddata/LocalMap.html[Local maps]` 允许您在同一个 Vert.x 实例中的不同事件循环（如不同的 verticle）之间安全地共享数据。
@@ -56,6 +58,7 @@ map2 = sharedData.getLocalMap("mymap2");
 Buffer buff = map2.get("eek");
 ----
 
+[[_asynchronous_shared_maps]]
 === 异步共享的 maps
 
 `link:../../apidocs/io/vertx/core/shareddata/AsyncMap.html[异步共享的 maps]` 允许数据被放到 map 中，并从本地或任何其他节点读取。
@@ -98,6 +101,7 @@ sharedData.<String, String>getLocalAsyncMap("mymap", res -> {
 });
 ----
 
+[[_putting_data_in_a_map]]
 ==== 将数据放入map
 
 您可以使用 `link:../../apidocs/io/vertx/core/shareddata/AsyncMap.html#put-java.lang.Object-java.lang.Object-io.vertx.core.Handler-[put]` 方法将数据放入map。
@@ -115,6 +119,7 @@ map.put("foo", "bar", resPut -> {
 });
 ----
 
+[[_getting_data_from_a_map]]
 ==== 从map中读取数据
 
 您可以使用  `link:../../apidocs/io/vertx/core/shareddata/AsyncMap.html#get-java.lang.Object-io.vertx.core.Handler-[get]` 方法从Map读取数据。
@@ -133,12 +138,14 @@ map.get("foo", resGet -> {
 });
 ----
 
+[[_other_map_operations]]
 ===== 其他map操作
 
 您还可以从异步Map中删除条目、清除Map、读取它的大小。
 
 有关更多信息，请参阅  `link:../../apidocs/io/vertx/core/shareddata/AsyncMap.html[API docs]` 。
 
+[[_asynchronous_locks]]
 === 异步锁
 
 `link:../../apidocs/io/vertx/core/shareddata/Lock.html[异步锁]` 允许您在集群中获取独占锁。
@@ -215,6 +222,7 @@ sharedData.getLocalLock("mylock", res -> {
 });
 ----
 
+[[_asynchronous_counters]]
 === 异步计数器
 
 有时你会需要在本地或者在应用节点之间维护一个原子计数器。

@@ -1,4 +1,4 @@
-[[passing_configuration_to_a_verticle]]
+[[_passing_configuration_to_a_verticle]]
 === 向 Verticle 传入配置
 
 可在部署时传给 Verticle 一个 JSON 格式的配置
@@ -19,6 +19,7 @@ vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
 System.out.println("Configuration: " + config().getString("name"));
 ----
 
+[[_accessing_environment_variables_in_a_verticle]]
 === 在 Verticle 中访问环境变量
 
 环境变量和系统属性可以直接通过 Java API 访问：

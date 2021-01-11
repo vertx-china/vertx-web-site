@@ -1,3 +1,4 @@
+[[_error_handling]]
 === 错误处理
 
 如前边部分所述，DnsClient允许您传递一个Handler，

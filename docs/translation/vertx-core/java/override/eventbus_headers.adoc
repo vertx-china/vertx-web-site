@@ -1,3 +1,4 @@
+[[_setting_headers_on_messages]]
 ==== 设置消息头
 
 在 Event Bus 上发送的消息可包含头信息。您可以在发送或发布(publish)时提供一个

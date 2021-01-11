@@ -1,73 +1,69 @@
 = Vert.x-Web
 :toc: left
 
-Vert.x-Web is a set of building blocks for building web applications with Vert.x. Think of it as a Swiss Army Knife for
-building modern, scalable, web apps.
+Vert.x-Web是基于Vert.x的，用于构建Web应用程序的一系列构建模块。 可以将其视为一把构建现代的，可扩展的Web应用的瑞士军刀。
 
-Vert.x core provides a fairly low level set of functionality for handling HTTP, and for some applications
-that will be sufficient.
+Vert.x Core 提供了一系列相对底层的功能用于操作HTTP，对于一部分应用是足够的。
 
-Vert.x-Web builds on Vert.x core to provide a richer set of functionality for building real web applications, more
-easily.
+Vert.x Web 基于 Vert.x Core 提供了一系列更丰富的功能，以便更容易地开发实际的 Web 应用。
 
-It's the successor to http://pmlopes.github.io/yoke/[Yoke] in Vert.x 2.x, and takes inspiration from projects such
-as http://expressjs.com/[Express] in the Node.js world and http://www.sinatrarb.com/[Sinatra] in the Ruby world.
+它继承了 Vert.x 2.x 里的 http://pmlopes.github.io/yoke/[Yoke] 的特点，灵感来自于 Node.js 的框架 http://expressjs.com/[Express] 和 Ruby 的框架 http://www.sinatrarb.com/[Sinatra] 等等。
 
-Vert.x-Web is designed to be powerful, un-opionated and fully embeddable. You just use the parts you want and nothing more.
-Vert.x-Web is not a container.
+Vert.x Web 的设计是强大的，非侵入式的, 并且是完全可插拔的。您可以只使用您需要的部分。 Vert.x Web 不是一个容器。
 
-You can use Vert.x-Web to create classic server-side web applications, RESTful web applications, 'real-time' (server push)
-web applications, or any other kind of web application you can think of. Vert.x-Web doesn't care. It's up to you to chose
-the type of app you prefer, not Vert.x-Web.
+您可以使用 Vert.x Web 来构建经典的服务端 Web 应用， RESTful 应用， 实时的（服务端推送)Web 应用, 或任何您所能想到的 Web 应用类型。应用类型的选择取决于您的喜好，而不是 Vert.x Web。
 
-Vert.x-Web is a great fit for writing RESTful HTTP micro-services**, but we don't force** you to write apps like that.
+Vert.x-Web is a great fit for writing RESTful HTTP micro-services, but we don’t force you to write apps like that。
+Vert.x Web 非常适合编写 RESTful HTTP 微服务，** 但我们不强制 ** 您必须把应用实现成这样。
 
-Some of the key features of Vert.x-Web include:
+Vert.x Web 的一部分关键特性有：
 
-* Routing (based on method, path, etc)
-* Regular expression pattern matching for paths
-* Extraction of parameters from paths
-* Content negotiation
-* Request body handling
-* Body size limits
-* Multipart forms
-* Multipart file uploads
-* Sub routers
-* Session support - both local (for sticky sessions) and clustered (for non sticky)
-* CORS (Cross Origin Resource Sharing) support
-* Error page handler
-* HTTP Basic/Digest Authentication
-* Redirect based authentication
-* Authorization handlers
-* JWT/OAuth2 based authorization
-* User/role/permission authorization
-* Favicon handling
-* Template support for server side rendering, including support for the following template engines out of the box:
+* 路由(基于方法,路径等)
+* 基于正则表达式的路径匹配
+* 从路径中提取参数
+* 内容协商
+* 处理消息体
+* 消息体的长度限制
+* Multipart 表单
+* Multipart 文件上传
+* 子路由
+* 支持本地会话和集群会话
+* 支持 CORS(跨域资源共享)
+* 错误页面处理器
+* HTTP基本/摘要认证
+* 基于重定向的认证
+* 授权处理器
+* 基于 JWT 的授权
+* 用户/角色/权限授权
+* 网页图标处理器
+
+* 支持服务端模板渲染，包括以下开箱即用的模板引擎:
 ** Handlebars
-** Jade,
+** Jade
 ** MVEL
 ** Thymeleaf
 ** Apache FreeMarker
 ** Pebble
 ** Rocker
-* Response time handler
-* Static file serving, including caching logic and directory listing.
-* Request timeout support
-* SockJS support
-* Event-bus bridge
-* CSRF Cross Site Request Forgery
-* VirtualHost
 
-Most features in Vert.x-Web are implemented as handlers so you can always write your own. We envisage many more being
-written over time.
+* 响应时间处理器
+* 静态文件服务，包括缓存逻辑以及目录监听
+* 支持请求超时
+* 支持 SockJS
+* 桥接 Event-bus
+* CSRF 跨域请求伪造
+* 虚拟主机
 
-We'll discuss all these features in this manual.
+Vert.x Web 的大部分特性是使用Handler实现的， 而且您随时可以实现您自己的处理器。我们预计随着时间的推移会有更多的处理器被实现。
 
-== Using Vert.x Web
+我们会在本手册里讨论所有上述的特性。
 
-To use vert.x web, add the following dependency to the _dependencies_ section of your build descriptor:
+[[_using_vert_x_web]]
+== 使用 Vert.x Web
 
-* Maven (in your `pom.xml`):
+在使用 Vert.x Web 之前，需要为您的构建工具在描述文件中添加  _dependencies_ 依赖项：
+
+* Maven (在您的 `pom.xml` 文件中):
 
 [source,xml,subs="+attributes"]
 ----
@@ -78,7 +74,7 @@ To use vert.x web, add the following dependency to the _dependencies_ section of
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle (在您的 `build.gradle` 文件中)：
 
 [source,groovy,subs="+attributes"]
 ----
@@ -87,70 +83,68 @@ dependencies {
 }
 ----
 
-=== Development mode
+[[_development_mode]]
+=== 开发模式
 
-Vert.x Web by default operates in production mode.
-You can switch the development mode by assigning the `dev` value to either:
+Vert.x Web 默认使用生产模式。
+您可以通过设置 `dev` 值到下面的其中一个来切换开发模式：
 
-* the `VERTXWEB_ENVIRONMENT` environment variable, or
-* the `vertxweb.environment` system property
+* `VERTXWEB_ENVIRONMENT` 环境变量，或
+* `vertxweb.environment` 系统属性
 
-In development mode:
+在开发模式：
 
-* template engine caches are disabled
-* the `ErrorHandler` does not display exception details
-* the `StaticHandler` does not handle cache headers
-* the GraphiQL development tool is disabled
+* 模板引擎缓存被禁用
+* `ErrorHandler` 不显示异常详细信息
+* `StaticHandler` 不处理缓存头
+* GraphQL开发工具被禁用
 
-== Re-cap on Vert.x core HTTP servers
+[[_re_cap_on_vert_x_core_http_servers]]
+== 回顾 Vert.x Core 的 HTTP 服务端
 
-Vert.x-Web uses and exposes the API from Vert.x core, so it's well worth getting familiar with the basic concepts of writing
-HTTP servers using Vert.x core, if you're not already.
+Vert.x Web 使用并暴露了 Vert.x Core 的 API，所以熟悉基于 Vert.x Core 编写 HTTP 服务端的基本概念是很有价值的。
 
-The Vert.x core HTTP documentation goes into a lot of detail on this.
+Vert.x core HTTP文档对此进行了详细介绍。
 
-Here's a hello world web server written using Vert.x core. At this point there is no Vert.x-Web involved:
-
+这是一个用 Vert.x core 编写的 Hello World Web服务。暂不涉及Vert.x-Web：
 [source,java]
 ----
 HttpServer server = vertx.createHttpServer();
 
 server.requestHandler(request -> {
 
-  // This handler gets called for each request that arrives on the server
+  // 所有的请求都会调用这个处理器处理
   HttpServerResponse response = request.response();
   response.putHeader("content-type", "text/plain");
 
-  // Write to the response and end it
+  // 写入响应并结束处理
   response.end("Hello World!");
 });
 
 server.listen(8080);
 ----
 
-We create an HTTP server instance, and we set a request handler on it. The request handler will be called whenever
-a request arrives on the server.
+我们创建了一个 HTTP 服务器实例，并设置了一个请求处理器。所有的请求都会调用这个处理器处理。
 
-When that happens we are just going to set the content type to `text/plain`, and write `Hello World!` and end the
-response.
+当请求到达时，我们设置响应的 Content Type 为 `text/plain` ， 并写入了 `Hello World!` 然后结束了处理。
 
-We then tell the server to listen at port `8080` (default host is `localhost`).
+之后，我们告诉服务器监听 `8080` 端口(默认的主机名是 `localhost` )。
 
-You can run this, and point your browser at `http://localhost:8080` to verify that it works as expected.
+您可以执行这段代码，并打开浏览器访问 `http://localhost:8080` 来验证它是否如预期一样工作。
 
-== Basic Vert.x-Web concepts
+[[_basic_vert_x_web_concepts]]
+== Vert.x Web 的基本概念
 
-Here's the 10000 foot view:
+高屋建瓴 (Here's the 10000 foot view)：
 
-A `link:../../apidocs/io/vertx/ext/web/Router.html[Router]` is one of the core concepts of Vert.x-Web. It's an object which maintains zero or more
-`link:../../apidocs/io/vertx/ext/web/Route.html[Routes]`.
+`link:../../apidocs/io/vertx/ext/web/Router.html[路由器 Router]` 是 Vert.x Web 的核心概念之一。 它是一个维护了零或多个
+`link:../../apidocs/io/vertx/ext/web/Route.html[路由 Routes]` 的对象。
 
-A router takes an HTTP request and finds the first matching route for that request, and passes the request to that route.
+一个 router 接收 HTTP 请求，并查找首个匹配该请求的route, 然后将请求传递给这个route
 
-The route can have a _handler_ associated with it, which then receives the request. You then _do something_ with the
-request, and then, either end it or pass it to the next matching handler.
+`Route` 可以持有一个与之关联的 _handler_ 用于接收请求。 您可以通过这个处理器对请求 _做一些事情_, 然后结束响应或者把请求传递给下一个匹配的处理器。
 
-Here's a simple router example:
+以下是一个简单的路由示例：
 
 [source,java]
 ----
@@ -160,48 +154,43 @@ Router router = Router.router(vertx);
 
 router.route().handler(ctx -> {
 
-  // This handler will be called for every request
+  // 所有的请求都会调用这个处理器处理
   HttpServerResponse response = ctx.response();
   response.putHeader("content-type", "text/plain");
 
-  // Write to the response and end it
+  // 写入响应并结束处理
   response.end("Hello World from Vert.x-Web!");
 });
 
 server.requestHandler(router).listen(8080);
 ----
 
-It basically does the same thing as the Vert.x Core HTTP server hello world example from the previous section,
-but this time using Vert.x-Web.
+它做了和上文使用 Vert.x Core 实现的 hello world HTTP 服务基本相同的事情，只是这一次换成了 Vert.x Web。
 
-We create an HTTP server as before, then we create a router. Once we've done that we create a simple route with
-no matching criteria so it will match _all_ requests that arrive on the server.
+我们像以前一样创建一个HTTP服务器，然后我们创建一个 router。当我们完成这些之后,我们创建一个简单的没有匹配条件的 rout，它能够匹配 _全部_ 到来的请求。
 
-We then specify a handler for that route. That handler will be called for all requests that arrive on the server.
+然后，我们为该路由指定一个处理器。该处理器将处理所有到来的请求。
 
-The object that gets passed into the handler is a `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]` - this contains
-the standard Vert.x `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html[HttpServerRequest]` and `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html[HttpServerResponse]`
-but also various other useful stuff that makes working with Vert.x-Web simpler.
+传递给处理器的对象是 `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]` - 它包含标准的 Vert.x `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html[HttpServerRequest]` 和 `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html[HttpServerResponse]`
+还有其他各种有用的东西，让使用Vert.x-Web变得更加简单。
 
-For every request that is routed there is a unique routing context instance, and the same instance is passed to
-all handlers for that request.
+处理器调用的参数是一个 http://vertx.io/docs/apidocs/io/vertx/ext/web/RoutingContext.html[ `RoutingContext` ] 对象。 它不仅包含了 Vert.x 中标准的 http://vertx.io/docs/apidocs/io/vertx/core/http/HttpServerRequest.html[ `HttpServerRequest` ] 和
+http://vertx.io/docs/apidocs/io/vertx/core/http/HttpServerResponse.html[ `HttpServerResponse` ]，还包含了各种用于简化 Vert.x Web 使用的东西。
 
-Once we've set up the handler, we set the request handler of the HTTP server to pass all incoming requests
-to `link:../../apidocs/io/vertx/core/Handler.html#handle-java.lang.Object-[handle]`.
+每个被路由的请求， 都有一个唯一的路由上下文实例， 并将这个实例传递给该请求的所有处理器。
 
-So, that's the basics. Now we'll look at things in more detail:
+当我们建立了处理器之后，我们设置 HTTP 服务器的请求处理器，使所有的请求都通过 `link:../../apidocs/io/vertx/core/Handler。html#handle-java.lang.Object-[handle]` 处理。
 
-== Handling requests and calling the next handler
+这些是最基本的，下面我们来看一下更多的细节：
 
-When Vert.x-Web decides to route a request to a matching route, it calls the handler of the route passing in an instance
-of `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]`. A route can have different handlers, that you can append using
-`link:../../apidocs/io/vertx/ext/web/Route.html#handler-io.vertx.core.Handler-[handler]`
+[[_handling_requests_and_calling_the_next_handler]]
+== 处理请求并调用下一个处理器
 
-If you don't end the response in your handler, you should call `link:../../apidocs/io/vertx/ext/web/RoutingContext.html#next--[next]` so another
-matching route can handle the request (if any).
+当 Vert.x Web 决定路由一个请求到匹配的route，它会调用对应处理器并将一个 `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]` 实例传递给它. route可以具有不同的处理器， 您可以叠加使用 `link:../../apidocs/io/vertx/ext/web/Route。html#handler-io.vertx.core.Handler-[handler]`
 
-You don't have to call `link:../../apidocs/io/vertx/ext/web/RoutingContext.html#next--[next]` before the handler has finished executing.
-You can do this some time later, if you want:
+如果您不在处理器里结束这个响应，您需要调用 `link:../../apidocs/io/vertx/ext/web/RoutingContext.html#next--[next]` 方法让其他匹配的 route 来处理请求(如果有)。
+
+您不需要在处理器执行完毕时调用 `link:../../apidocs/io/vertx/ext/web/RoutingContext.html#next--[next]` 。 您可以在之后需要的时间点调用它：
 
 [source,java]
 ----
@@ -209,14 +198,13 @@ Route route = router.route("/some/path/");
 route.handler(ctx -> {
 
   HttpServerResponse response = ctx.response();
-  // enable chunked responses because we will be adding data as
-  // we execute over other handlers. This is only required once and
-  // only if several handlers do output.
+  // 开启分块响应，因为我们将在执行其他处理器时添加数据
+  // 仅当有多个处理器输出时
   response.setChunked(true);
 
   response.write("route1\n");
 
-  // Call the next matching route after a 5 second delay
+  // 延迟5秒后调用下一匹配route
   ctx.vertx().setTimer(5000, tid -> ctx.next());
 });
 
@@ -225,7 +213,7 @@ route.handler(ctx -> {
   HttpServerResponse response = ctx.response();
   response.write("route2\n");
 
-  // Call the next matching route after a 5 second delay
+  // 延迟5秒后调用下一匹配route
   ctx.vertx().setTimer(5000, tid -> ctx.next());
 });
 
@@ -234,44 +222,42 @@ route.handler(ctx -> {
   HttpServerResponse response = ctx.response();
   response.write("route3");
 
-  // Now end the response
+  // 现在结束响应
   ctx.response().end();
 });
 ----
 
-In the above example `route1` is written to the response, then 5 seconds later `route2` is written to the response,
-then 5 seconds later `route3` is written to the response and the response is ended.
+在上述的例子中， `route1` 向响应里写入了数据， 5秒之后 `route2` 向响应里写入了数据，再5秒之后 `route3` 向响应里写入了数据并结束了响应。
 
-Note, all this happens without any thread blocking.
+NOTE: 所有发生的这些没有线程阻塞。
 
-== Simple responses
+[[_simple_responses]]
+== 简单的响应
 
-Handlers are quite powerful as they allow you to build quite complex applications. For simple responses, for example,
-returning an asynchronous response from a vert.x API directly, the router includes a shortcut to a handler that ensures
-that:
+处理器非常强大， 因为它们允许您构建非常复杂的应用程序。 为了保证简单的响应，例如直接从vert.x API返回异步响应，router 包含一个快捷的处理器：
 
-1. The response is returned in JSON.
-2. If there is an error processing the handler, a proper error is returned.
-3. If there is an error serializing the response to JSON, a proper error is returned.
+1. 响应返回JSON。
+2. 如果处理过程中发生错误，一个适当的错误会返回。
+3. 如果序列化JSON中发生错误，一个适当的错误会返回。
 
 [source,java]
 ----
 router
   .get("/some/path")
-  // this handler will ensure that the response is serialized to json
-  // the content type is set to "application/json"
+  // 这个处理器将保证这个响应会被序列化成json
+  // content type被设置成 "application/json"
   .respond(
     ctx -> Future.succeededFuture(new JsonObject().put("hello", "world")));
 
 router
   .get("/some/path")
-  // this handler will ensure that the Pojo is serialized to json
-  // the content type is set to "application/json"
+  // 这个处理器将保证这个Pojo会被序列化成json
+  // content type被设置成 "application/json"
   .respond(
     ctx -> Future.succeededFuture(new Pojo()));
 ----
 
-However you can also use it for non JSON responses if the function supplied calls either `write` or `end`:
+不过， 如果提供的函数支持调用 `write` 或 `end` ， 您还可以将其用于非JSON响应。
 
 [source,java]
 ----
@@ -285,7 +271,7 @@ router
 
 router
   .get("/some/path")
-  // in this case, the handler ensures that the connection is ended
+  // 在这种情况下，处理器确保连接被终止
   .respond(
     ctx -> ctx
       .response()
@@ -293,135 +279,122 @@ router
         .write("Write some text..."));
 ----
 
-== Using blocking handlers
+[[_using_blocking_handlers]]
+== 使用阻塞式处理器
 
-Sometimes, you might have to do something in a handler that might block the event loop for some time, e.g. call
-a legacy blocking API or do some intensive calculation.
+某些时候您可能需要在处理器里执行一些需要阻塞 Event Loop 的操作，比如调用某个传统的阻塞式 API 或者执行密集计算。
 
-You can't do that in a normal handler, so we provide the ability to set blocking handlers on a route.
+您不能在普通的处理器里执行这些操作， 因此我们提供了将route设置成阻塞式处理器的功能。
 
-A blocking handler looks just like a normal handler but it's called by Vert.x using a thread from the worker pool
-not using an event loop.
-
-You set a blocking handler on a route with `link:../../apidocs/io/vertx/ext/web/Route.html#blockingHandler-io.vertx.core.Handler-[blockingHandler]`.
-Here's an example:
+阻塞式处理器和普通处理器很像， 区别是 Vert.x 会使用 Worker Pool 中的线程而不是 Event Loop 线程来处理请求。
+您可以使用 `link:../../apidocs/io/vertx/ext/web/Route.html#blockingHandler-io.vertx.core.Handler-[blockingHandler]`
+方法来建立阻塞式处理器。 下面是一个例子:
 
 [source,java]
 ----
 router.route().blockingHandler(ctx -> {
 
-  // Do something that might take some time synchronously
+  // 执行某些同步的耗时操作
   service.doSomethingThatBlocks();
 
-  // Now call the next handler
+  // 调用下一个处理器
   ctx.next();
 
 });
 ----
 
-By default, any blocking handlers executed on the same context (e.g. the same verticle instance) are _ordered_ - this
-means the next one won't be executed until the previous one has completed. If you don't care about orderering and
-don't mind your blocking handlers executing in parallel you can set the blocking handler specifying `ordered` as
-false using `link:../../apidocs/io/vertx/ext/web/Route.html#blockingHandler-io.vertx.core.Handler-boolean-[blockingHandler]`.
+默认情况下，在同一个 Context (例如同一个 Verticle 实例) 上执行的所有阻塞式处理器是顺序的， 也就意味着只有一个处理器执行完了才会继续执行下一个。 如果您不关心执行的顺序，并且不介意阻塞式处理器以并行的方式执行， 您可以在使用 `link:../../apidocs/io/vertx/ext/web/Route.html#blockingHandler-io.vertx.core.Handler-boolean-[blockingHandler]` 时，设置阻塞式处理器的 `ordered` 为 false。
 
-Note, if you need to process multipart form data from a blocking handler, you MUST use a non-blocking handler
-     FIRST in order to call `setExpectMultipart(true)`. Here is an example:
-
+NOTE: 如果您需要在一个阻塞处理器中处理一个 multipart 类型的表单数据，您需要首先使用一个非阻塞的处理器来调用 `setExpectMultipart(true)` 。下面是一个例子：
 [source,java]
 ----
 router.post("/some/endpoint").handler(ctx -> {
   ctx.request().setExpectMultipart(true);
   ctx.next();
 }).blockingHandler(ctx -> {
-  // ... Do some blocking operation
+  // ... 执行某些阻塞操作
 });
 ----
 
-== Routing by exact path
+[[_routing_by_exact_path]]
+== 基于精确路径的路由
 
-A route can be set-up to match the path from the request URI. In this case it will match any request which has a path
-that's the same as the specified path.
+可以将 `Route` 设置为根据需要所匹配的 URI。在这种情况下它只会匹配路径一致的请求。
 
-In the following example the handler will be called for a request `/some/path/`. We also ignore trailing slashes
-so it will be called for paths `/some/path` and `/some/path//` too:
-
+在下面这个例子中，处理器会被路径为 `/some/path/` 的请求调用。我们会忽略结尾的 `/` ， 所以路径 `/some/path` 或者 `/some/path//` 的请求也是匹配的
 [source,java]
 ----
 Route route = router.route().path("/some/path/");
 
 route.handler(ctx -> {
-  // This handler will be called for the following request paths:
+  // 这个处理器会被以下路径的请求调用：
 
   // `/some/path/`
   // `/some/path//`
   //
-  // but not:
-  // `/some/path` the end slash in the path makes it strict
+  // 但不包括:
+  // `/some/path` 路径末尾的斜线会被严格限制
   // `/some/path/subdir`
 });
 
-// paths that do not end with slash are not strict
-// this means that the trailing slash is optional
-// and they match regardless
+// 路径结尾没有斜线的不会被严格限制
+// 这意味着结尾的斜线是可选的
+// 无论怎样都会匹配
 Route route2 = router.route().path("/some/path");
 
 route2.handler(ctx -> {
-  // This handler will be called for the following request paths:
+  // 这个处理器会被以下路径的请求调用：
 
   // `/some/path`
   // `/some/path/`
   // `/some/path//`
   //
-  // but not:
+  // 但不包括:
   // `/some/path/subdir`
 });
 ----
 
-== Routing by paths that begin with something
+[[_routing_by_paths_that_begin_with_something]]
+== 基于路径前缀的路由
 
-Often you want to route all requests that begin with a certain path. You could use a regex to do this, but a simply
-way is to use an asterisk `*` at the end of the path when declaring the route path.
+您经常需要为所有以某些路径开始的请求设置 `Route` 。 您可以使用正则表达式来实现， 但更简单的方式是在声明 `Route` 的路径时使用一个 `*` 作为结尾。
 
-In the following example the handler will be called for any request with a URI path that starts with
-`/some/path/`.
+在下面的例子中处理器会匹配所有 URI 以 `/some/path` 开头的请求。
 
-For example `/some/path/foo.html` and `/some/path/otherdir/blah.css` would both match.
-
+例如 `/some/path/foo.html` 和 `/some/path/otherdir/blah.css` 都会匹配。
 [source,java]
 ----
 Route route = router.route().path("/some/path/*");
 
 route.handler(ctx -> {
-  // This handler will be called for any path that starts with
-  // `/some/path/`, e.g.
+  // 这个处理器处理会被所有以 `/some/path/` 开头的请求调用， 例如：
 
   // `/some/path/`
   // `/some/path/subdir`
   // `/some/path/subdir/blah.html`
   //
-  // but not:
-  // `/some/path` the path is strict because it ends with slash
+  // 但不包括:
+  // `/some/path` 这个路径被限制因为以斜线结尾
   // `/some/bath`
 });
 ----
 
-With any path it can also be specified when creating the route:
-
+也可以在创建 `Route` 的时候指定任意的路径：
 [source,java]
 ----
 Route route = router.route("/some/path/*");
 
 route.handler(ctx -> {
-  // This handler will be called same as previous example
+  // 这个处理器的调用规则和上面的例子一样
 });
 ----
 
-== Capturing path parameters
+[[_capturing_path_parameters]]
+== 捕捉路径参数
 
-It's possible to match paths using placeholders for parameters which are then available in the context
-`link:../../apidocs/io/vertx/ext/web/RoutingContext.html#pathParam-java.lang.String-[pathParam]`.
+可以通过占位符声明路径参数并在处理请求时通过 `link:../../apidocs/io/vertx/ext/web/RoutingContext.html#pathParam-java.lang.String-[pathParam]` 。 方法获取
 
-Here's an example
+以下是一个例子
 
 [source,java]
 ----
@@ -432,21 +405,20 @@ router
     String productType = ctx.pathParam("productType");
     String productID = ctx.pathParam("productID");
 
-    // Do something with them...
+    // 执行某些操作...
   });
 ----
 
-The placeholders consist of `:` followed by the parameter name. Parameter names consist of any alphabetic character,
-numeric character or underscore.
+占位符由 `:` 和参数名构成. 参数名由字母， 数字和下划线构成。
 
-In the above example, if a POST request is made to path: `/catalogue/products/tools/drill123/` then the route will match
-and `productType` will receive the value `tools` and `productID` will receive the value `drill123`.
+在上面的例子中， 如果一个 POST 请求的路径为  `/catalogue/products/tools/drill123/` ， 那么会匹配这个 `Route` ， 并且会接收参数 `productType` 的值为 `tools` ，参数 `productID` 的值为 `drill123` 。
 
-Note: You can also capture `*` as path param `*`.
+NOTE: 您也可以将 * 捕获为路径参数 * 。
 
-== Routing with regular expressions
+[[_routing_with_regular_expressions]]
+== 基于正则表达式的路由
 
-Regular expressions can also be used to match URI paths in routes.
+同样也可用正则表达式匹配路由的 URI 路径。
 
 [source,java]
 ----
@@ -454,19 +426,19 @@ Route route = router.route().pathRegex(".*foo");
 
 route.handler(ctx -> {
 
-  // This handler will be called for:
+  // 以下路径的请求都会调用这个处理器：
 
   // /some/path/foo
   // /foo
   // /foo/bar/wibble/foo
   // /bar/foo
 
-  // But not:
+  // 但不包括：
   // /bar/wibble
 });
 ----
 
-Alternatively the regex can be specified when creating the route:
+或者在创建 route 时指定正则表达式：
 
 [source,java]
 ----
@@ -474,40 +446,43 @@ Route route = router.routeWithRegex(".*foo");
 
 route.handler(ctx -> {
 
-  // This handler will be called same as previous example
+  // 这个路由器的调用规则和上面的例子一样
 
 });
 ----
 
-== Capturing path parameters with regular expressions
 
-You can also capture path parameters when using regular expressions, here's an example:
+[[_capturing_path_parameters_with_regular_expressions]]
+== 通过正则表达式捕捉路径参数
+
+您也可以通过正则表达式声明捕捉路径参数，这是一个例子：
 
 [source,java]
 ----
 Route route = router.routeWithRegex(".*foo");
 
-// This regular expression matches paths that start with something like:
-// "/foo/bar" - where the "foo" is captured into param0 and the "bar" is
-// captured into param1
+// 这个正则表达式可以匹配路径类似于：
+// `/foo/bar` 的请求
+// `foo` 可以通过参数 param0 获取，`bar` 可以通过参数 param1 获取
 route.pathRegex("\\/([^\\/]+)\\/([^\\/]+)").handler(ctx -> {
 
   String productType = ctx.pathParam("param0");
   String productID = ctx.pathParam("param1");
 
-  // Do something with them...
+  // 执行某些操作……
 });
 ----
 
-In the above example, if a request is made to path: `/tools/drill123/` then the route will match
-and `productType` will receive the value `tools` and `productID` will receive the value `drill123`.
+在上述的例子中，如果一个请求的路径为 `/tools/drill123/`，那么会匹配这个 `route`，
+并且会接收到参数 `productType` 的值为 `tools`，参数 `productID` 的值为 `drill123`。
 
-Captures are denoted in regular expressions with capture groups (i.e. surrounding the capture with round brackets)
+捕捉（译者注：这里指的是捕捉参数这一行为）在正则表达式中用捕捉组表示（即用圆括号括住捕捉）
 
-== Using named capture groups
+[[_using_named_capture_groups]]
+== 使用命名的捕捉组
 
-Using int index param names might be troublesome in some cases.
-It's possible to use named capture groups in the regex path.
+使用序号参数名在某些场景下可能会比较麻烦。
+亦可在正则表达式路径中使用命名的捕捉组。
 
 [source,java]
 ----
@@ -518,19 +493,20 @@ router
     String productType = ctx.pathParam("productType");
     String productID = ctx.pathParam("productID");
 
-    // Do something with them...
+    // 执行某些操作……
   });
 ----
 
-In the example above, named capture groups are mapped to path parameters of the same name as the group.
+在上述的例子中，命名捕捉组将路径参数映射到同名的捕捉组中。
 
-Additionally, you can still access group parameters as you would with normal groups (i.e. `params0, params1...`)
+此外，您仍可以使用普通捕捉组访问组参数（例如：`params0, params1...`）
 
-== Routing by HTTP method
+[[_routing_by_http_method]]
+== 基于 HTTP 方法的路由
 
-By default a route will match all HTTP methods.
+Route 默认会匹配所有的 HTTP 方法。
 
-If you want a route to only match for a specific HTTP method you can use `link:../../apidocs/io/vertx/ext/web/Route.html#method-io.vertx.core.http.HttpMethod-[method]`
+如果您只想让 route 匹配特定的 HTTP 方法，那么您可以使用 `link:../../apidocs/io/vertx/ext/web/Route.html#method-io.vertx.core.http.HttpMethod-[method]`
 
 [source,java]
 ----
@@ -538,52 +514,52 @@ Route route = router.route().method(HttpMethod.POST);
 
 route.handler(ctx -> {
 
-  // This handler will be called for any POST request
+  // 所有的 POST 请求都会调用这个处理器
 
 });
 ----
 
-Or you can specify this with a path when creating the route:
+或者您可以在创建 Route 时和路径一起指定：
 
 [source,java]
 ----
 Route route = router.route(HttpMethod.POST, "/some/path/");
 
 route.handler(ctx -> {
-  // This handler will be called for any POST request
-  // to a URI path starting with /some/path/
+  // 所有路径为 `/some/path/` 
+  // 的 POST 请求都会调用这个处理器
 });
 ----
 
-If you want to route for a specific HTTP method you can also use the methods such as `link:../../apidocs/io/vertx/ext/web/Router.html#get--[get]`,
-`link:../../apidocs/io/vertx/ext/web/Router.html#post--[post]` and `link:../../apidocs/io/vertx/ext/web/Router.html#put--[put]` named after the HTTP
-method name. For example:
+如果您想让 Route 指定 HTTP 方法，您也可以使用对应的 `link:../../apidocs/io/vertx/ext/web/Router.html#get--[get]`，
+`link:../../apidocs/io/vertx/ext/web/Router.html#post--[post]` 以及 `link:../../apidocs/io/vertx/ext/web/Router.html#put--[put]` 等方法。
+例如：
 
 [source,java]
 ----
 router.get().handler(ctx -> {
 
-  // Will be called for any GET request
+  // 所有 GET 请求都会调用这个处理器
 
 });
 
 router.get("/some/path/").handler(ctx -> {
 
-  // Will be called for any GET request to a path
-  // starting with /some/path
+  // 所有路径以 `/some/path/` 开始的 
+  // GET 请求都会调用这个处理器
 
 });
 
 router.getWithRegex(".*foo").handler(ctx -> {
 
-  // Will be called for any GET request to a path
-  // ending with `foo`
+  // 所有路径以 `foo` 结尾的
+  // GET 请求都会调用这个处理器
 
 });
 ----
 
-If you want to specify a route will match for more than HTTP method you can call `link:../../apidocs/io/vertx/ext/web/Route.html#method-io.vertx.core.http.HttpMethod-[method]`
-multiple times:
+如果您想要让 route 匹配不止一个 HTTP 方法，
+您可多次调用 `link:../../apidocs/io/vertx/ext/web/Route.html#method-io.vertx.core.http.HttpMethod-[method]` 方法：
 
 [source,java]
 ----
@@ -591,25 +567,25 @@ Route route = router.route().method(HttpMethod.POST).method(HttpMethod.PUT);
 
 route.handler(ctx -> {
 
-  // This handler will be called for any POST or PUT request
+  // 所有 GET 或 POST 请求都会调用这个处理器
 
 });
 ----
 
-If you are creating an application that require custom HTTP verbs, for example, an `WebDav` server, then you can specify
-custom verbs like:
+如果您的应用程序需要自定义 HTTP 动词，例如，在一个 `基于Web的分布式编写和版本控制（WebDAV）` 服务器中，
+您可这样自定义动词：
 
 [source,java]
 ----
 Route route = router.route()
   .method(HttpMethod.valueOf("MKCOL"))
   .handler(ctx -> {
-    // This handler will be called for any MKCOL request
+    // 所有 MKCOL 请求都会调用这个处理器
   });
 ----
 
-NOTE: It is important to notice that features such as rerouting will not accept custom http methods and inspecting the
-route verbs will yield the enumeration value `OTHER` instead of the custom name.
+NOTE: 请务必留意，像 rerouting 等特性不接受自定义 http 方法，
+这些操作在检测到自定义动词时将会使用 `OTHER` 值以替代自定义名。
 
 == Route order
 
@@ -741,7 +717,7 @@ If two matching routes have the same value of order, then they will be called in
 
 You can also specify that a route is handled last, with `link:../../apidocs/io/vertx/ext/web/Route.html#last--[last]`
 
-Note: Route order can be specified only before you configure an handler!
+NOTE: Route order can be specified only before you configure an handler!
 
 == Routing based on MIME type of request
 
@@ -2377,30 +2353,31 @@ router.route().handler(ctx -> {
 Multi tenant is a powerful handler that will allow applications to live side by side, however it provides no sandboxing
 for execution. It should not be used as isolation as wrongly written applications may leak state across tenants.
 
-== Templates
+[[_templates]]
+== 模板
 
-Vert.x-Web includes dynamic page generation capabilities by including out of the box support for several popular template
-engines. You can also easily add your own.
+Vert.x Web 为若干流行的模板引擎提供了开箱即用的支持，通过这种方式来提供生成动态页面的能力。
+您也可以很容易地添加您自己的实现。
 
-Template engines are described by `link:../../apidocs/io/vertx/ext/web/common/template/TemplateEngine.html[TemplateEngine]`. In order to render a template
-`link:../../apidocs/io/vertx/ext/web/common/template/TemplateEngine.html#render-io.vertx.core.json.JsonObject-java.lang.String-io.vertx.core.Handler-[render]` is used.
+`link:../../apidocs/io/vertx/ext/web/common/template/TemplateEngine.html[TemplateEngine]` 定义了使用模板引擎的接口。
+当渲染模板时会调用 `link:../../apidocs/io/vertx/ext/web/common/template/TemplateEngine.html#render-io.vertx.core.json.JsonObject-java.lang.String-io.vertx.core.Handler-[render]` 方法。
 
-The simplest way to use templates is not to call the template engine directly but to use the
-`link:../../apidocs/io/vertx/ext/web/handler/TemplateHandler.html[TemplateHandler]`.
-This handler calls the template engine for you based on the path in the HTTP request.
+最简单的使用模板的方式不是直接调用模板引擎，而是使用模板处理器
+`link:../../apidocs/io/vertx/ext/web/handler/TemplateHandler.html[TemplateHandler]` 。
+这个处理器会根据 HTTP 请求的路径来调用模板引擎。
 
-By default the template handler will look for templates in a directory called `templates`. This can be configured.
+缺省情况下，模板处理器会在 `templates` 目录中查找模板文件。这是可以配置的。
 
-The handler will return the results of rendering with a content type of `text/html` by default. This can also be configured.
+该处理器会返回渲染的结果，并默认设置 Content-Type 消息头为 `text/html` 。这也是可以配置的。
 
-When you create the template handler you pass in an instance of the template engine you want. Template engines are
-not embedded in vertx-web so, you need to configure your project to access them. Configuration is provided for
-each template engine.
+您需要在创建模板处理器时提供您想要使用的模板引擎实例。
+Vert.x Web 并未嵌入模板引擎的实现，您需要配置项目来访问它们。
+Vert.x Web 提供了每一种模板引擎的配置。
 
-Here are some examples:
+以下是例子：
 
 ////
-These examples are not using the traditional "transcoding" as they use an API providing in another project.
+这些例子并未使用传统方式的“转码”，因为用了其他项目的API
 ////
 
 [source, java]
@@ -2408,35 +2385,29 @@ These examples are not using the traditional "transcoding" as they use an API pr
 TemplateEngine engine = HandlebarsTemplateEngine.create();
 TemplateHandler handler = TemplateHandler.create(engine);
 
-// This will route all GET requests starting with /dynamic/ to the template handler
-// E.g. /dynamic/graph.hbs will look for a template in /templates/graph.hbs
+// 这会将所有以 `/dynamic` 开头的 GET 请求路由到模板处理器上
+// 例如 /dynamic/graph.hbs 会查找模板 /templates/graph.hbs
 router.get("/dynamic/*").handler(handler);
 
-// Route all GET requests for resource ending in .hbs to the template handler
+// 将所有以 `.hbs` 结尾的 GET 请求路由到模板处理器上
 router.getWithRegex(".+\\.hbs").handler(handler);
 ----
 
+[[_mvel_template_engine]]
+=== MVEL 模版引擎
 
+您需要在项目中添加以下 _依赖_ 以使用 MVEL 模板引擎：
+`io.vertx:vertx-web-templ-mvel:4.0.0`。 并通过此方法以创建 MVEL 模板引擎实例：
+`io.vertx.ext.web.templ.mvel.MVELTemplateEngine#create(io.vertx.core.Vertx)`。
 
+在使用 MVEL 模板引擎时，如果不指定模板文件的扩展名，
+则默认会查找扩展名为 `.templ` 的文件。
 
+在 MVEL 模板中可以通过 `context` 上下文变量来访问路由上下文 `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]` 对象。
+这意味着您可使用任何基于上下文里的信息来渲染模板，
+包括请求、响应、会话或者上下文数据。
 
-
-
-
-=== MVEL template engine
-
-To use MVEL, you need to add the following _dependency_ to your project:
-`io.vertx:vertx-web-templ-mvel:4.0.0`. Create an instance of the MVEL template engine using:
-`io.vertx.ext.web.templ.mvel.MVELTemplateEngine#create(io.vertx.core.Vertx)`
-
-When using the MVEL template engine, it will by default look for
-templates with the `.templ` extension if no extension is specified in the file name.
-
-The routing context `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]` is available
-in the MVEL template as the `context` variable, this means you can render the template based on anything in the context
-including the request, response, session or context data.
-
-Here are some examples:
+以下是例子：
 
 ----
 The request path is @{context.request().path()}
@@ -2446,23 +2417,24 @@ The variable 'foo' from the session is @{context.session().get('foo')}
 The value 'bar' from the context data is @{context.get('bar')}
 ----
 
-Please consult the http://mvel.codehaus.org/MVEL+2.0+Templating+Guide[MVEL templates documentation] for how to write
-MVEL templates.
+关于如何编写 MVEL 模板，
+请参考 http://mvel.codehaus.org/MVEL+2.0+Templating+Guide[MVEL 模板文档]。
 
-=== Jade template engine
+[[_jade_template_engine]]
+=== Jade 模版引擎（译者注：Jade 已更名为 Pug)
 
-To use the Jade template engine, you need to add the following _dependency_ to your project:
-`io.vertx:vertx-web-templ-jade:4.0.0`. Create an instance of the Jade template engine using:
-`io.vertx.ext.web.templ.jade.JadeTemplateEngine#create(io.vertx.core.Vertx)`.
+您需要在项目中添加以下 _依赖_ 以使用 Jade 模板引擎：
+`io.vertx:vertx-web-templ-jade:4.0.0`。 并通过此方法以创建 Jade 模板引擎实例：
+`io.vertx.ext.web.templ.jade.JadeTemplateEngine#create(io.vertx.core.Vertx)`。
 
-When using the Jade template engine, it will by default look for
-templates with the `.jade` extension if no extension is specified in the file name.
+在使用 Jade 模板引擎时，如果不指定模板文件的扩展名，
+则默认会查找扩展名为 `.jade` 的文件。
 
-The routing context `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]` is available
-in the Jade template as the `context` variable, this means you can render the template based on anything in the context
-including the request, response, session or context data.
+在 Jade 模板中可以通过 `context` 上下文变量来访问路由上下文 `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]` 对象。
+这意味着您可使用任何基于上下文里的信息来渲染模板，
+包括请求、响应、会话或者上下文数据。
 
-Here are some examples:
+以下是例子：
 
 ----
 !!! 5
@@ -2472,25 +2444,26 @@ html
  body
 ----
 
-Please consult the https://github.com/neuland/jade4j[Jade4j documentation] for how to write
-Jade templates.
+关于如何编写 Jade 模板，
+请参考 https://github.com/neuland/jade4j[Jade4j 文档]。
 
-=== Handlebars template engine
+[[_handlebars_template_engine]]
+=== Handlebars 模板引擎
 
-To use Handlebars, you need to add the following _dependency_ to your project:
-`io.vertx:vertx-web-templ-handlebars:4.0.0`. Create an instance of the Handlebars template engine
-using: `io.vertx.ext.web.templ.handlebars.HandlebarsTemplateEngine#create(io.vertx.core.Vertx)`.
+您需要在项目中添加以下 _依赖_ 以使用 Handlebars 模板引擎：
+`io.vertx:vertx-web-templ-handlebars:4.0.0`。 并通过此方法以创建 Handlebars 模板引擎实例：
+`io.vertx.ext.web.templ.handlebars.HandlebarsTemplateEngine#create(io.vertx.core.Vertx)`。
 
-When using the Handlebars template engine, it will by default look for
-templates with the `.hbs` extension if no extension is specified in the file name.
+在使用 Handlebars 模板引擎时，如果不指定模板文件的扩展名，
+则默认会查找扩展名为 `.hbs` 的文件。
 
-Handlebars templates are not able to call arbitrary methods in objects so we can't just pass the routing context
-into the template and let the template introspect it like we can with other template engines.
+Handlebars 不允许在模板中随意地调用对象的方法，
+因此我们不能像对待其他模板引擎一样将RoutingContext传递到引擎里并让模板来识别它。
 
-Instead, the context `link:../../apidocs/io/vertx/ext/web/RoutingContext.html#data--[data]` is available in the template.
+替代方案是，可以使用模版中的上下文 `link:../../apidocs/io/vertx/ext/web/RoutingContext.html#data--[data]` 对象。
 
-If you want to have access to other data like the request path, request params or session data you should
-add it the context data in a handler before the template handler. For example:
+如果您要访问某些RoutingContext里不存在的信息，
+比如请求的路径、请求参数或者会话等，您需要在模板处理器执行之前将他们添加到上下文data里，例如：
 
 [source,java]
 ----
@@ -2507,23 +2480,24 @@ router.get("/dynamic").handler(ctx -> {
 router.get("/dynamic/").handler(handler);
 ----
 
-Please consult the https://github.com/jknack/handlebars.java[Handlebars Java port documentation] for how to write
-handlebars templates.
+关于如何编写 Handlebars 模板，
+请参考 https://github.com/jknack/handlebars.java[Handlebars Java 文档]。
 
-=== Thymeleaf template engine
+[[_thymeleaf_template_engine]]
+=== Thymeleaf 模板引擎
 
-To use Thymeleaf, you need to add the following _dependency_ to your project:
-`io.vertx:vertx-web-templ-thymeleaf:4.0.0`. Create an instance of the Thymeleaf template engine
-using: `io.vertx.ext.web.templ.thymeleaf.ThymeleafTemplateEngine#create(io.vertx.core.Vertx)`.
+您需要在项目中添加以下 _依赖_ 以使用 Thymeleaf 模板引擎：
+`io.vertx:vertx-web-templ-thymeleaf:4.0.0`。 并通过此方法以创建 Thymeleaf 模板引擎实例：
+`io.vertx.ext.web.templ.thymeleaf.ThymeleafTemplateEngine#create(io.vertx.core.Vertx)`。
 
-When using the Thymeleaf template engine, it will by default look for
-templates with the `.html` extension if no extension is specified in the file name.
+在使用 Thymeleaf 模板引擎时，如果不指定模板文件的扩展名，
+则默认会查找扩展名为 `.html` 的文件。
 
-The routing context `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]` is available
-in the Thymeleaf template as the `context` variable, this means you can render the template based on anything in the context
-including the request, response, session or context data.
+在 Thymeleaf 模板中可以通过 `context` 上下文变量来访问路由上下文 `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]` 对象。
+这意味着您可使用任何基于上下文里的信息来渲染模板，
+包括请求、响应、会话或者上下文数据。
 
-Here are some examples:
+以下是例子：
 
 ----
 [snip]
@@ -2535,23 +2509,24 @@ Here are some examples:
 [snip]
 ----
 
-Please consult the http://www.thymeleaf.org/[Thymeleaf documentation] for how to write
-Thymeleaf templates.
+关于如何编写 Thymeleaf 模板，
+请参考 http://www.thymeleaf.org/[Thymeleaf 文档]。
 
-=== Apache FreeMarker template engine
+[[_apache_freemarker_template_engine]]
+=== Apache FreeMarker 模版引擎
 
-To use Apache FreeMarker, you need to add the following _dependency_ to your project:
-`io.vertx:vertx-web-templ-freemarker:4.0.0`. Create an instance of the Apache FreeMarker template engine
-using: `io.vertx.ext.web.templ.Engine#create()`.
+您需要在项目中添加以下 _依赖_ 以使用 Apache FreeMarker ：
+`io.vertx:vertx-web-templ-freemarker:4.0.0`。 并通过此方法以创建 Apache FreeMarker 模板引擎实例：
+`io.vertx.ext.web.templ.Engine#create()`。
 
-When using the Apache FreeMarker template engine, it will by default look for
-templates with the `.ftl` extension if no extension is specified in the file name.
+在使用 Apache FreeMarker 模板引擎时，如果不指定模板文件的扩展名，
+则默认会查找扩展名为 `.ftl` 的文件。
 
-The routing context `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]` is available
-in the Apache FreeMarker template as the `context` variable, this means you can render the template based on anything in the context
-including the request, response, session or context data.
+在 Apache FreeMarker 模板中可以通过 `context` 上下文变量来访问路由上下文 `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]` 对象。
+这意味着您可使用任何基于上下文里的信息来渲染模板，
+包括请求、响应、会话或者上下文数据。
 
-Here are some examples:
+以下是例子：
 
 ----
 [snip]
@@ -2563,23 +2538,24 @@ Here are some examples:
 [snip]
 ----
 
-Please consult the http://www.freemarker.org/[Apache FreeMarker documentation] for how to write
-Apache FreeMarker templates.
+关于如何编写 Apache FreeMarker 模板，
+请参考 http://www.freemarker.org/[Apache FreeMarker 文档]。
 
-=== Pebble template engine
+[[_pebble_template_engine]]
+=== Pebble 模版引擎
 
-To use Pebble, you need to add the following _dependency_ to your project:
-`io.vertx:vertx-web-templ-pebble:4.0.0`. Create an instance of the Pebble template engine
-using: `io.vertx.ext.web.templ.pebble.PebbleTemplateEngine#create(vertx)`.
+您需要在项目中添加以下 _依赖_ 以使用 Pebble ：
+`io.vertx:vertx-web-templ-pebble:4.0.0`。 并通过此方法以创建 Pebble 模板引擎实例：
+`io.vertx.ext.web.templ.pebble.PebbleTemplateEngine#create(vertx)`。
 
-When using the Pebble template engine, it will by default look for
-templates with the `.peb` extension if no extension is specified in the file name.
+在使用 Pebble 模板引擎时，如果不指定模板文件的扩展名，
+则默认会查找扩展名为 `.ped` 的文件。
 
-The routing context `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]` is available
-in the Pebble template as the `context` variable, this means you can render the template based on anything in the context
-including the request, response, session or context data.
+在 Pebble 模板中可以通过 `context` 上下文变量来访问路由上下文 `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]` 对象。
+这意味着您可使用任何基于上下文里的信息来渲染模板，
+包括请求、响应、会话或者上下文数据。
 
-Here are some examples:
+以下是例子：
 
 ----
 [snip]
@@ -2591,16 +2567,17 @@ Here are some examples:
 [snip]
 ----
 
-Please consult the http://www.mitchellbosecke.com/pebble/home/[Pebble documentation] for how to write
-Pebble templates.
+关于如何编写 Pebble 模板，
+请参考 http://www.mitchellbosecke.com/pebble/home/[Pebble 文档]。
 
-=== Rocker template engine
+[[_rocker_template_engine]]
+=== Rocker 模版引擎
 
-To use Rocker, then add `io.vertx:vertx-web-templ-rocker:4.0.0` as a dependency to your project.
-You can then create a Rocker template engine instance with `io.vertx.ext.web.templ.rocker#create()`.
+您需要在项目中添加以下 _依赖_ 以使用 Rocker：`io.vertx:vertx-web-templ-rocker:4.0.0`。
+并通过此方法以创建 Rocker 模板引擎实例：`io.vertx.ext.web.templ.rocker#create()`。
 
-The values of the JSON context object passed to the `render` method are then exposed as template parameters.
-Given:
+Rocker会将JSON上下文对象的值传递给 `render` 方法作为模版的参数。
+假定已知：
 
 ----
 [snip]
@@ -2615,7 +2592,7 @@ engine.render(context, "somedir/TestRockerTemplate2", render -> {
 [snip]
 ----
 
-then the template can be as the following `somedir/TestRockerTemplate2.rocker.html` resource file:
+那么相对应的模版文件 `somedir/TestRockerTemplate2.rocker.html` 可写作：
 
 ----
 @import io.vertx.core.json.JsonObject
@@ -2624,17 +2601,18 @@ Hello @foo and @bar
 Request path is @context.getString("path")
 ----
 
-=== HTTL template engine
+[[_httl_template_engine]]
+=== HTTL 模版引擎
 
-To use HTTL, you need to add the following _dependency_ to your project:
-`io.vertx:vertx-web-templ-httl:4.0.0`. Create an instance of the HTTL template engine
-using: `io.vertx.ext.web.templ.httl.HTTLTemplateEngine#create(io.vertx.core.Vertx)`.
+您需要在项目中添加以下 _依赖_ 以使用 HTTL ：
+`io.vertx:vertx-web-templ-httl:4.0.0`。 并通过此方法以创建 HTTL 模板引擎实例：
+`io.vertx.ext.web.templ.httl.HTTLTemplateEngine#create(io.vertx.core.Vertx)`。
 
-When using the HTTL template engine, it will by default look for
-templates with the `.httl` extension if no extension is specified in the file name.
+在使用 HTTL 模板引擎时，如果不指定模板文件的扩展名，
+则默认会查找扩展名为 `.httl` 的文件。
 
-The values of the JSON context object passed to the `render` method are then exposed as template parameters.
-Given:
+HTTL会将JSON上下文对象的值传递给 `render` 方法作为模版的参数。
+假定已知：
 
 ----
 [snip]
@@ -2649,7 +2627,7 @@ engine.render(context, "somedir/test-httl-template1.httl", render -> {
 [snip]
 ----
 
-then the template can be as the following `somedir/test-httl-template1.httl` resource file:
+那么相对应的模版文件 `somedir/test-httl-template1.httl` 可写作：
 
 ----
 <!-- #set(String foo, String bar) -->
@@ -2657,20 +2635,21 @@ Hello ${foo} and ${bar}
 
 ----
 
-Please consult the https://httl.github.io/en/[HTTL documentation] for how to write
-HTTL templates.
+关于如何编写 HTTL 模板，
+请参考 https://httl.github.io/en/[HTTL 文档]。
 
-=== Rythm template engine
+[[_rythm_template_engine]]
+=== Rythm 模版引擎
 
-To use Rythm, you need to add the following _dependency_ to your project:
-`io.vertx:vertx-web-templ-rythm:4.0.0`. Create an instance of the Rythm template engine
-using: `io.vertx.ext.web.templ.rythm.RythmTemplateEngine#create(io.vertx.core.Vertx)`.
+您需要在项目中添加以下 _依赖_ 以使用 Rythm ：
+`io.vertx:vertx-web-templ-rythm:4.0.0`。 并通过此方法以创建 Rythm 模板引擎实例：
+`io.vertx.ext.web.templ.rythm.RythmTemplateEngine#create(io.vertx.core.Vertx)`。
 
-When using the Rythm template engine, it will by default look for
-templates with the `.html` extension if no extension is specified in the file name.
+在使用 Rythm 模板引擎时，如果不指定模板文件的扩展名，
+则默认会查找扩展名为 `.html` 的文件。
 
-The values of the JSON context object passed to the `render` method are then exposed as template parameters.
-Given:
+Rythm会将JSON上下文对象的值传递给 `render` 方法作为模版的参数。
+假定已知：
 
 ----
 [snip]
@@ -2685,70 +2664,77 @@ engine.render(context, "somedir/test-rythm-template1.html", render -> {
 [snip]
 ----
 
-then the template can be as the following `somedir/test-rythm-template1.httl` resource file:
+那么相对应的模版文件 `somedir/test-rythm-template1.httl` 可写作：
 
 ----
 <!-- #set(String foo, String bar) -->
 Hello @foo and @bar
 ----
 
-Please consult the http://www.rythmengine.org/[RythmEngine documentation] for how to write templates.
+关于如何编写 HTTL 模板，请参考 http://www.rythmengine.org/[RythmEngine 文档]。
 
-=== Caching
+[[_caching]]
+=== 缓存
 
-Many of the engines support caching of the compiled templates. The cache is stored inside a vert.x shared data local map
-which allows the engines to share the same cache across several verticles in a efficient and safe way.
+许多引擎支持将编译好的模版存入缓存。该缓存存放在Vert.x的可分享的数据local map里。
+这样引擎便可在多个verticle中安全高效地使用该缓存。
 
-==== Disabling caching
+[[_disabling_caching]]
+==== 禁用缓存
 
-During development you might want to disable template caching so that the template gets reevaluated on each request.
-In order to do this you need to set the system property: `vertxweb.environment` or environment variable
-`VERTXWEB_ENVIRONMENT` to `dev` or `development`. By default caching is always enabled.
+在开发时，为了让每一次请求可以读取最新的模板，您可能希望禁用模板的缓存。
+您可通过设置系统变量：`vertxweb.environment` 或环境变量
+`VERTXWEB_ENVIRONMENT` 为 `dev` 或 `development` 将其禁用。缓存默认是启用的。
 
-== Error handler
+[[_error_handler]]
+== 错误处理器
 
-You can render your own errors using a template handler or otherwise but Vert.x-Web also includes an out of the boxy
-"pretty" error handler that can render error pages for you.
+您可使用模版处理器自行渲染错误页面，
+但是Vert.x-Web同样为您提供了开箱即用且“好看的”错误处理器，可为您渲染错误页面。
 
-The handler is `link:../../apidocs/io/vertx/ext/web/handler/ErrorHandler.html[ErrorHandler]`. To use the error handler just set it as a
-failure handler for any paths that you want covered.
+该处理器是 `link:../../apidocs/io/vertx/ext/web/handler/ErrorHandler.html[ErrorHandler]`。
+要使用该错误处理器，仅需要将其设置为您希望覆盖的错误路径的失败处理器即可（译者注：例如router.route("/*").failureHandler(ErrorHandler.create(vertx))）。
 
-== Request logger
+[[_request_logger]]
+== 请求日志
 
-Vert.x-Web includes a handler `link:../../apidocs/io/vertx/ext/web/handler/LoggerHandler.html[LoggerHandler]` that you can use to log HTTP requests.
-You should mount this handler before any handler that could fail the `RoutingContext`
+Vert.x-Web通过内置处理器 `link:../../apidocs/io/vertx/ext/web/handler/LoggerHandler.html[LoggerHandler]` 来记录请求日志。
+您需在挂载任何可能导致 `RoutingContext` 失败的处理器之前挂载该处理器。
 
-By default requests are logged to the Vert.x logger which can be configured to use JUL logging, log4j or SLF4J.
+默认情况下，请求日志将会被记录到Vert.x logger中，亦可通过更改配置使用JUL logging, log4j 或 SLF4J记录。
 
-See `link:../../apidocs/io/vertx/ext/web/handler/LoggerFormat.html[LoggerFormat]`.
+详见 `link:../../apidocs/io/vertx/ext/web/handler/LoggerFormat.html[LoggerFormat]`。
 
-== Serving favicons
+[[_serving_favicons]]
+== 提供网页图标
 
-Vert.x-Web includes the handler `link:../../apidocs/io/vertx/ext/web/handler/FaviconHandler.html[FaviconHandler]` especially for serving favicons.
+Vert.x-Web通过内置处理器 `link:../../apidocs/io/vertx/ext/web/handler/FaviconHandler.html[FaviconHandler]` 以提供网页图标。
 
-Favicons can be specified using a path to the filesystem, or by default Vert.x-Web will look for a file on the classpath
-with the name `favicon.ico`. This means you bundle the favicon in the jar of your application.
+图标可以指定为文件系统上的某个路径，否则 Vert.x Web 默认会在 classpath 上寻找名为 `favicon.ico` 的文件。
+这意味着您可以将图标打包到包含您应用的 jar 包里。
 
-== Timeout handler
+[[_timeout_handler]]
+== 超时处理器
 
-Vert.x-Web includes a timeout handler that you can use to timeout requests if they take too long to process.
+Vert.x-Web内置一个超时处理器以处理超时请求。
 
-This is configured using an instance of `link:../../apidocs/io/vertx/ext/web/handler/TimeoutHandler.html[TimeoutHandler]`.
+可通过 `link:../../apidocs/io/vertx/ext/web/handler/TimeoutHandler.html[TimeoutHandler]` 配置。
 
-If a request times out before the response is written a `503` response will be returned to the client.
+如果一个请求超时，则会给客户端返回一个 503 的响应。
 
-Here's an example of using a timeout handler which will timeout all requests to paths starting with `/foo` after 5
-seconds:
+下面的例子设置了一个超时处理器。对于所有以 `/foo` 路径开头的请求，
+都会在执行时间超过 5 秒之后自动超时。
 
 [source,java]
 ----
 router.route("/foo/").handler(TimeoutHandler.create(5000));
 ----
 
-== Response time handler
+[[_response_time_handler]]
+== 响应时间处理器
 
-This handler sets the header `x-response-time` response header containing the time from when the request was received
-to when the response headers were written, in ms., e.g.:
+该处理器会将从接收到请求到写入响应的消息头之间的毫秒数写入到响应的 `x-response-time` 里，
+例如：
 
 x-response-time: 1456ms
 

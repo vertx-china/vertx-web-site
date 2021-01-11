@@ -1,8 +1,8 @@
+[[_rxjava_2_api]]
 == RxJava 2 API
 
-The RxJava `link:../../apidocs/io/vertx/reactivex/ext/web/client/HttpRequest.html[HttpRequest]` provides an rx-ified version of the original API,
-the `link:../../apidocs/io/vertx/reactivex/ext/web/client/HttpRequest.html#rxSend--[rxSend]` method returns a `Single<HttpResponse<Buffer>>` that
-makes the HTTP request upon subscription, as consequence, the `Single` can be subscribed many times.
+RxJava `link:../../apidocs/io/vertx/reactivex/ext/web/client/HttpRequest.html[HttpRequest]` 提供了RX化的原始版本API，
+`link:../../apidocs/io/vertx/reactivex/ext/web/client/HttpRequest.html#rxSend--[rxSend]` 方法返回一个能够订阅到HTTP请求的 `Single<HttpResponse<Buffer>>` ，因此，`Single` 能被订阅多次。
 
 [source,java]
 ----
@@ -10,14 +10,14 @@ Single<HttpResponse<Buffer>> single = client
   .get(8080, "myserver.mycompany.com", "/some-uri")
   .rxSend();
 
-// Send a request upon subscription of the Single
+// Single订阅后，发送请求
 single.subscribe(response -> System.out.println("Received 1st response with status code" + response.statusCode()), error -> System.out.println("Something went wrong " + error.getMessage()));
 
-// Send another request
+// 发送另一个请求
 single.subscribe(response -> System.out.println("Received 2nd response with status code" + response.statusCode()), error -> System.out.println("Something went wrong " + error.getMessage()));
 ----
 
-The obtained `Single` can be composed and chained naturally with the RxJava API
+获得的 `Single` 可以与RxJava API自然地组合和链式调用
 
 [source,java]
 ----
@@ -26,13 +26,13 @@ Single<String> url = client
   .rxSend()
   .map(HttpResponse::bodyAsString);
 
-// Use the flatMap operator to make a request on the URL Single
+// 使用flatMap操作，向Single的URL上发出请求
 url
   .flatMap(u -> client.getAbs(u).rxSend())
   .subscribe(response -> System.out.println("Received response with status code" + response.statusCode()), error -> System.out.println("Something went wrong " + error.getMessage()));
 ----
 
-The same APIs is available
+同样的API们是可用的
 
 [source,java]
 ----
@@ -48,8 +48,7 @@ single.subscribe(resp -> {
 });
 ----
 
-The `link:../../apidocs/io/vertx/reactivex/ext/web/client/HttpRequest.html#sendStream-io.reactivex.Flowable-io.vertx.core.Handler-[sendStream]` shall
-be preferred for sending bodies `Flowable<Buffer>`.
+`link:../../apidocs/io/vertx/reactivex/ext/web/client/HttpRequest.html#sendStream-io.reactivex.Flowable-io.vertx.core.Handler-[sendStream]` 应首选发送 `Flowable<Buffer>` body。
 
 [source,java]
 ----
@@ -64,4 +63,4 @@ single.subscribe(resp -> {
 });
 ----
 
-Upon subscription, the `body` will be subscribed and its content used for the request.
+订阅后, `body` 将被订阅，其内容被用于请求。

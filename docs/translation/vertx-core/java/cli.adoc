@@ -19,6 +19,7 @@ Vert.x CLI 不但提供一个编程模型用以描述命令行界面，还提供
 2. 解析用户输入的命令行
 3. 进行查询/问答交互操作
 
+[[_definition_stage]]
 === 定义阶段
 
 每个命令行界面都必须定义所要使用的选项和参数集合。这些选项和参数也需命名。
@@ -49,8 +50,9 @@ CLI cli = CLI.create("copy")
 创建之后，可以给它设置摘要和描述。一般来说，摘要是指一行简短的文字说明，
 描述是指篇幅较长的详细说明。每个选项和参数可以使用
 `link:../../apidocs/io/vertx/core/cli/CLI.html#addArgument-io.vertx.core.cli.Argument-[addArgument]` 和
-`link:../../apidocs/io/vertx/core/cli/CLI.html#addOption-io.vertx.core.cli.Option-[addOption]` 方法加入到`CLI`对象中。
+`link:../../apidocs/io/vertx/core/cli/CLI.html#addOption-io.vertx.core.cli.Option-[addOption]` 方法加入到 `CLI` 对象中。
 
+[[_options]]
 ==== 选项列表
 
 `link:../../apidocs/io/vertx/core/cli/Option.html[Option]` 是指用户输入的命令行中出现的以 _键_ 来标识的命令行参数。
@@ -116,6 +118,7 @@ CLI cli = CLI.create("some-name")
 
 选项列表配置也可以通过其对应格式的 JSON 数据来创建。
 
+[[_arguments]]
 ==== 参数
 
 和选项不一样，参数不以 _键_ 进行标识而是以其 _索引_ 作为标识。
@@ -164,6 +167,7 @@ CLI cli = CLI.create("some-name")
 
 参数也可以通过其对应格式的 JSON 数据来创建。
 
+[[_usage_generation]]
 ==== 生成使用说明信息
 
 当 `link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` 实例配置完成之后，您可以用它来生成 _使用说明_ 信息：
@@ -203,6 +207,7 @@ A command line interface to copy files.
 
 如果需要调整这个使用说明信息，请参考 `link:../../apidocs/io/vertx/core/cli/UsageMessageFormatter.html[UsageMessageFormatter]` 类。
 
+[[_parsing_stage]]
 === 解析阶段
 
 `link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` 配置完成以后，您可以解析用户输入的命令行，
@@ -225,7 +230,7 @@ CommandLine commandLine = cli.parse(userCommandLineArguments);
 [[query_interrogation_stage]]
 === 查询/问答交互阶段
 
-命令行解析完成之后，您可以从 
+命令行解析完成之后，您可以从
 `link:../../apidocs/io/vertx/core/cli/CLI.html#parse-java.util.List-[parse]` 方法返回的 `link:../../apidocs/io/vertx/core/cli/CommandLine.html[CommandLine]`
 对象中获取到选项值和参数值：
 

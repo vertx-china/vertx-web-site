@@ -1,3 +1,4 @@
+[[_dns_client]]
 == DNS 客户端
 
 通常情况下，您需要以异步方式来获取DNS信息。
@@ -33,6 +34,7 @@ DnsClient client1 = vertx.createDnsClient();
 DnsClient client2 = vertx.createDnsClient(new DnsClientOptions().setQueryTimeout(10000));
 ----
 
+[[_lookup]]
 === lookup
 
 尝试为一个指定名称元素获取A（ipv4）或 AAAA（ipv6）记录时，第一条被返回的（记录）将会被使用。
@@ -52,6 +54,7 @@ client.lookup("vertx.io", ar -> {
 });
 ----
 
+[[_lookup4]]
 === lookup4
 
 尝试查找给定名称的A（ipv4）记录。第一个返回的（记录）将会被使用，
@@ -71,6 +74,7 @@ client.lookup4("vertx.io", ar -> {
 });
 ----
 
+[[_lookup6]]
 === lookup6
 
 尝试查找给定名称的 AAAA（ipv6）记录。第一个返回的（记录）将会被使用，
@@ -90,6 +94,7 @@ client.lookup6("vertx.io", ar -> {
 });
 ----
 
+[[_resolvea]]
 === resolveA
 
 尝试解析给定名称的所有A（ipv4）记录，
@@ -112,6 +117,7 @@ client.resolveA("vertx.io", ar -> {
 });
 ----
 
+[[_resolveaaaa]]
 === resolveAAAA
 
 尝试解析给定名称的所有AAAA（ipv6）记录，
@@ -134,6 +140,7 @@ client.resolveAAAA("vertx.io", ar -> {
 });
 ----
 
+[[_resolvecname]]
 === resolveCNAME
 
 尝试解析给定名称的所有CNAME记录，
@@ -156,6 +163,7 @@ client.resolveCNAME("vertx.io", ar -> {
 });
 ----
 
+[[_resolvemx]]
 === resolveMX
 
 尝试解析给定名称的所有MX记录，
@@ -189,6 +197,7 @@ record.priority();
 record.name();
 ----
 
+[[_resolvetxt]]
 === resolveTXT
 
 尝试解析给定名称的所有TXT记录，TXT记录通常用于定义域的额外信息。
@@ -210,6 +219,7 @@ client.resolveTXT("vertx.io", ar -> {
 });
 ----
 
+[[_resolvens]]
 === resolveNS
 
 尝试解析给定名称的所有NS记录，NS记录指定一个DNS服务器，
@@ -232,6 +242,7 @@ client.resolveNS("vertx.io", ar -> {
 });
 ----
 
+[[_resolvesrv]]
 === resolveSRV
 
 尝试解析给定名称的所有SRV记录，SRV记录用于定义服务端口和主机名等额外信息。
@@ -272,6 +283,7 @@ record.target();
 
 详细信息请参阅API文档
 
+[[_resolveptr]]
 === resolvePTR
 
 尝试解析给定名称的PTR记录，PTR记录将ip地址映射到名称。
@@ -291,6 +303,7 @@ client.resolvePTR("1.0.0.10.in-addr.arpa", ar -> {
 });
 ----
 
+[[_reverselookup]]
 === reverseLookup
 
 尝试对ipaddress进行反向查找，这与解析PTR记录类似。

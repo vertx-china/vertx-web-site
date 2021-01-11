@@ -1,7 +1,9 @@
+[[_writing_tcp_servers_and_clients]]
 == 编写 TCP 服务端和客户端
 
 Vert.x让您轻松编写非阻塞的TCP客户端和服务器。
 
+[[_creating_a_tcp_server]]
 === 创建 TCP 服务端
 
 最简单地使用所有默认配置项创建 TCP 服务端的方式如下：
@@ -11,6 +13,7 @@ Vert.x让您轻松编写非阻塞的TCP客户端和服务器。
 NetServer server = vertx.createNetServer();
 ----
 
+[[_configuring_a_tcp_server]]
 === 配置 TCP 服务端
 
 若您不想使用默认配置，可以在创建时通过传入一个 `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]`
@@ -22,6 +25,7 @@ NetServerOptions options = new NetServerOptions().setPort(4321);
 NetServer server = vertx.createNetServer(options);
 ----
 
+[[_start_the_server_listening]]
 === 启动服务端监听
 
 要告诉服务端监听传入的请求，您可以使用其中一个 `link:../../apidocs/io/vertx/core/net/NetServer.html#listen--[listen]`
@@ -64,6 +68,7 @@ server.listen(1234, "localhost", res -> {
 });
 ----
 
+[[_listening_on_a_random_port]]
 === 监听随机端口
 
 若设置监听端口为 `0`，服务器将随机寻找一个没有使用的端口来监听。
@@ -82,6 +87,7 @@ server.listen(0, "localhost", res -> {
 });
 ----
 
+[[_getting_notified_of_incoming_connections]]
 === 接收传入连接的通知
 
 若您想要在连接创建完时收到通知，则需要设置一个 `link:../../apidocs/io/vertx/core/net/NetServer.html#connectHandler-io.vertx.core.Handler-[connectHandler]` ：
@@ -99,6 +105,7 @@ server.connectHandler(socket -> {
 这是一个代表了实际连接的套接字接口，它允许您读取和写入数据、以及执行各种其他操作，
 如关闭 Socket。
 
+[[_reading_data_from_the_socket]]
 === 从Socket读取数据
 
 您可以在Socket上调用 `link:../../apidocs/io/vertx/core/net/NetSocket.html#handler-io.vertx.core.Handler-[handler]`
@@ -117,6 +124,7 @@ server.connectHandler(socket -> {
 });
 ----
 
+[[_writing_data_to_a_socket]]
 === 向Socket中写入数据
 
 您可使用 `link:../../apidocs/io/vertx/core/streams/WriteStream.html#write-java.lang.Object-[write]` 方法写入数据到Socket：
@@ -135,6 +143,7 @@ socket.write("some data", "UTF-16");
 
 写入操作是异步的，可能调用 `write` 方法返回过后一段时间才会执行。
 
+[[_closed_handler]]
 === 关闭处理器
 
 若您想要在 Socket 关闭时收到通知，可以设置一个 `link:../../apidocs/io/vertx/core/net/NetSocket.html#closeHandler-io.vertx.core.Handler-[closeHandler]`
@@ -147,6 +156,7 @@ socket.closeHandler(v -> {
 });
 ----
 
+[[_handling_exceptions]]
 === 处理异常
 
 您可以设置一个 `link:../../apidocs/io/vertx/core/net/NetSocket.html#exceptionHandler-io.vertx.core.Handler-[exceptionHandler]`
@@ -156,6 +166,7 @@ socket.closeHandler(v -> {
 `link:../../apidocs/io/vertx/core/net/NetServer.html#connectHandler-io.vertx.core.Handler-[connectHandler]` 接受到连接对象前发生的所有异常，
 比如在TLS握手期间。
 
+[[_event_bus_write_handler]]
 ===  Event Bus 写处理器
 
 每个 Socket 会自动在Event Bus中注册一个处理器，当这个处理器中收到任意Buffer时，
@@ -165,6 +176,7 @@ socket.closeHandler(v -> {
 
 处理器的地址由 `link:../../apidocs/io/vertx/core/net/NetSocket.html#writeHandlerID--[writeHandlerID]` 方法提供。
 
+[[_local_and_remote_addresses]]
 === 本地和远程地址
 
 您可以通过 `link:../../apidocs/io/vertx/core/net/NetSocket.html#localAddress--[localAddress]` 方法获取 `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` 的本地地址。
@@ -172,12 +184,13 @@ socket.closeHandler(v -> {
 通过 `link:../../apidocs/io/vertx/core/net/NetSocket.html#remoteAddress--[remoteAddress]` 方法获取
 `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` 的远程地址（即连接的另一端的地址）。
 
+[[_sending_files_or_resources_from_the_classpath]]
 === 发送文件或 Classpath 中的资源
 
 您可以直接通过 `link:../../apidocs/io/vertx/core/net/NetSocket.html#sendFile-java.lang.String-[sendFile]` 方法将文件和 classpath 中的资源写入Socket。
 这种做法是非常高效的，它可以被操作系统内核直接处理。
 
-请阅读 <<classpath, serving files from the classpath, 从 Classpath 访问文件>>
+请阅读 <<classpath, 从 Classpath 访问文件>>
 章节了解类路径的限制或禁用它。
 
 [source,java]
@@ -185,14 +198,16 @@ socket.closeHandler(v -> {
 socket.sendFile("myfile.dat");
 ----
 
+[[_streaming_sockets]]
 === 流式的Socket
 
-`link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` 接口继承了 link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 和
+`link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` 接口继承了 `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 和
 `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` 接口，因此您可以将它套用（pipe）到其他的
 读写流上。
 
 有关更多信息，请参阅  <<streams, 流 >> 章节。
 
+[[_upgrading_connections_to_ssltls]]
 ===  升级到 SSL/TLS 连接
 
 一个非SSL/TLS连接可以通过 `link:../../apidocs/io/vertx/core/net/NetSocket.html#upgradeToSsl-io.vertx.core.Handler-[upgradeToSsl]` 方法升级到SSL/TLS连接。
@@ -200,6 +215,7 @@ socket.sendFile("myfile.dat");
 必须为服务器或客户端配置SSL/TLS才能正常工作。请参阅 <<ssl, chapter on SSL/TLS>>
 章节获取详细信息。
 
+[[_closing_a_tcp_server]]
 === 关闭 TCP 服务端
 
 您可以调用 `link:../../apidocs/io/vertx/core/net/NetServer.html#close--[close]` 方法关闭服务端。
@@ -221,11 +237,13 @@ server.close(res -> {
 });
 ----
 
+[[_automatic_clean_up_in_verticles_3]]
 === Verticle中的自动清理
 
 若您在Verticle内创建了 TCP 服务端和客户端，
 它们将会在Verticle撤销时自动被关闭。
 
+[[_scaling_sharing_tcp_servers]]
 === 扩展 - 共享 TCP 服务端
 
 任意一个TCP服务端中的处理器总是在相同的Event-Loop线程上执行。
@@ -280,6 +298,7 @@ _Vert.x施加了一点魔法。_
 
 因此，Vert.x TCP 服务端可以水平扩展到多个核，并且每个实例保持单线程环境不变。
 
+[[_creating_a_tcp_client]]
 === 创建 TCP 客户端
 
 使用所有默认选项创建 TCP 客户端的最简单方法如下：
@@ -289,9 +308,10 @@ _Vert.x施加了一点魔法。_
 NetClient client = vertx.createNetClient();
 ----
 
+[[_configuring_a_tcp_client]]
 === 配置 TCP 客户端
 
-如果您不想使用默认值，则可以在创建实例时传入 `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` 
+如果您不想使用默认值，则可以在创建实例时传入 `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]`
 给客户端：
 
 [source,java]
@@ -300,10 +320,11 @@ NetClientOptions options = new NetClientOptions().setConnectTimeout(10000);
 NetClient client = vertx.createNetClient(options);
 ----
 
+[[_making_connections]]
 === 创建连接
 
 您可以使用 `link:../../apidocs/io/vertx/core/net/NetClient.html#connect-int-java.lang.String-io.vertx.core.Handler-[connect]` 方法创建到服务器的连接。
-请指定服务器的端口和主机，以及用于处理 
+请指定服务器的端口和主机，以及用于处理
 `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` 的处理器。当连接成功或失败时处理器会被调用。
 
 [source,java]
@@ -320,6 +341,7 @@ client.connect(4321, "localhost", res -> {
 });
 ----
 
+[[_configuring_connection_attempts]]
 === 配置连接重试
 
 可以将客户端配置为在无法连接的情况下自动重试。
@@ -367,24 +389,26 @@ Netty 使用 `DEBUG` 级别和 `io.netty.handler.logging.LoggingHandler` 名称�
 - 日志的记录是由Netty而不是Vert.x的日志来执行
 - 这个功能 *不能* 用于生产环境
 
-您应该阅读 <<netty-logging, Netty 日志记录>> 章节来了解详细信息。You should read the <<netty-logging>> section.
+您应该阅读 <<netty-logging, Netty 日志记录>> 章节来了解详细信息。
 
 [[ssl]]
 === 配置服务端和客户端以使用SSL/TLS
 
-TCP 客户端和服务端可以通过配置来使用 [TLS（传输层安全性协议）]http://en.wikipedia.org/wiki/Transport_Layer_Security[Transport Layer Security] 
+TCP 客户端和服务端可以通过配置来使用 [TLS（传输层安全性协议）]http://en.wikipedia.org/wiki/Transport_Layer_Security[Transport Layer Security]
 ——早期版本的TLS被称为SSL。
 
 无论是否使用SSL/TLS，服务器和客户端的API都是相同的。通过创建客户端/服务器时使用的
 `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` 或 / `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]`
 来启用TLS/SSL。
 
+[[_enabling_ssltls_on_the_server]]
 ==== 在服务端启用SSL/TLS
 
 您需要设置 `link:../../apidocs/io/vertx/core/net/NetServerOptions.html#setSsl-boolean-[ssl]` 配置项来启用 SSL/TLS。
 
 默认是禁用的。
 
+[[_specifying_keycertificate_for_the_server]]
 ==== 指定服务端的密钥/证书
 
 SSL/TLS 服务端通常向客户端提供证书，以便验证服务端的身份。
@@ -499,6 +523,7 @@ NetServerOptions options = new NetServerOptions().setSsl(true).setKeyCertOptions
 NetServer server = vertx.createNetServer(options);
 ----
 
+[[_specifying_trust_for_the_server]]
 ==== 指定服务器信任
 
 SSL/TLS 服务端可以使用证书颁发机构来验证客户端的身份。
@@ -600,12 +625,14 @@ NetServerOptions options = new NetServerOptions().
 NetServer server = vertx.createNetServer(options);
 ----
 
+[[_enabling_ssltls_on_the_client]]
 ==== 客户端启用SSL/TLS
 
 客户端也可以轻松地配置为SSL。使用SSL和使用标准套接字具有完全相同的API。
 
 若要启用 `NetClient` 上的SSL，可调用函数 `setSSL(true)`。
 
+[[_client_trust_configuration]]
 ==== 客户端受信配置
 
 若客户端将 `link:../../apidocs/io/vertx/core/net/ClientOptionsBase.html#setTrustAll-boolean-[trustALl]`  设置为 `true`，
@@ -728,6 +755,7 @@ NetClientOptions options = new NetClientOptions().
 NetClient client = vertx.createNetClient(options);
 ----
 
+[[_specifying_keycertificate_for_the_client]]
 ==== 指定客户端的密钥/证书
 
 如果服务器需要客户端认证，那么当连接时，客户端必须向服务器提供自己的证书。
@@ -818,6 +846,7 @@ NetClient client = vertx.createNetClient(options);
 
 请记住 `pem` 的配置中，私钥是不加密的。
 
+[[_self_signed_certificates_for_testing_and_development_purposes]]
 ==== 用于测试和开发目的的自签名证书
 
 CAUTION: 不要在生产设置中使用，这里生成的密钥非常不安全。
@@ -879,6 +908,7 @@ vertx.createHttpServer(new HttpServerOptions()
   .listen(8080);
 ----
 
+[[_revoking_certificate_authorities]]
 ==== 待撤销证书颁发机构
 
 可以通过配置证书吊销列表（CRL）来吊销不再被信任的证书机构。
@@ -906,6 +936,7 @@ NetClientOptions options = new NetClientOptions().
 NetClient client = vertx.createNetClient(options);
 ----
 
+[[_configuring_the_cipher_suite]]
 ==== 配置密码套件
 
 默认情况下，TLS配置将使用运行Vert.x的JVM 密码套件，该密码套件可以
@@ -925,6 +956,7 @@ NetServer server = vertx.createNetServer(options);
 
 密码套件可在 `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]` 或 `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` 配置项中指定。
 
+[[_configuring_tls_protocol_versions]]
 ==== 配置TLS协议版本
 
 默认情况下，TLS配置将使用以下协议版本：SSLv2Hello、TLSv1、TLSv1.1 和 TLSv1.2。
@@ -942,9 +974,10 @@ NetServer server = vertx.createNetServer(options);
 
 协议版本可在 `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]` 或 `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` 配置项中指定。
 
+[[_ssl_engine]]
 ==== SSL引擎
 
-引擎实现可以配置为使用 https://www.openssl.org[OpenSSL] 而不是JDK实现（来支持SSL）。 
+引擎实现可以配置为使用 https://www.openssl.org[OpenSSL] 而不是JDK实现（来支持SSL）。
 OpenSSL提供比JDK引擎更好的性能和CPU使用率、以及JDK版本独立性。
 
 引擎选项可使用：
@@ -971,6 +1004,7 @@ options = new NetServerOptions().
   setOpenSslEngineOptions(new OpenSSLEngineOptions());
 ----
 
+[[_server_name_indication_sni]]
 ==== 服务器名称指示（SNI）
 
 服务器名称指示（英語：Server Name Indication，缩写：SNI）是TLS的一个扩展协议，需要指定尝试连接的主机名：
@@ -982,7 +1016,7 @@ TLS握手开始时客户端提供要连接的服务器名称，服务端根据�
 当SNI可用时，服务器使用以下规则匹配证书：
 
 * 服务器名称完全匹配的证书CN（Common Name，通用名称）或SAN DNS（带有DNS的主题备用名称），例如 `www.example.com`
-* 带匹配通配符的服务器名称匹配的证书CN或SAN DNS证书，例如 `* .example.com` 
+* 带匹配通配符的服务器名称匹配的证书CN或SAN DNS证书，例如 `* .example.com`
 * 否则，当客户端不提供服务器名称或提供的服务器名称无法匹配时，返回第一个证书
 
 当服务器另外要求客户端身份验证时：
@@ -1052,6 +1086,7 @@ client.connect(1234, "localhost", "server.name", res -> {
 * 使用IP进行连接时，指定服务器名称
 * 使用短名称进行连接时，强制指定服务器名称
 
+[[_application_layer_protocol_negotiation_alpn]]
 ==== 应用层协议协商
 
 ALPN(Application-Layer Protocol Negotiation)是应用层协议协商的TLS扩展，它被HTTP/2使用：
@@ -1072,14 +1107,16 @@ Java 9 支持HTTP/2，可以开箱即用，无需其他步骤。
 - OpenSSL中ALPN可用时，使用 `link:../../apidocs/io/vertx/core/net/OpenSSLEngineOptions.html[OpenSSLEngineOptions]`
 - 否则失败
 
+[[_openssl_alpn_support]]
 ===== OpenSSL ALPN支持
 
 OpenSSL提供了原生的ALPN支持。
 
-OpenSSL需要配置 `link:../../apidocs/io/vertx/core/net/TCPSSLOptions.html#setOpenSslEngineOptions-io.vertx.core.net.OpenSSLEngineOptions-[setOpenSslEngineOptions]` 
+OpenSSL需要配置 `link:../../apidocs/io/vertx/core/net/TCPSSLOptions.html#setOpenSslEngineOptions-io.vertx.core.net.OpenSSLEngineOptions-[setOpenSslEngineOptions]`
 并在类路径上使用 http://netty.io/wiki/forked-tomcat-native.html[netty-tcnative] 的jar库。
 依赖于tcnative的实现，需要OpenSSL安装在您的操作系统中。
 
+[[_jetty_alpn_support]]
 ===== Jetty-ALPN支持
 
 Jetty-ALPN是一个小型的jar，它覆盖了几种Java 8发行版用以支持ALPN。
@@ -1102,6 +1139,7 @@ JVM必须将 _alpn-boot-${version}.jar_ 放在它的 `bootclasspath` 中启动�
 -javaagent:/path/to/alpn/agent
 ----
 
+[[_using_a_proxy_for_client_connections]]
 === 客户端连接使用代理
 
 `link:../../apidocs/io/vertx/core/net/NetClient.html[NetClient]` 支持HTTP/1.x _CONNECT_、_SOCKS4a_ 或 _SOCKS5_ 代理。
@@ -1124,7 +1162,7 @@ NetClient client = vertx.createNetClient(options);
 DNS 解析总是在代理服务器上完成解析，为了实现 SOCKS4 客户端的功能，
 需要先在本地解析 DNS 地址。
 
-
+[[_using_ha_proxy_protocol]]
 === 使用HA PROXY协议
 
 https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt[HA PROXY 协议] 提供了一种便捷的安全传输连接信息

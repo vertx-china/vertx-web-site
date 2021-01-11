@@ -1,14 +1,12 @@
 === Redis backend
 
-The service discovery has a plug-able backend using the `link:../../apidocs/io/vertx/servicediscovery/spi/ServiceDiscoveryBackend.html[ServiceDiscoveryBackend]` SPI. This is an implementation of the SPI based
-on Redis.
+服务发现组件通过实现 `link:../../apidocs/io/vertx/servicediscovery/spi/ServiceDiscoveryBackend.html[ServiceDiscoveryBackend]` SPI提供了一种可插拔的存储后端扩展机制，这是以Redis为基础的SPI的实现。
 
-==== Using the Redis backend
+==== 使用 Redis 存储后端
 
-To use the Redis backend, add the following dependency to the _dependencies_ section of your build
-descriptor:
+要使用 Redis 存储后端，需要将如下的依赖包加入到依赖配置文件中：
 
-* Maven (in your `pom.xml`):
+* Maven ( `pom.xml` 文件):
 
 [source,xml,subs="+attributes"]
 ----
@@ -19,23 +17,20 @@ descriptor:
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle ( `build.gradle` 文件):
 
 [source,groovy,subs="+attributes"]
 ----
 compile 'io.vertx:vertx-service-discovery-backend-redis:4.0.0'
 ----
 
-Be aware that you can have only a single implementation of the SPI in your _classpath_. If none,
-the default backend is used.
+需要注意的是，你只能在 `classpath` 中指定一个SPI的实现；如果没有指定，那么将使用默认的存储后端。
 
-==== Configuration
+==== 配置
 
-The backend is based on the http://vertx.io/docs/vertx-redis-client/java[vertx-redis-client].
-The configuration is the client configuration as well as `key` indicating in which _key_ on Redis
-the records are stored.
+Redis存储后端是基于 http://vertx.io/docs/vertx-redis-client/java[vertx-redis-client] 实现的，这个配置是客户端配置以及在Redis上 `key` 的存储记录
 
-Here is an example:
+下面是一个示例：
 
 [source,java]
 ----
@@ -47,8 +42,7 @@ ServiceDiscovery.create(vertx, new ServiceDiscoveryOptions()
     ));
 ----
 
-It's important to note that the backend configuration is passed in the `setBackendConfiguration` method (or
-`backendConfiguration` entry if you use JSON):
+值得注意的一点是，配置是在 `setBackendConfiguration` 方法中传入的（如果使用JSON，则传递给 `backendConfiguration` 对象:
 
 [source,java]
 ----
