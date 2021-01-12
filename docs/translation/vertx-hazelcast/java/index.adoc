@@ -480,7 +480,7 @@ spec:
 同样地，Pod 的准备情况探针（readiness probe）必须考虑集群状态。
 请参阅 <<one-by-one, 集群管理>> 章节，了解如何使用 link:../../vertx-health-check/java/[Vert.x 健康检查] 实现准备情况探针。
 
-[[_Cluster_administration]]
+[[_cluster_administration]]
 == 集群管理
 
 Hazelcast 集群管理器的工作原理是将 Vert.x 节点作为 Hazelcast 集群的成员。
