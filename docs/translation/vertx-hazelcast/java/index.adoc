@@ -223,7 +223,8 @@ Vertx.clusteredVertx(options, res -> {
 
 IMPORTANT: 不支持 Hazelcast 客户端及智能客户端。
 
-IMPORTANT: 要确保 Hazelcast 集群 先于 Vert.x 集群启动，后于 Vert.x 集群关闭。 同时需要禁用 `shutdown hook` （参考上述的 xml 配置，或通过系统变量来实现）。
+IMPORTANT: 要确保 Hazelcast 集群 先于 Vert.x 集群启动，后于 Vert.x 集群关闭。
+同时需要禁用 `shutdown hook` （参考上述的 xml 配置，或通过系统变量来实现）。
 
 [[_changing_timeout_for_failed_nodes]]
 == 修改故障节点的超时配置
