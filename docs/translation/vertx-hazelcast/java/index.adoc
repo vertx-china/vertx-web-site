@@ -554,18 +554,18 @@ router.get("/readiness").handler(HealthCheckHandler.createWithHealthChecks(check
 ----
 
 [[_using_lite_members]]
-==== 使用 Lite Members
+==== 使用轻量级成员（Lite Members）
 
-为了尽量减少 Vert.x 集群适应新拓扑的时间，您可以使用外部数据节点，并将 Vert.x 节点标记为 https://docs.hazelcast.org/docs/latest/manual/html-single/#enabling-lite-members[_Lite Members_]。
+为了尽量减少 Vert.x 集群适应新拓扑的时间，您可以使用外部数据节点，并将 Vert.x 节点标记为 https://docs.hazelcast.org/docs/latest/manual/html-single/#enabling-lite-members[_轻量级成员_]。
 
-_Lite Members_ 像普通成员一样加入 Hazelcast 集群，但是他们不拥有任何数据分区。
+_轻量级成员_ 像普通成员一样加入 Hazelcast 集群，但是他们不拥有任何数据分区。
 因此，添加或删除此类成员时，Hazelcast 不需要迁移数据分区。
 
-IMPORTANT: 您必须事先启动外部数据节点，因为 Hazelcast 不会只使用 _Lite Members_ 节点创建集群。
+IMPORTANT: 您必须事先启动外部数据节点，因为 Hazelcast 不会只使用 _轻量级成员_ 节点创建集群。
 
 启动外部数据节点可以使用 Hazelcast 分发启动脚本，或以编程方式进行。
 
-可以在XML配置中将Vert.x节点标记为 _Lite Members_ 节点：
+可以在XML配置中将Vert.x节点标记为 _轻量级成员_ 节点：
 
 [source,xml]
 ----
