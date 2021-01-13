@@ -158,7 +158,7 @@ Vertx.clusteredVertx(options, res -> {
 Hazelcast 支持几种不同的发现配置。
 Hazelcast 默认配置使用多播，因此您必须在网络上启用多播才能正常工作。
 
-有关如何配置不同的发现方式，请查阅 Hazelcast 文档。
+关于如何配置不同的发现方式，请查阅 Hazelcast 文档。
 
 [[_changing_local_and_public_address_with_system_properties]]
 === 通过系统配置改变本地地址及公共地址
