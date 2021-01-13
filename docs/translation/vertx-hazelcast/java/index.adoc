@@ -376,7 +376,7 @@ Kubernetes 上的 Hazelcast 要配置为使用 https://github.com/hazelcast/haze
 </dependency>
 ----
 
-NOTE: 如果你使用了其他版本的 Hazelcast core 依赖，请确保与 Kubernetes discovery 插件的兼容性.
+NOTE: 如果你使用了其他版本的 Hazelcast core 依赖，请确保兼容 Kubernetes discovery 插件。
 
 然后在 Hazelcast 配置中配置 Kubernetes discovery 插件，可以通过自定义的 `cluster.xml` 文件进行配置，或通过编程方式配置（参考 <<configcluster>>）。
 
