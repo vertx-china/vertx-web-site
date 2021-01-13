@@ -459,8 +459,8 @@ spec:
 
 为此，我们必须将 Kubernetes 配置为：
 
-* 不要同时启动多个新 Pod
-* 在滚动更新过程中，不可用的 Pod 不能多于一个
+* 在升级过程中yunxu 不可用的最大 Pod 数
+* 允许超过预期创建数量的最大 Pod 数（译者注：即，实际创建的 Pod 数量 ≤ 预期 Pod 数量 + maxSurge）
 
 [source,yaml]
 ----
