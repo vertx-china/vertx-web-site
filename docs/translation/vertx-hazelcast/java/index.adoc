@@ -450,7 +450,7 @@ spec:
        component: MY-SERVICE-NAME
 ----
 
-更多关于配置的详情请参考 https://github.com/hazelcast/hazelcast-kubernetes[Hazelcast Kubernetes 插件页面].
+更多关于配置的详情请参考 https://github.com/hazelcast/hazelcast-kubernetes[Hazelcast Kubernetes 插件页面]。
 
 [[_rolling_updates]]
 === 滚动更新
