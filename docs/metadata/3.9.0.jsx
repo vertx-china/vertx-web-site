@@ -572,7 +572,7 @@ const entries = [
   {
     id: "vertx-hazelcast",
     name: "Hazelcast Clustering",
-    description: "基于Hazelcast实现的集群管理器。",
+    description: "基于 Hazelcast 实现的集群管理器。",
     category: "clustering",
     href: "/vertx-hazelcast/java/",
     repository: "https://github.com/vert-x3/vertx-hazelcast",
@@ -581,7 +581,7 @@ const entries = [
   {
     id: "vertx-infinispan",
     name: "Infinispan Clustering",
-    description: "Cluster manager implementation that uses Infinispan.",
+    description: "基于 Infinispan 实现的集群管理器。",
     category: "clustering",
     href: "/vertx-infinispan/java/",
     repository: "https://github.com/vert-x3/vertx-infinispan",
@@ -590,7 +590,7 @@ const entries = [
   {
     id: "vertx-ignite",
     name: "Apache Ignite Clustering",
-    description: "Cluster manager implementation that uses Apache Ignite.",
+    description: "基于 Apache Ignite 实现的集群管理器。",
     category: "clustering",
     href: "/vertx-ignite/java/",
     repository: "https://github.com/vert-x3/vertx-ignite",
@@ -599,7 +599,7 @@ const entries = [
   {
     id: "vertx-zookeeper",
     name: "Apache Zookeeper Clustering",
-    description: "Cluster manager implementation that uses Apache Zookeeper.",
+    description: "基于 Apache Zookeeper 实现的集群管理器。",
     category: "clustering",
     href: "/vertx-zookeeper/java/",
     repository: "https://github.com/vert-x3/vertx-zookeeper",
