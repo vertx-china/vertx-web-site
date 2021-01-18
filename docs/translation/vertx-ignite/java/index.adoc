@@ -127,7 +127,7 @@ Ignite 的配置除了上述的 json 格式，也可以选用 XML 格式。
 
 首先，增加 `ignite-spring` 依赖。
 
-* Maven （位于 `pom.xml`）：
+* Maven （位于 `pom.xml` ）：
 
 [source,xml,subs="+attributes"]
 ----
