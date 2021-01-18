@@ -47,7 +47,7 @@ Vert.x 集群管理器是可插拔的组件，您可以选择您想用的或最�
 </dependency>
 ----
 
-* Gradle （位于 `build.gradle`）：
+* Gradle （位于 `build.gradle` ）：
 
 [source,groovy,subs="+attributes"]
 ----
