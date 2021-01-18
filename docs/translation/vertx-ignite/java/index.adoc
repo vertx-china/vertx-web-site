@@ -36,7 +36,7 @@ Vert.x 集群管理器是可插拔的组件，您可以选择您想用的或最�
 
 在项目配置文件中增加以下依赖：
 
-* Maven （位于 `pom.xml`）：
+* Maven （位于 `pom.xml` ）：
 
 [source,xml,subs="+attributes"]
 ----
