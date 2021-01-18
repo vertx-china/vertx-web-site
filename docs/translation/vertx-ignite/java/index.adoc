@@ -238,7 +238,7 @@ Vertx.clusteredVertx(options, res -> {
 [[_discovery_and_network_transport_configuration]]
 === 服务发现与网络传输配置
 
-Ignite 默认配置使用 `TcpDiscoveryMulticastIpFinder`，因此您的网络必须保证组播可用。
+Ignite 默认配置使用 `TcpDiscoveryMulticastIpFinder` ，因此您的网络必须保证组播可用。
 对于禁用组播的情况，应将 `TcpDiscoveryVmIpFinder` 与预先配置的IP地址列表一起使用。
 更多详细信息请参阅 Apache Ignite 文档的 
 http://apacheignite.readme.io/docs/cluster-config[集群配置] 章节。
