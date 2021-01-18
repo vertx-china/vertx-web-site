@@ -145,7 +145,7 @@ Ignite 的配置除了上述的 json 格式，也可以选用 XML 格式。
 compile 'org.apache.ignite:ignite-spring:${ignite.version}'
 ----
 
-然后新增一个 `ignite.xml` 文件，内容如：
+然后新增一个 `ignite.xml` 文件，像这样：
 
 [source,xml,subs="+attributes"]
 ----
