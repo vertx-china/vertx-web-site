@@ -251,7 +251,7 @@ http://apacheignite.readme.io/docs/cluster-config[集群配置] 章节。
 [[_multicast_not_enabled_on_the_machine]]
 === 机器禁用组播
 
-Ignite 集群管理器默认使用 `TcpDiscoveryMulticastIpFinder`，因此需要IP组播。
+Ignite 集群管理器默认使用 `TcpDiscoveryMulticastIpFinder` ，因此需要IP组播。
 对于某些操作系统，需要将组播路由增加到路由表，否则会使用默认路由。
 
 请注意，某些操作系统只为单播路由查询路由表，而不为IP组播路由查询路由表。
