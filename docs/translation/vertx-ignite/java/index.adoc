@@ -138,7 +138,7 @@ Ignite 的配置除了上述的 json 格式，也可以选用 XML 格式。
 </dependency>
 ----
 
-* Gradle （位于 `build.gradle`）：
+* Gradle （位于 `build.gradle `）：
 
 [source,groovy,subs="+attributes"]
 ----
