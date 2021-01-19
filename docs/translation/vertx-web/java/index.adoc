@@ -2851,13 +2851,14 @@ router.mountSubRouter("/myapp", sockJSHandler.socketHandler(sockJSSocket -> {
 }));
 ----
 
-=== The client side
+[[_the_client_side]]
+=== 客户端
 
-In client side JavaScript you use the SockJS client side library to make connections. For convenience the package is
-available on https://www.npmjs.com/package/sockjs-client[https://www.npmjs.com/package/sockjs-client].
+在客户端 JavaScript 环境里您需要通过 SockJS 的客户端库来建立连接。
+这是SockJS 客户端的地址 https://www.npmjs.com/package/sockjs-client[https://www.npmjs.com/package/sockjs-client]。
 
-This means you can refer to it from bundlers or build tools. If however you want to get a `CDN` version to use directly
-on your `HTML` document, first you need to refer to the sockjs dependency:
+您可直接在捆绑软件或构建工具中直接引用它。
+或者您想获得 `CDN` 版本以便在您的 `HTML` 文档中直接使用，那么首先您需要引入 sockjs 的依赖：
 
 [source,html]
 ----
@@ -2871,8 +2872,8 @@ on your `HTML` document, first you need to refer to the sockjs dependency:
 </html>
 ----
 
-Full details for using the SockJS JavaScript client are on the https://github.com/sockjs/sockjs-client[SockJS website],
-but in summary you use it something like this:
+完整的使用细节可参阅https://github.com/sockjs/sockjs-client[SockJS website]，
+但简而言之可像这样使用：
 
 [source,js]
 ----
@@ -2904,9 +2905,10 @@ sock.send('test');
 sock.close();
 ----
 
-=== Configuring the SockJS handler
+[[_configuring_the_sockjs_handler]]
+=== 配置 SockJS 处理器
 
-The handler can be configured with various options using `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSHandlerOptions.html[SockJSHandlerOptions]`.
+可使用 `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSHandlerOptions.html[SockJSHandlerOptions]` 为处理器配置各种选项。
 
 [[_writing_to_a_sockjs_socket_over_the_event_bus]]
 === 通过 event bus 写入 SockJS 套接字
