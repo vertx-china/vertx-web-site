@@ -2793,24 +2793,25 @@ router
 
 == SockJS
 
-SockJS is a client side JavaScript library and protocol which provides a simple WebSocket-like interface allowing you
-to make connections to SockJS servers irrespective of whether the actual browser or network will allow real WebSockets.
+SockJS 是一个客户端的 JavaScript 库以及协议，它提供了类似 WebSocket 的接口以方便您与 SockJS 服务器创建连接，
+而无需您关心浏览器或网络是否允许真正的 WebSocket。
 
-It does this by supporting various different transports between browser and server, and choosing one at run-time
-according to browser and network capabilities.
+它提供了若干不同的传输方式，
+并在运行时根据浏览器和网络的兼容性来选择使用哪种传输方式处理。
 
-All this is transparent to you - you are simply presented with the WebSocket-like interface which _just works_.
+然而这一切对您而言是透明的，您只需要简单地使用类似 WebSocket 的接口_即可_。
 
 请参阅 https://github.com/sockjs/sockjs-client[ SockJS 网站]以获取更多关于SockJS的信息。
 
-=== SockJS handler
+[[_sockjs_handler]]
+=== SockJS 处理器
 
-Vert.x provides an out of the box handler called `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSHandler.html[SockJSHandler]` for
-using SockJS in your Vert.x-Web applications.
+Vert.x 提供了一个开箱即用的处理器 `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSHandler.html[SockJSHandler]` 
+以便您在 Vert.x-Web 应用中使用 SockJS。
 
-You should create one handler per SockJS application using `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSHandler.html#create-io.vertx.core.Vertx-[SockJSHandler.create]`.
-You can also specify configuration options when creating the instance. The configuration options are described with
-an instance of `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSHandlerOptions.html[SockJSHandlerOptions]`.
+您需要通过 `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSHandler.html#create-io.vertx.core.Vertx-[SockJSHandler.create]` 方法为每一个 SockJS 的应用创建处理器。
+您也可以在创建处理器时通过 `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSHandlerOptions.html[SockJSHandlerOptions]`
+对象来指定配置选项。
 
 [source,java]
 ----
