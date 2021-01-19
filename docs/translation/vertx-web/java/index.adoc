@@ -2829,9 +2829,9 @@ SockJSHandler sockJSHandler = SockJSHandler.create(vertx, options);
 您可以在服务器端设置一个 SockJS 处理器，
 这个处理器会在客户端创建连接时被调用：
 
-调用这个处理器的参数是一个 `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSSocket.html[SockJSSocket]` 对象。
-这是一个类似套接字的接口，您可以像使用 `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`
-或 `link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]` 那样通过它来读写数据。它实现了 `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 和
+传递给处理器的是 `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSSocket.html[SockJSSocket]` 对象。
+这是一个类似套接字的接口，您可以像使用 `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` 或
+`link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]` 那样通过它来读写数据。它实现了 `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 和
 `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` 接口，因此您可以将它套用（pump）到其他读写流上。
 
 下面的例子中的 SockJS 处理器直接使用了它读取到的数据进行回写：
