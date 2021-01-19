@@ -2860,7 +2860,7 @@ router.mountSubRouter("/myapp", sockJSHandler.socketHandler(sockJSSocket -> {
 这是SockJS 客户端的地址 https://www.npmjs.com/package/sockjs-client[https://www.npmjs.com/package/sockjs-client]。
 
 您可直接在捆绑软件或构建工具中直接引用它。
-或者您想获得 `CDN` 版本以便在您的 `HTML` 文档中直接使用，那么首先您需要引入 sockjs 的依赖：
+或者您想在 `HTML` 文档中直接使用 `CDN` 版本，那么首先需要引入 sockjs 的依赖：
 
 [source,html]
 ----
