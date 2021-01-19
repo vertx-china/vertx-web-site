@@ -2931,7 +2931,7 @@ SockJSHandler sockJSHandler = SockJSHandler.create(vertx, options);
 
 router.mountSubRouter("/myapp", sockJSHandler.socketHandler(sockJSSocket -> {
 
-  // 获取 writeHandlerID 并将其存放 (例如放在 local map 里)
+  // 获取 writeHandlerID 并将其存放 (例如放在本地 map 里)
   String writeHandlerID = sockJSSocket.writeHandlerID();
 
 }));
