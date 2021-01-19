@@ -103,6 +103,17 @@ jobs:
           commit-message: publish
           force-orphan: true
 
+      - uses: okou19900722/workflows/git-deploy@v1
+        with:
+          ssh-key: ${{ secrets.CODING_TOKEN }}
+          src-dir: vertx-china.github.io
+          branch: master
+          repo-url: git@e.coding.net:lippen/cn.vertx.tk.git
+          user-name: okou19900722
+          user-email: 512058895@qq.com
+          commit-message: publish
+          force-orphan: true
+
       - name: Refresh Gitee Pages
         uses: okou19900722/gitee-pages@v1
         with:
@@ -112,3 +123,5 @@ jobs:
           branch: "master"
           directory: ""
           https: 'true'
+        env:
+          RUNNER_DEBUG: 1
