@@ -2891,7 +2891,7 @@ sock.onmessage = function(e) {
 
 sock.onevent = function(event, message) {
  console.log('event: %o, message:%o', event, message);
- return true; // in order to signal that the message has been processed
+ return true; // 为了标记消息已被处理了
 };
 
 sock.onunhandled = function(json) {
