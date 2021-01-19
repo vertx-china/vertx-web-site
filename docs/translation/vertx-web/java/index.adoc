@@ -2874,7 +2874,7 @@ router.mountSubRouter("/myapp", sockJSHandler.socketHandler(sockJSSocket -> {
 </html>
 ----
 
-完整的使用细节可参阅https://github.com/sockjs/sockjs-client[ SockJS 网站]，
+完整的使用细节可参阅 https://github.com/sockjs/sockjs-client[SockJS 网站]，
 但简而言之可像这样使用：
 
 [source,js]
