@@ -2908,13 +2908,14 @@ sock.close();
 
 The handler can be configured with various options using `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSHandlerOptions.html[SockJSHandlerOptions]`.
 
-=== Writing to a SockJS socket over the event bus
+[[_writing_to_a_sockjs_socket_over_the_event_bus]]
+=== 通过 event bus 写入 SockJS 套接字
 
-When a `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSSocket.html[SockJSSocket]` is created, it can register an event handler with the event bus.
-The address of that handler is given by `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSSocket.html#writeHandlerID--[writeHandlerID]`.
+在创建 `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSSocket.html[SockJSSocket]` 的时候，可为其注册一个 event bus 上的事件处理器。
+该处理器的地址就是 `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSSocket.html#writeHandlerID--[writeHandlerID]` 。
 
-By default, the event handler is not registered.
-It must enabled in `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSHandlerOptions.html[SockJSHandlerOptions]`.
+默认情况下，不允许注册事件处理器。
+需要通过 `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSHandlerOptions.html[SockJSHandlerOptions]` 以启用该设置。
 
 [source,java]
 ----
@@ -2926,16 +2927,16 @@ SockJSHandler sockJSHandler = SockJSHandler.create(vertx, options);
 
 router.mountSubRouter("/myapp", sockJSHandler.socketHandler(sockJSSocket -> {
 
-  // Retrieve the writeHandlerID and store it (e.g. in a local map)
+  // 获取 writeHandlerID 并将其存放 (例如放在 local map 里)
   String writeHandlerID = sockJSSocket.writeHandlerID();
 
 }));
 ----
 
-NOTE: By default, the handler is registered only locally.
-It can be made cluster-wide with `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSHandlerOptions.html#setLocalWriteHandler-boolean-[setLocalWriteHandler]`.
+NOTE: 默认情况下，处理器仅在本地注册。
+集群可通过配置 `link:../../apidocs/io/vertx/ext/web/handler/sockjs/SockJSHandlerOptions.html#setLocalWriteHandler-boolean-[setLocalWriteHandler]` 为false启用。
 
-Then you can write `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]`s to the SockJS socket over the event bus.
+随后将数据写入 `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]` 便可发送给 SockJS 套接字。
 
 [source,java]
 ----
