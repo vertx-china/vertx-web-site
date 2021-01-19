@@ -2799,7 +2799,7 @@ SockJS 是一个客户端的 JavaScript 库以及协议，它提供了类似 Web
 它提供了若干不同的传输方式，
 并在运行时根据浏览器和网络的兼容性来选择使用哪种传输方式处理。
 
-然而这一切对您而言是透明的，您只需要简单地使用类似 WebSocket 的接口_即可_。
+然而这一切对您而言是透明的，您只需要简单地使用类似 WebSocket 的接口 _即可_。
 
 请参阅 https://github.com/sockjs/sockjs-client[ SockJS 网站]以获取更多关于SockJS的信息。
 
