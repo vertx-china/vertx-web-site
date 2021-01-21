@@ -36,8 +36,8 @@ Vert.x 集群器 *并不* 处理节点之间的通信。在 Vert.x 中，集群�
 需要注意的是，要确保 Vert.x 的 classpath 中没有其它的集群管理器实现，
 否则会使用错误的集群管理器。
 
-编程内嵌 Vert.x 时，可以在创建 Vert.x 实例时，
-通过编程的方式显式配置 Vert.x 集群管理器，例如：
+编程内嵌 Vert.x 可以在创建 Vert.x 实例时，
+通过代码显式配置 Vert.x 集群管理器，例如：
 
 [source,java]
 ----
@@ -61,8 +61,8 @@ Vertx.clusteredVertx(options, res -> {
 前者配置数据网格（data grid），后者配置组管理和集群成员发现。
 
 您可以在 classpath 中替换这些配置文件（其中一个或两个）。
-如果想在 fat jar 中内嵌自己的配置文件，此文件必须在 fat jar 的根目录中。
-如果此文件是一个外部文件，则必须将其所在的 **目录** 添加至 classpath 中。
+如果想在 fat jar 中内嵌自己的配置文件，这些文件必须在 fat jar 的根目录中。
+如果这些配置文件是外部文件，则必须将其所在的 **目录** 添加至 classpath 中。
 举个例子，如果使用 Vert.x 的 _launcher_ 启动应用，则 classpath 应该设置为：
 
 [source,shell]
@@ -75,7 +75,7 @@ java -jar my-app.jar -cp conf -cluster
 ----
 
 还可以通过配置系统属性 `vertx.infinispan.config` 及/或 `vertx.jgroups.config`
-指定配置文件来覆盖默认配置：
+覆盖默认配置、指定配置文件：
 
 [source,shell]
 ----
@@ -88,7 +88,7 @@ java -Dvertx.infinispan.config=my/package/config/my-infinispan.xml -jar ... -clu
 
 集群管理器优先在 classpath 查找指定的配置文件，如果没有找到，则在文件系统中查找指定的配置文件。
 
-如果设定了上述的系统属性，则会覆盖 classpath 中的 `infinispan.xml` or `jgroups.xml` 文件。
+如果设置了上述系统属性，则会覆盖 classpath 中的 `infinispan.xml` or `jgroups.xml` 文件。
 
 `jgroup.xml` 与 `infinispan.xml` 分别是 JGroups 、 Infinispan 配置文件。在对应的官方可以网站可以详细的配置攻略。
 
@@ -136,13 +136,14 @@ Vertx.clusteredVertx(options, res -> {
 </cache-container>
 ----
 
-== Packaging an executable uber JAR
+[[_packaging_an_executable_uber_jar]]
+== 打包可执行的 fat-jar 包
 
-Infinispan uses Java's `ServiceLoader` mechanism to discover implementations of a few classes at runtime.
+Infinispan 在运行时使用 Java SPI 机制（`ServiceLoader`） 发现一些类/接口的实现。
 
-You must configure your build tool to merge service descriptors files when creating an executable uber JAR (also known as "fat" JAR).
+构建可执行的超级 JAR（也称为 fat-JAR ）包时，必须在构建工具中配置将服务描述文件打包。
 
-If you use Maven and the Maven Shade Plugin, the plugin configuration should look like:
+如果您使用 Maven 及 Maven Shade 插件，插件应该配置如下：
 
 [source,xml]
 ----
@@ -155,7 +156,7 @@ If you use Maven and the Maven Shade Plugin, the plugin configuration should loo
 </configuration>
 ----
 
-If you use Gradle and the Gradle Shadow Plugin:
+如果您使用 Gradle 及 Gradle Shadow 插件：
 
 [source,kotlin]
 ----
@@ -164,35 +165,36 @@ shadowJar {
 }
 ----
 
-== Configuring for Kubernetes
+[[_configuring_for_kubernetes]]
+== 适配 Kubernetes
 
-On Kubernetes, JGroups can be configured to use either the Kubernetes API (`KUBE_PING`) or DNS (`DNS_PING`) for discovery.
-In this document, we will use DNS discovery.
+在 Kubernetes 上，JGroups 的节点发现配置可选择使用 Kubernetes API (`KUBE_PING`) 或 DNS (`DNS_PING`)。
+本文将使用 DNS 发现。
 
-First, force usage of IPv4 in the JVM with a system property.
+首先通过以下系统属性配置 JVM 强制使用 IPv4：
 
 [source,shell]
 ----
 -Djava.net.preferIPv4Stack=true
 ----
 
-Then, set the `vertx.jgroups.config` system property to `default-configs/default-jgroups-kubernetes.xml`.
-This JGroups stack file is located in the `infinispan-core` JAR and preconfigured for Kubernetes.
+然后设置系统属性 `vertx.jgroups.config` 为 `default-configs/default-jgroups-kubernetes.xml`。
+JGroups 的 stack-file 在 `infinispan-core` 的JAR包中，并已为 Kubernetes 做了预配置。
 
 [source,shell]
 ----
 -Dvertx.jgroups.config=default-configs/default-jgroups-kubernetes.xml
 ----
 
-Also, set the JGroups DNS query to find members.
+同时设置 JGroups DNS 查询以便发现集群成员。
 
 [source,shell]
 ----
 -Djgroups.dns.query=MY-SERVICE-DNS-NAME
 ----
 
-The `MY-SERVICE-DNS-NAME` value must be a https://kubernetes.io/docs/user-guide/services/#headless-services[*headless* Kubernetes service] name that will be used by JGroups to identify all cluster members.
-A headless service can be created with:
+其中 `MY-SERVICE-DNS-NAME` 的取值必须是一个 https://kubernetes.io/docs/user-guide/services/#headless-services[Kubernetes *无头* 服务（Headless Service）] 名，JGroups 会用该名称来标识所有集群成员。
+无头服务的创建配置可参考下面代码：
 
 [source,yaml]
 ----
@@ -210,11 +212,11 @@ spec:
  publishNotReadyAddresses: true # <3>
  clusterIP: None
 ----
-<1> JGroups TCP port
-<2> Cluster members selected by the `cluster=clustered-app` label
-<3> Set to true so that members can be discovered without interfering with your readiness probe logic
+<1> JGroups TCP 端口
+<2> 由 `cluster=clustered-app` 标签选择的集群成员
+<3> 设置为true，则可以在不干涉就绪探针（readiness probe）逻辑的前提下，发现集群成员
 
-Eventually, apply the `cluster=clustered-app` label to all deployments that should be part of the cluster:
+最后，属于集群的所有 Kubernetes 部署需要增加 `cluster=clustered-app` 标签：
 
 [source,yaml]
 ----
@@ -227,14 +229,15 @@ spec:
        cluster: clustered-app
 ----
 
-=== Rolling updates
+[[_rolling_updates]]
+=== 滚动更新
 
-During rolling udpates, the Infinispan team http://infinispan.org/docs/stable/user_guide/user_guide.html#using_kubernetes_and_openshift_rolling_updates[recommends] to replace pods one by one.
+Infinispan 团队 http://infinispan.org/docs/stable/user_guide/user_guide.html#using_kubernetes_and_openshift_rolling_updates[建议] 在滚动更新期间逐一更换 Pod。
 
-To do so, we must configure Kubernetes to:
+为此，我们必须将 Kubernetes 配置为：
 
-* never start more than one new pod at once
-* forbid more than one unavailable pod during the process
+* 不要同时启动多个新 Pod
+* 在滚动更新过程中，不可用的 Pod 不能多于一个
 
 [source,yaml]
 ----
@@ -248,11 +251,11 @@ spec:
      maxUnavailable: 1 <1>
      maxSurge: 1 <2>
 ----
-<1> the maximum number of pods that can be unavailable during the update process
-<2> the maximum number of pods that can be created over the desired number of pods
+<1> 在升级过程中允许 不可用的最大 Pod 数
+<2> 允许超过预期创建数量的最大 Pod 数（译者注：即，实际创建的 Pod 数量 ≤ 预期 Pod 数量 + maxSurge）
 
-Also, pod readiness probe must take cluster health into account.
-Please refer to the <<one-by-one, cluster administration>> section for details on how to implement a readiness probe with link:../../vertx-health-check/java/[Vert.x Health Checks].
+同样地，Pod 的就绪探针（readiness probe）必须考虑集群状态。
+请参阅 <<one-by-one, 集群管理>> 章节，了解如何使用 link:../../vertx-health-check/java/[Vert.x 健康检查] 实现准备情况探针。
 
 [[_configuring_for_docker_compose]]
 == 适配 Docker Compose
@@ -336,7 +339,7 @@ VPN 软件工作时通常会创建虚拟网络接口，但往往不支持组播�
 [[_problems_with_ipv6]]
 === 使用IPv6的问题
 
-如果在 IPv6 地址配置遇到困难，可以通过设置系统属性 `java.net.preferIPv4Stack` 请强制使用 IPv4：
+如果在 IPv6 地址配置遇到困难，可以通过设置系统属性 `java.net.preferIPv4Stack` 强制使用 IPv4：
 
 ----
 -Djava.net.preferIPv4Stack=true
@@ -346,7 +349,7 @@ VPN 软件工作时通常会创建虚拟网络接口，但往往不支持组播�
 === 开启日志
 
 在排除故障时，开启 Infinispan 和 JGroups 日志很有帮助，可以观察是否组成了集群。
-使用默认的 JUL 日志时，在 classpath 中添加 `vertx-default-jul-logging.properties` 文件可开启 Ignite 日志。
+使用默认的 JUL 日志时，在 classpath 中添加 `vertx-default-jul-logging.properties` 文件可开启 Infinispan 和 JGroups 日志。
 这是一个标准 java.util.logging（JUL） 配置文件。
 具体配置如下：
 
@@ -386,12 +389,14 @@ JGroups 默认采用 JDK Logging 实现。同时也支持 log4j 与 log4j2 ，�
 如果想查阅更详细的信息，或实现自己的日志后端，请参考
 http://www.jgroups.org/manual/index.html#Logging[JGroups日志文档]。
 
-== SharedData extensions
+[[_sharedData_extensions]]
+== SharedData 扩展
 
-=== AsyncMap content streams
+[[_asyncMap_content_streams]]
+=== AsyncMap 内容流
 
-The `InfinispanAsyncMap` API allows to retrieve keys, values and entries as streams.
-This can be useful if you need to go through the content of a large map for bulk processing.
+`InfinispanAsyncMap` API支持将 AsyncMap 的键、值及 Entry 作为流进行读取。
+如果您需要遍历读取很大的 AsyncMap 并进行批量处理，这将很有帮助。
 
 [source,java]
 ----
@@ -401,58 +406,62 @@ ReadStream<V> valueStream = infinispanAsyncMap.valueStream();
 ReadStream<Map.Entry<K, V>> entryReadStream = infinispanAsyncMap.entryStream();
 ----
 
-== Cluster administration
+[[_cluster_administration]]
+== 集群管理
 
-The Infinispan cluster manager works by turning Vert.x nodes into members of an Infinispan cluster.
-As a consequence, Vert.x cluster manager administration should follow the Infinispan management guidelines.
+Infinispan 集群管理器的工作原理是将 Vert.x 节点作为 Infinispan 集群的成员。
+因此，Vert.x 使用 Infinispan 集群管理器时，应遵循 Infinispan 的管理准则。
 
-First, let's take a step back and introduce rebalancing and split-brain syndrome.
+首先介绍下再平衡（Rebalancing）和脑裂。
 
-=== Rebalancing
+[[_rebalancing]]
+=== 再平衡（Rebalancing）
 
-Each Vert.x node holds pieces of the clustering data: eventbus subscriptions, async map entries, clustered counters... etc.
+每个 Vert.x 节点都包含部分集群数据，包括：EventBus 订阅，异步 Map，分布式计数器等等。
 
-When a member joins or leaves the cluster, Infinispan rebalances cache entries on the new set of members.
-In other words, it moves data around to accomodate the new cluster topology.
-This process may take some time, depending on the amount of clustered data and number of nodes.
+当有节点加入或离开集群时，Infinispan 会在新的集群拓扑中重新平衡分配（rebalance）缓存条目。
+换句话说，它可以移动数据以适应新的集群拓扑。
+此过程可能需要一些时间，具体取决于集群数据量和节点数量。
 
-=== Split-brain syndrome
+=== 脑裂
 
-In a perfect world, there would be no network equipment failures.
-Reality is, though, that sooner or later your cluster will be divided into smaller groups, unable to see each others.
+在理想环境中，不会出现网络设备故障。
+实际上，集群早晚会被分成多个小组，彼此之间不可见。
 
-Infinispan is capable of merging the nodes back into a single cluster.
-But just as with rebalancing, this process may take some time.
-Before the cluster is fully functional again, some eventbus consumers might not be able to get messages.
-Or high-availability may not be able to redeploy a failing verticle.
+Infinispan 能够将节点合并回单个集群。
+但是，就像数据分区迁移一样，此过程可能需要一些时间。
+在集群变回可用之前，某些 EventBus 的消费者可能无法获取到消息。
+否则，重新部署故障的 Verticle 过程中无法保证高可用。
 
 [NOTE]
 ====
-It is difficult (if possible at all) to make a difference between a network partition and:
+很难（或者说基本不可能）区分脑裂和:
 
-- long GC pauses (leading to missed pings),
-- many nodes being killed forcefully, at-once, because you are deploying a new version of your application
+- 长时间的GC暂停 （导致错过了心跳检查），
+- 部署新版本应用时，同时强制关闭了很多节点
 ====
 
-=== Recommendations
+[[_recommendations]]
+=== 建议
 
-Considering the common clustering issues discussed above, it is recommended to stick to the following good practices.
+考虑到上面讨论的常见集群问题，建议遵循下述的最佳实践。
 
-==== Graceful shutdown
+[[_graceful_shutdown]]
+==== 优雅地关闭
 
-Avoid stopping members forcefully (e.g, `kill -9` a node).
+应该避免强行停止集群成员节点（例如，对节点进程使用 `kill -9` ）。
 
-Of course process crashes are inevitable, but a graceful shutdown helps to get the remaining nodes in a stable state faster.
+当然，进程崩溃是不可避免的，但是优雅地关闭进程有助于其余节点更快地恢复稳定状态。
 
 [[one-by-one]]
-==== One node after the other
+==== 逐个添加或移除节点
 
-When rolling a new version of your app, scaling-up or down your cluster, add or remove nodes one after the other.
+滚动更新新版本应用时，或扩大/缩小集群时，应该一个接一个地添加或移除节点。
 
-Stopping nodes one by one prevents the cluster from thinking a network partition occured.
-Adding them one by one allows for clean, incremental rebalancing operations.
+逐个停止节点可避免集群误以为发生了脑裂。
+逐个添加节点可以进行干净的增量数据分区迁移。
 
-The cluster healthiness can be verified with link:../../vertx-health-check/java/[Vert.x Health Checks]:
+可以使用 link:../../vertx-health-check/java/[Vert.x 运行状况检查] 来验证集群安全性：
 
 [source,java]
 ----
@@ -460,7 +469,7 @@ Handler<Promise<Status>> procedure = ClusterHealthCheck.createProcedure(vertx, t
 HealthChecks checks = HealthChecks.create(vertx).register("cluster-health", procedure);
 ----
 
-After creation, the health check can be exposed over HTTP with a link:../../vertx-web/java/[Vert.x Web] router handler:
+完成集群创建后，可以通过 link:../../vertx-web/java/[Vert.x Web] 路由 Handler 编写的HTTP程序进行健康检查：
 
 [source,java]
 ----
