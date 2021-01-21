@@ -460,8 +460,8 @@ spec:
 
 为此，我们必须将 Kubernetes 配置为：
 
-* 在升级过程中允许 不可用的最大 Pod 数
-* 允许超过预期创建数量的最大 Pod 数（译者注：即，实际创建的 Pod 数量 ≤ 预期 Pod 数量 + maxSurge）
+* 不要同时启动多个新 Pod
+* 在滚动更新过程中，不可用的 Pod 不能多于一个
 
 [source,yaml]
 ----
@@ -475,8 +475,8 @@ spec:
      maxUnavailable: 1 <1>
      maxSurge: 1 <2>
 ----
-<1> 升级过程中，不可用的 Pod 最大数量
-<2> 实际创建的 Pod 数量 小于等于（期望的 Pod 数量 + maxSurge）
+<1> 在升级过程中允许 不可用的最大 Pod 数
+<2> 允许超过预期创建数量的最大 Pod 数（译者注：即，实际创建的 Pod 数量 ≤ 预期 Pod 数量 + maxSurge）
 
 同样地，Pod 的准备情况探针（readiness probe）必须考虑集群状态。
 请参阅 <<one-by-one, 集群管理>> 章节，了解如何使用 link:../../vertx-health-check/java/[Vert.x 健康检查] 实现准备情况探针。
