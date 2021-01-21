@@ -257,7 +257,7 @@ IMPORTANT: 要确保 Hazelcast 集群 先于 Vert.x 集群启动，后于 Vert.x
 如果机器上有多个网络接口（也有可能是在运行 VPN 的情况下），
 那么 Hazelcast 很有可能使用错误的网络接口。
 
-为了确保 Hazelcast 使用正确的网络接口，在配置文件中将 `interface` 设置为指定IP地址.
+为了确保 Hazelcast 使用正确的网络接口，在配置文件中将 `interface` 设置为指定IP地址。
 同时确保 `enabled` 属性设置为 `true` 。例如：
 
 ----
