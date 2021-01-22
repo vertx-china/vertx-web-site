@@ -123,7 +123,7 @@ Vertx.clusteredVertx(options, res -> {
 
 在这种情况下，Vert.x 并不是缓存管理器的所有者，因此不能在关闭 Vert.x 时停止 Infinispan 。
 
-需要注意的是，需要通过如下配置来自定义 Infinispan 实例：
+请注意，可通过如下配置以定制 Infinispan 实例：
 
 [source,xml]
 ----
