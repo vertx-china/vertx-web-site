@@ -333,8 +333,7 @@ VPN 软件工作时通常会创建虚拟网络接口，但往往不支持组播�
 在某些情况下，由于特殊的运行环境，可能无法使用组播。
 在这种情况下，应该配置为其他协议，例如配置 `TCPPING` 以使用 TCP 套接字，或配置 `S3_PING` 以使用亚马逊 S3。
 
-有关其他可用的 JGroups 发现协议及其如何配置的更多信息，
-请查阅 http://www.jgroups.org/manual/index.html#Discovery[JGroups文档] 。
+有关其他可用的 JGroups 发现协议及其如何配置的更多信息，请查阅 http://www.jgroups.org/manual/index.html#Discovery[JGroups文档] 。
 
 [[_problems_with_ipv6]]
 === 使用IPv6的问题
