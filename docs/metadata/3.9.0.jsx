@@ -571,7 +571,7 @@ const entries = [
   // clustering
   {
     id: "vertx-hazelcast",
-    name: "Hazelcast Clustering",
+    name: "Hazelcast 集群",
     description: "基于 Hazelcast 实现的集群管理器。",
     category: "clustering",
     href: "/vertx-hazelcast/java/",
@@ -580,7 +580,7 @@ const entries = [
   },
   {
     id: "vertx-infinispan",
-    name: "Infinispan Clustering",
+    name: "Infinispan 集群",
     description: "基于 Infinispan 实现的集群管理器。",
     category: "clustering",
     href: "/vertx-infinispan/java/",
@@ -589,7 +589,7 @@ const entries = [
   },
   {
     id: "vertx-ignite",
-    name: "Apache Ignite Clustering",
+    name: "Apache Ignite 集群",
     description: "基于 Apache Ignite 实现的集群管理器。",
     category: "clustering",
     href: "/vertx-ignite/java/",
@@ -598,7 +598,7 @@ const entries = [
   },
   {
     id: "vertx-zookeeper",
-    name: "Apache Zookeeper Clustering",
+    name: "Apache Zookeeper 集群",
     description: "基于 Apache Zookeeper 实现的集群管理器。",
     category: "clustering",
     href: "/vertx-zookeeper/java/",
