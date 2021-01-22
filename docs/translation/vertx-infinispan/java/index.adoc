@@ -63,7 +63,7 @@ Vertx.clusteredVertx(options, res -> {
 您可以在 classpath 中替换这些配置文件（其中一个或两个）。
 如果想在 fat jar 中内嵌自己的配置文件，这些文件必须在 fat jar 的根目录中。
 如果这些配置文件是外部文件，则必须将其所在的 **目录** 添加至 classpath 中。
-举个例子，如果使用 Vert.x 的 _launcher_ 启动应用，则 classpath 应该设置为：
+举个例子，如果使用 Vert.x 的 _launcher_ 类启动应用，则 classpath 应该设置为：
 
 [source,shell]
 ----
