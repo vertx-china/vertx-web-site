@@ -87,8 +87,8 @@ CamelBridge.create(vertx,
 
 _注意_: `org.fusesource.hawtbuf.Buffer` 会自动转换成 `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]` 。
 
-如果您使用了 `send` （而不是 `publish` ），并且 Camel exchange 期望一个回复 （ _In Out_ exchange），
-Vert.x 代码应作为对已发送消息的回复。当收到回复消息时，它钭传播到 exchange：
+如果您使用了 `send` （而不是 `publish` ），并且 Camel 交换 期望一个回复 （ _In Out_ 交换），
+Vert.x 代码应作为对已发送消息的回复。当收到回复消息时，它钭传播到 交换：
 
 [source,java]
 ----
@@ -157,7 +157,7 @@ vertx.eventBus().request("test", "hello", reply -> {
 });
 ----
 
-如果您在事件总线上发送消息时注册了回复的处理器，则它将 Camel exchange 配置为期望一个响应
+如果您在事件总线上发送消息时注册了回复的处理器，则它将 Camel 交换 配置为期望获得一个响应
 （它使用EIP的请求-响应模式），响应在回复的消息体中。
 如果路由失败，您将收到一个失败的回复（收件人失败），并伴随以下消息：
 
