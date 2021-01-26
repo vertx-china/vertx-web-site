@@ -1,22 +1,23 @@
 = Vert.x Camel Bridge
 :toc: left
 
-Apache Camel (http://camel.apache.org) is an open source Java framework that focuses on making integration easier
-and more accessible to developers. This bridge lets Vert.x applications interact with Camel endpoints:
+Apache Camel (http://camel.apache.org) 是一个开源的Java框架，
+它致力于让开发人员更简单的集成和更方便的使用。此桥接允许 Vert.x 程序与 Camel 端点进行交互:
 
-* the application can send messages to Camel.
-* the application can receive message from Camel.
+* 向Camel发送消息。
+* 接收来自Camel的消息。
 
-The bridge relies on the Vert.x event bus and associate an event bus address to a Camel endpoint.
+此桥接依赖于 Vert.x 的事件总线（Event Bus，后面统一称 `事件总线`），并将事件总线地址与 Camel 端点进行关联。
 
-CAUTION: This component is not _polyglot_ as it requires some classes from Camel that can only be used in Java.
+CAUTION: 此组件不是 _多语言_ 的，因为它依赖的 Camel 中的某些类只能在Java中使用。
 
-== Using vertx-camel-bridge
+[[_using_vertx_camel_bridge]]
+== 使用 vertx-camel-bridge
 
-To use the Vert.x Camel Bridge, add the following dependency to the _dependencies_ section of your
-build descriptor:
+使用 Vert.x Camel 桥接的前提是将以下依赖项添加到您的
+_依赖_ 中：
 
-* Maven (in your `pom.xml`):
+* Maven （ 在您的 `pom.xml` 文件中 ）：
 
 [source,xml,subs="+attributes"]
 ----
@@ -27,16 +28,17 @@ build descriptor:
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle （ 在您的 `build.gradle` 文件中 ）：
 
 [source,groovy,subs="+attributes"]
 ----
 compile 'io.vertx:vertx-camel-bridge:4.0.0'
 ----
 
-== Bridge configuration
+[[_bridge_configuration]]
+== 配置桥接
 
-Before being used, the bridge needs to be configured and started:
+在使用本组件之前，你需要对其进行配置：
 
 [source,java]
 ----
@@ -48,16 +50,15 @@ CamelBridge.create(vertx,
 ).start();
 ----
 
-The bridge requires a `CamelContext`. It will find the endpoint from the context. The bridge needs to be started
-before being used. Be aware the the `start` method is asynchronous. You can use
-`link:../../apidocs/io/vertx/camel/CamelBridge.html#start-io.vertx.core.Handler-[start]` to be notified when the bridge has been started.
+此桥接需要一个 `CamelContext` 上下文，它将从上下文中找到端点。桥接在使用之前，要确保已经启动。你可以使用
+`link:../../apidocs/io/vertx/camel/CamelBridge.html#start-io.vertx.core.Handler-[start]`
+方法来监听桥接启动的通知。
 
+[[_inbound_mapping]]
+=== 入站映射
 
-
-=== Inbound mapping
-
-Inbound mapping associates a Camel endpoint to an event bus address. Messages received on this endpoint are
-transformed to event bus messages.
+入站映射将 Camel 的端点关联到事件总线上。
+在此端点上接收到的消息将被转换成事件总线的消息
 
 [source,java]
 ----
@@ -76,15 +77,15 @@ CamelBridge.create(vertx,
 );
 ----
 
-The snippet above shows different ways to configure an inbound mapping:
+上面的代码展示了配置入站映射的不同方法：
 
-* you can configure the Camel endpoint either using the `Endpoint` object or its uri
-* you can disables the header copy (Camel message headers are copied to the event bus message)
-* you can uses `publish` instead of `send` to broadcast the message to all event bus consumers
-* you can configures the type of the event bus message body. If not set it uses the Camel message payload. If
-sets, it looks in the Camel context for a converter between the Camel message payload and the desired type.
+* 您可以使用 `Endpoint` 对象或对应的 url 来配置 Camel 端点。
+* 您可以禁用header头的复制（ Camel 消息头将会被复制到事件总线的消息中）。
+* 您可以使用 `publish` 代替 `send` 来将消息广播给所有事件总线的消费者。
+* 您可以配置事件总线消息体的类型。如果您未配置，则默认使用 Camel消息负载。
+如果您配置了，它将在 Camel 上下文中查找 Camel 消息有效负载和所需要类型之间的转换器。
 
-_Note_: `org.fusesource.hawtbuf.Buffer` are automatically converted to `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]`.
+_注意_: `org.fusesource.hawtbuf.Buffer` 会自动转换成 `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]` 。
 
 If `send` is used (so not `publish`), and when the Camel exchange expect a reply (_In Out_ exchange), the Vert.x
 code expect as reply to the sent message. When the reply arrives it is propagated to the exchange:
@@ -110,6 +111,7 @@ String response = template.extractFutureBody(future, String.class);
 
 You can also configure the reply `timeout` using `link:../../apidocs/io/vertx/camel/InboundMapping.html#setTimeout-int-[setTimeout]`.
 
+[[_outbound_mapping]]
 === Outbound mapping
 
 Outbound mapping associates an event bus address to a Camel endpoint. Messages received on this event bus address
@@ -221,11 +223,13 @@ vertx.eventBus().request("camel-route", "hello", reply -> {
 By default it uses the default worker thread pool, this is customizable using the
 `link:../../apidocs/io/vertx/camel/OutboundMapping.html#setWorkerExecutor-io.vertx.core.WorkerExecutor-[setWorkerExecutor]` method.
 
+[[_stopping_the_bridge]]
 == Stopping the bridge
 
 Don't forget to stop the bridge using the `stop` method. The `stop` method is asynchronous. You can use
 `link:../../apidocs/io/vertx/camel/CamelBridge.html#stop-io.vertx.core.Handler-[stop]` to be notified when the bridge has been stopped.
 
+[[_exchanging_custom_object]]
 == Exchanging custom object
 
 If you want to send and receive custom objects, you need to register a codec on the event bus:
