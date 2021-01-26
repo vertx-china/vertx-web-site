@@ -1,7 +1,6 @@
 = Vert.x Circuit Breaker
 
 Vert.x Circuit Breaker 是Vert.x熔断模式的实现。
-
 它用来追踪故障，当失败次数达到阈值时触发熔断，并且可选择性提供失败回调，以保证服务可用或长时间等待。
 
 支持以下故障:
@@ -12,6 +11,7 @@ Vert.x Circuit Breaker 是Vert.x熔断模式的实现。
 
 熔断器要旨是保护 Vert.x 的 非阻塞 和 异步 的行为，以便受益于Vert.x 执行模型。
 
+[[_using_the_vert_x_circuit_breaker]]
 == 准备工作
 
 使用Vert.x Circuit Breaker之前，你必须在你得项目当中添加依赖。
@@ -34,13 +34,14 @@ Vert.x Circuit Breaker 是Vert.x熔断模式的实现。
 compile 'io.vertx:vertx-circuit-breaker:4.0.0'
 ----
 
+[[_using_the_circuit_breaker]]
 == 使用熔断器
 
 为了使用熔断器我们需要以下的步骤：
 
-* 创建一个熔断器，并配置成你所需要的超时，最大故障次数等参数
+1. 创建一个熔断器，并配置成你所需要的超时，最大故障次数等参数
 
-* 使用熔断器执行代码
+2. 使用熔断器执行代码
 
 **重要！！！** 熔断器应该是稳定的单例，而不是每次使用就重新创建它。
 
@@ -70,7 +71,6 @@ breaker.execute(promise -> {
 ----
 
 执行结果以 `link:../../apidocs/io/vertx/core/Future.html[Future]` 对象返回,其 `link:../../apidocs/io/vertx/core/Future.html[Future]` 对象,封装了成功结果集或失败结果集
-
 例如:在下面的例子中，对应的结果就是REST调用的输出：
 
 [source,java]
@@ -167,6 +167,7 @@ breaker.<String>execute(
     });
 ----
 
+[[_retries]]
 == 重试（Retries）
 
 还可以通过 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#setMaxRetries-int-[setMaxRetries]`.
@@ -208,6 +209,7 @@ breaker.<String>execute(
   });
 ----
 
+[[_callbacks]]
 == 回调（Callbacks）
 
 你可以配置熔断开路(OPEN)/闭路(CLOSE)时回调。
@@ -239,6 +241,7 @@ breaker.<String>execute(
 
 当熔断器决定尝试复位的时候（ half-open 状态），我们也可以注册 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreaker.html#halfOpenHandler-io.vertx.core.Handler-[halfOpenHandler]` 的回调从而得到回调通知。
 
+[[_event_bus_notification]]
 == 事件总线通知
 
 每当熔断器发生状态改变的时候,熔断器都会在事件总线上推送通知，总线通默认地址为：`vertx.circuit-breaker`。
@@ -253,6 +256,7 @@ breaker.<String>execute(
 * `failures` : 错误次数
 * `node` : 节点标识 (如果事件总线运行在单节模式，那么该值为：`local`)
 
+[[_the_half_open_state]]
 == 半开状态（half-open）
 
 当熔断器处于开路状态时，对其调用会立即失败，不会执行实际操作。经过适当的时间 (通过
@@ -261,6 +265,7 @@ breaker.<String>execute(
 允许下一次熔断器的调用实际调用如果成功，熔断器将复位并返回到关闭状态，
 回归正常的模式；但是如果这次调用失败，则熔断器返回到熔断状态，直到下次半开状态。
 
+[[_reported_exceptions]]
 == 异常
 
 异常状态:
@@ -268,6 +273,7 @@ breaker.<String>execute(
 * 当熔断器开路(OPEN)的情况,会抛出 `link:../../apidocs/io/vertx/circuitbreaker/OpenCircuitException.html[OpenCircuitException]` 异常
 * 当操作超时的时候,会抛出`link:../../apidocs/io/vertx/circuitbreaker/TimeoutException.html[TimeoutException]`
 
+[[_pushing_circuit_breaker_metrics_to_the_hystrix_dashboard]]
 == 将熔断器指标推送到Hystrix看板（Dashboard）
 
 Netflix Hystrix带有一个看板（dashboard），用于显示熔断器的当前状态。 Vert.x 熔断器可以发布其指标（metric），以供Hystrix 仪表板使用。 Hystrix 仪表板需要一个发送指标的SSE流，
@@ -296,6 +302,7 @@ vertx.createHttpServer()
 *注意*：这些指标量是由 Vert.x Web Handler 使用 Event Bus 事件通知收集的。
 如果你不想使用默认的通知地址，请在创建的时候设置。
 
+[[_using_netflix_hystrix]]
 == 使用 Netflix Hystrix
 
 https://github.com/Netflix/Hystrix[Hystrix] 提供了熔断器模式的实现。可以在Vert.x中使用Hystrix提供的熔断器或组合使用。
