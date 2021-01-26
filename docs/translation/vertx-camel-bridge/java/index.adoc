@@ -52,13 +52,13 @@ CamelBridge.create(vertx,
 
 此桥接需要一个 `CamelContext` 上下文，它将从上下文中找到端点。桥接在使用之前，要确保已经启动。你可以使用
 `link:../../apidocs/io/vertx/camel/CamelBridge.html#start-io.vertx.core.Handler-[start]`
-方法来监听桥接启动的通知。
+方法来注册桥接启动时的回调。
 
 [[_inbound_mapping]]
 === 入站映射
 
 入站映射将 Camel 的端点关联到事件总线上。
-在此端点上接收到的消息将被转换成事件总线的消息
+在此端点上接收到的消息将被转换成事件总线的消息。
 
 [source,java]
 ----
@@ -87,8 +87,8 @@ CamelBridge.create(vertx,
 
 _注意_: `org.fusesource.hawtbuf.Buffer` 会自动转换成 `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]` 。
 
-If `send` is used (so not `publish`), and when the Camel exchange expect a reply (_In Out_ exchange), the Vert.x
-code expect as reply to the sent message. When the reply arrives it is propagated to the exchange:
+如果您使用了 `send` （而不是 `publish` ），并且 Camel exchange 期望一个回复 （ _In Out_ exchange），
+Vert.x 代码应作为对已发送消息的回复。当收到回复消息时，它钭传播到 exchange：
 
 [source,java]
 ----
@@ -109,13 +109,13 @@ Future<Object> future = template.asyncRequestBody(endpoint, "hello");
 String response = template.extractFutureBody(future, String.class);
 ----
 
-You can also configure the reply `timeout` using `link:../../apidocs/io/vertx/camel/InboundMapping.html#setTimeout-int-[setTimeout]`.
+您还可以通过 `link:../../apidocs/io/vertx/camel/InboundMapping.html#setTimeout-int-[setTimeout]` 方法来配置回复的 `超时`。
 
 [[_outbound_mapping]]
-=== Outbound mapping
+=== 出站映射
 
-Outbound mapping associates an event bus address to a Camel endpoint. Messages received on this event bus address
-are transformed to Camel messages and sent to the endpoint.
+出站映射将事件总线地址关联到 Camel 的端点上。
+在此地址上接收到的消息将被转换成发送到 Camel 对应端点的消息
 
 [source,java]
 ----
@@ -131,9 +131,9 @@ CamelBridge.create(vertx,
 );
 ----
 
-The snippet above shows different ways to configure an outbound mapping.
+上面的示例展示了配置出站映射的不同方法。
 
-You can connect your outbound mapping to a Camel route:
+您可以将出站映射链接到 Camel 路由上：
 
 [source,java]
 ----
@@ -153,13 +153,13 @@ bridge.start();
 
 
 vertx.eventBus().request("test", "hello", reply -> {
-  // Reply from the route (here it's "OK")
+  // 来自路由的回复（这里是“OK”）
 });
 ----
 
-If when you send the message on the event bus you register a reply handler, it configures the Camel exchange to
-expect a response (it uses the request-reply pattern of the EIP). The response is passed in the reply body. If the
-route fails, you get a reply failure (recipient failure), with the message as cause:
+如果您在事件总线上发送消息时注册了回复的处理器，则它将 Camel exchange 配置为期望一个响应
+（它使用EIP的请求-响应模式），响应在回复的消息体中。
+如果路由失败，您将收到一个失败的回复（收件人失败），并伴随以下消息：
 
 [source,java]
 ----
@@ -186,8 +186,8 @@ vertx.eventBus().request("camel-route", "hello", reply -> {
 });
 ----
 
-If the processing you apply is blocking, you*must** set _blocking_ to `true`. This avoid executing the
-processing on the event loop thread:
+如果您正在执行阻塞的逻辑，您**必须**将 _blocking_ 设置为 `true` 。这样可以避免在
+event loop 线程执行相应逻辑。
 
 [source,java]
 ----
@@ -198,7 +198,7 @@ camel.addRoutes(new RouteBuilder() {
       .process(new Processor() {
         @Override
         public void process(Exchange exchange) throws Exception {
-          // Do something blocking...
+          // 执行阻塞逻辑……
         }
       })
       .to("http://localhost:8080");
@@ -220,19 +220,19 @@ vertx.eventBus().request("camel-route", "hello", reply -> {
 });
 ----
 
-By default it uses the default worker thread pool, this is customizable using the
-`link:../../apidocs/io/vertx/camel/OutboundMapping.html#setWorkerExecutor-io.vertx.core.WorkerExecutor-[setWorkerExecutor]` method.
+默认情况下，它使用默认的工作线程池，您也可以通过
+`link:../../apidocs/io/vertx/camel/OutboundMapping.html#setWorkerExecutor-io.vertx.core.WorkerExecutor-[setWorkerExecutor]`方法来自定义。
 
 [[_stopping_the_bridge]]
-== Stopping the bridge
+== 停止桥接
 
-Don't forget to stop the bridge using the `stop` method. The `stop` method is asynchronous. You can use
-`link:../../apidocs/io/vertx/camel/CamelBridge.html#stop-io.vertx.core.Handler-[stop]` to be notified when the bridge has been stopped.
+别忘记使用 `stop` 方法来停止桥接。 `stop` 方法是异步的，你可以使用
+`link:../../apidocs/io/vertx/camel/CamelBridge.html#stop-io.vertx.core.Handler-[stop]` 方法注册桥接结束时的回调
 
 [[_exchanging_custom_object]]
-== Exchanging custom object
+== 交换自定义对象
 
-If you want to send and receive custom objects, you need to register a codec on the event bus:
+如果您需要发送或者接收自定义的对象，您需要在事件总线上注册一个编码/解码器。
 
 [source,java]
 ----
