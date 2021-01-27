@@ -50,7 +50,7 @@ CamelBridge.create(vertx,
 ).start();
 ----
 
-此桥接需要一个 `CamelContext` 上下文，它将从上下文中找到端点。桥接在使用之前，要确保已经启动。你可以使用
+此桥接需要一个 `CamelContext` 上下文，它将从上下文中找到端点。桥接在使用之前，要确保已经启动。 需要注意的是 `start` 方法是异步的，你可以使用
 `link:../../apidocs/io/vertx/camel/CamelBridge.html#start-io.vertx.core.Handler-[start]`
 方法来注册桥接启动时的回调。
 
