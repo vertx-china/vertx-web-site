@@ -1077,6 +1077,7 @@ connection.setOption(MySQLSetOption.MYSQL_OPTION_MULTI_STATEMENTS_OFF, ar -> {
 
 当您要将数据批量插入到数据库中时，您可以使用 `PreparedQuery#executeBatch` ，它提供了一个简单的 API 来处理此问题。请记住，MySQL 原生不支持批处理协议，因此 API 只是语法糖，一个接一个执行预处理语句，这意味着比执行一个预处理语句插入多条带有值列表的记录，需要更多的网络往返行程。
 
+[[_tricky_date_time_data_types]]
 === 棘手的日期和时间数据类型
 
 处理 MYSQL 日期和时间数据类型（尤其是时区）是棘手的，因此响应式 MySQL 客户端不会为这些值进行魔法转换。
