@@ -833,6 +833,7 @@ Note: 目前尚不支持绑定OUT参数的预处理语句。
 [[_authentication]]
 == 认证
 
+[[_default_authentication_plugin]]
 === 默认身份验证插件
 
 该客户端支持指定在连接开始时使用缺省的身份验证插件。
