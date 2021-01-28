@@ -853,6 +853,7 @@ MySQLConnectOptions options = new MySQLConnectOptions()
   .setAuthenticationPlugin(MySQLAuthenticationPlugin.MYSQL_NATIVE_PASSWORD); // 设定默认身份验证插件
 ----
 
+[[_new_authentication_method_introduced_in_mysql_8]]
 === MySQL 8 中引入的新身份验证方法
 
 MySQL 8.0 引入了一种名为 `caching_sha2_password` 的身份验证方法，它被用于默认的身份验证方法。
