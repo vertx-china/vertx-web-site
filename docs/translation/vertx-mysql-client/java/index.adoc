@@ -563,6 +563,7 @@ client
 });
 ----
 
+[[_handling_json]]
 === 处理 JSON
 
 MySQL `JSON` 数据类型由以下Java类型表示：
