@@ -1,7 +1,7 @@
-== Cursors and streaming
+[[_cursors_and_streaming]]
+== 游标和流
 
-By default prepared query execution fetches all rows, you can use a
-`link:../../apidocs/io/vertx/sqlclient/Cursor.html[Cursor]` to control the amount of rows you want to read:
+默认情况下，预处理查询执行将获取所有行，您可以使用 `link:../../apidocs/io/vertx/sqlclient/Cursor.html[Cursor]` 控制您想读取的行数量：
 
 [source,java]
 ----
@@ -9,19 +9,19 @@ connection.prepare("SELECT * FROM users WHERE age > ?", ar1 -> {
   if (ar1.succeeded()) {
     PreparedStatement pq = ar1.result();
 
-    // Create a cursor
+    // 创建游标
     Cursor cursor = pq.cursor(Tuple.of(18));
 
-    // Read 50 rows
+    // 读取50行
     cursor.read(50, ar2 -> {
       if (ar2.succeeded()) {
         RowSet<Row> rows = ar2.result();
 
-        // Check for more ?
+        // 检查更多 ?
         if (cursor.hasMore()) {
-          // Repeat the process...
+          // 重复这个过程...
         } else {
-          // No more rows - close the cursor
+          // 没有更多行-关闭游标
           cursor.close();
         }
       }
@@ -30,19 +30,20 @@ connection.prepare("SELECT * FROM users WHERE age > ?", ar1 -> {
 });
 ----
 
-Cursors shall be closed when they are released prematurely:
+游标过早释放时应将其关闭：
 
 [source,java]
 ----
 cursor.read(50, ar2 -> {
   if (ar2.succeeded()) {
-    // Close the cursor
+    // 关闭游标
     cursor.close();
   }
 });
 ----
 
 A stream API is also available for cursors, which can be more convenient, specially with the Rxified version.
+游标还可以使用流式API，这可以更加方便，尤其是在Rx化的版本中。
 
 [source,java]
 ----
@@ -50,10 +51,10 @@ connection.prepare("SELECT * FROM users WHERE age > ?", ar1 -> {
   if (ar1.succeeded()) {
     PreparedStatement pq = ar1.result();
 
-    // Fetch 50 rows at a time
+    // 一次获取50行
     RowStream<Row> stream = pq.createStream(50, Tuple.of(18));
 
-    // Use the stream
+    // 使用流
     stream.exceptionHandler(err -> {
       System.out.println("Error: " + err.getMessage());
     });
@@ -67,8 +68,6 @@ connection.prepare("SELECT * FROM users WHERE age > ?", ar1 -> {
 });
 ----
 
-The stream read the rows by batch of `50` and stream them, when the rows have been passed to the handler,
-a new batch of `50` is read and so on.
+当这些行已传递给处理程序时，该流将批量读取50行并将其流化。读取新一批的50行，依此类推。
 
-The stream can be resumed or paused, the loaded rows will remain in memory until they are delivered and the cursor
-will stop iterating.
+流可以恢复或暂停，已加载的行将保留在内存中，直到被送达，游标将停止迭代。
