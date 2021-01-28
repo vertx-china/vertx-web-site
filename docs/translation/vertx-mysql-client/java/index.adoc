@@ -1062,6 +1062,7 @@ connection.setOption(MySQLSetOption.MYSQL_OPTION_MULTI_STATEMENTS_OFF, ar -> {
 
 以下是使用响应式 MySQL 客户端时避免常见陷阱的一些最佳实践。
 
+[[_prepared_statement_count_limit]]
 === 预处理语句的计数限制
 
 有时您可能会遇到臭名昭著的错误 `Can't create more than max_prepared_stmt_count statements (current value: 16382)` ，这是因为服务器已达到预处理语句的总数限制。
