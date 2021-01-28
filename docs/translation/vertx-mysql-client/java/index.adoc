@@ -237,6 +237,7 @@ MySQLPool client2 = MySQLPool.pool(vertx, connectOptions, poolOptions);
 
 有几个选项供您配置客户端。
 
+[[_data_object]]
 === 数据对象
 
 配置客户端的简单方法就是指定 `MySQLConnectOptions` 数据对象。
