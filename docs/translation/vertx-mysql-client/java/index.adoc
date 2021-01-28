@@ -325,6 +325,7 @@ connectOptions.setProperties(attributes);
 
 更多有关信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/mysql-affected-rows.html[MySQL Reference Manual]
 
+[[_connection_uri]]
 === 连接 URI
 
 除了使用 `MySQLConnectOptions` 数据对象进行配置外，我们还另外为您提供了一个使用连接URI进行配置的方法：
