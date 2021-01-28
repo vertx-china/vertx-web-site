@@ -602,6 +602,7 @@ value = tuple.getInteger(2); // 期望得到 3
 
 MySQL `TIME` 数据类型可用于表示一天中的时间或范围为 `-838:59:59` 到 `838:59:59` 的时间间隔。再响应式MySQL客户端， `TIME` 数据类型自然的被映射为`java.time.Duration`，但是您还可以通过 `Row#getLocalTime` 访问器以 `java.time.LocalTime` 检索它。
 
+[[_handling_numeric]]
 === 处理 NUMERIC
 
 `link:../../apidocs/io/vertx/sqlclient/data/Numeric.html[Numeric]` Java类型用于表示MySQL的 `NUMERIC` 类型。
