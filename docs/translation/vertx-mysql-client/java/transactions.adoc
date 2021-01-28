@@ -66,6 +66,7 @@ tx.completion().onFailure(err -> {
 });
 ----
 
+[[_simplified_transaction_api_2]]
 === 简单事务 API
 
 当您创建了一个连接池, 您可以调用 `link:../../apidocs/io/vertx/sqlclient/Pool.html#withConnection-java.util.函数。Function-io.vertx.core.Handler-[withConnection]` 并传递一个在连接内执行的函数。
