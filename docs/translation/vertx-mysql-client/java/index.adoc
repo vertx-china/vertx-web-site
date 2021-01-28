@@ -650,6 +650,7 @@ client
 });
 ----
 
+[[_handling_geometry]]
 === 处理 GEOMETRY
 
 MYSQL 还支持 `GEOMETRY`  数据类型，下面是一些示例展示您可以使用 Well-Known Text（WKT）格式或 Well-Known Binary（WKB）格式处理几何数据，数据被解码为MySQL TEXT 或 BLOB 数据类型。有很多很棒的第三方库可以处理这种格式的数据。
