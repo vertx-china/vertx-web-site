@@ -617,6 +617,7 @@ if (numeric.isNaN()) {
 }
 ----
 
+[[_handling_enum]]
 === 处理 ENUM
 
 MySQL支持ENUM数据类型，客户端将这些类型检索为String数据类型。
