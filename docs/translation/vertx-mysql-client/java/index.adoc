@@ -178,6 +178,7 @@ client.getConnection().compose(conn -> {
 
 连接完成后，您必须关闭它以释放到连接池中，以便可以重复使用。
 
+[[_unix_domain_socket]]
 === Unix 域套接字
 
 有时为了简单，安全或性能原因，需要通过 https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_socket[Unix 域套接字] 进行连接。
