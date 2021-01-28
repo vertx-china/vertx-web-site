@@ -57,7 +57,7 @@ pool.getConnection(res -> {
 });
 ----
 
-当数据库服务器报告当前事务失败时（例如，臭名昭著的 _current transaction is aborted, commands ignored until end of transaction block_），事务被回滚，并且 `link:../../apidocs/io/vertx/sqlclient/Transaction.html#completion--[completion]` future 随着 `link:../../apidocs/io/vertx/sqlclient/TransactionRollbackException.html[TransactionRollbackException]` 失败：
+当数据库服务器报告当前事务失败时（例如，臭名昭著的 _current transaction is aborted, commands ignored until end of transaction block_），事务被回滚，并且 `link:../../apidocs/io/vertx/sqlclient/Transaction.html#completion--[completion]` Future 随着 `link:../../apidocs/io/vertx/sqlclient/TransactionRollbackException.html[TransactionRollbackException]` 失败：
 
 [source,java]
 ----
@@ -73,10 +73,10 @@ tx.completion().onFailure(err -> {
 
 它从连接池中借用一个连接，开始事务，并且，在此事务范围内所有执行操作的客户端调用该函数。
 
-该函数必须返回一个任意结果的future。
+该函数必须返回一个任意结果的Future。
 
-- 当future成功，客户端提交这个事务
-- 当future失败，客户端回滚这个事务
+- 当Future成功，客户端提交这个事务
+- 当Future失败，客户端回滚这个事务
 
 事务完成后, 连接将返回到连接池中，并提供全部的结果。
 
