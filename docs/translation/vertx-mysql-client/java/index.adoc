@@ -922,6 +922,7 @@ MySQLConnection.connect(vertx, options, res -> {
 
 有时您希望使用 MySQL 实用程序命令，我们为此提供支持。有关更多信息，请参阅 https://dev.mysql.com/doc/dev/mysql-server/8.0.12/page_protocol_command_phase_utility.html[MySQL utility commands].
 
+[[_com_ping]]
 === COM_PING
 
 您可以使用 `COM_PING` 命令检查服务器是否处于活动状态。如果服务器响应 PING，将通知处理程序，否则将永远不会调用处理程序。
