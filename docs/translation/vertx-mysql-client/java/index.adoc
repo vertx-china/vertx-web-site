@@ -261,6 +261,7 @@ pool.getConnection(ar -> {
 });
 ----
 
+[[_collations_and_character_sets]]
 ==== 字符序和字符集
 
 响应式 MySQL 客户端支持配置字符序或字符集，并将它们映射到一个相关的 `java.nio.charset.Charset` 。
