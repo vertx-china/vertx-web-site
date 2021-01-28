@@ -523,6 +523,7 @@ MySQL数据类型编码将会根据参数值推断，这是类型映射
 |MYSQL_TYPE_STRING
 |===
 
+[[_handling_boolean]]
 === 处理布尔值
 
 在 MySQL 中 `BOOLEAN` 和 `BOOL` 数据类型是 `TINYINT(1)` 的同义词 . 零值视为假，非零值视为真。
