@@ -1072,6 +1072,7 @@ connection.setOption(MySQLSetOption.MYSQL_OPTION_MULTI_STATEMENTS_OFF, ar -> {
 
 还可以通过接口 `SqlConnection#prepare` 创建 `PreparedStatement` 对象来手动管理预处理语句的生命周期，以便可以选择何时释放语句句柄，甚至使用 https://dev.mysql.com/doc/refman/8.0/en/sql-prepared-statements.html[SQL syntax prepared statement].
 
+[[_demystifying_prepared_batch]]
 === 揭开批量预处理神秘面纱
 
 当您要将数据批量插入到数据库中时，您可以使用 `PreparedQuery#executeBatch` ，它提供了一个简单的 API 来处理此问题。请记住，MySQL 原生不支持批处理协议，因此 API 只是语法糖，一个接一个执行预处理语句，这意味着比执行一个预处理语句插入多条带有值列表的记录，需要更多的网络往返行程。
