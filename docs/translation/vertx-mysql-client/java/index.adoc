@@ -953,6 +953,7 @@ connection.resetConnection(ar -> {
 });
 ----
 
+[[_com_change_user]]
 === COM_CHANGE_USER
 
 您可以更改当前连接的用户，这将执行re-authentication并重置连接状态，如 `COM_RESET_CONNECTION` 。
