@@ -58,7 +58,7 @@ connection.prepare("SELECT * FROM users WHERE first_name LIKE ?", ar1 -> {
 
 该函数必须返回一个任意结果的future。
 
-future完成后, 连接将返回到连接池中，并提供全部的结果。
+Future 完成后, 连接将归还至连接池，并提供全部的结果。
 
 [source,java]
 ----
