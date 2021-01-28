@@ -451,6 +451,7 @@ include::tracing.adoc[]
 
 在Java中，没有无符号数字值的具体表示形式，因此客户端会将无符号值转换为相关的Java类型。
 
+[[_implicit_type_conversion]]
 === 隐式类型转换
 
 当执行预处理语句时，响应式 MySQL 客户端支持隐式类型转换。
