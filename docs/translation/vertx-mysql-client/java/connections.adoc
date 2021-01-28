@@ -56,7 +56,7 @@ connection.prepare("SELECT * FROM users WHERE first_name LIKE ?", ar1 -> {
 
 它从连接池中借用一个连接，并使用该连接调用函数。
 
-该函数必须返回一个任意结果的future。
+该函数必须返回一个任意结果的 Future。
 
 Future 完成后, 连接将归还至连接池，并提供全部的结果。
 
