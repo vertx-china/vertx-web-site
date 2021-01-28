@@ -593,6 +593,7 @@ value = tuple.get(Integer.class, 2); // 期望得到 3
 value = tuple.getInteger(2); // 期望得到 3
 ----
 
+[[_handling_bit]]
 === 处理 BIT
 `BIT` 是 `java.lang.Long` 类型的映射, 但是Java没有无符号数值的概念, 因此，如果您要插入或更新最大值为 `BIT(64)` 的记录 , 您可以通过一些技巧将参数设置为 `-1L`.
 
