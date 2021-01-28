@@ -1001,6 +1001,7 @@ connection.debug(ar -> {
 });
 ----
 
+[[_com_set_option]]
 === COM_SET_OPTION
 
 您可以使用 `COM_SET_OPTION` 命令设置当前连接的选项。目前只能设置 `CLIENT_MULTI_STATEMENTS`。
