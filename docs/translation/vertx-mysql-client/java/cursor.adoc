@@ -30,7 +30,7 @@ connection.prepare("SELECT * FROM users WHERE age > ?", ar1 -> {
 });
 ----
 
-游标过早释放时应将其关闭：
+游标提前释放时应将其关闭：
 
 [source,java]
 ----
