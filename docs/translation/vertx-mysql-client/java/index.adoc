@@ -986,6 +986,7 @@ connection.getInternalStatistics(ar -> {
 });
 ----
 
+[[_com_debug]]
 === COM_DEBUG
 
 您可以使用 `COM_DEBUG` 命令将调试信息转储到MySQL服务器的STDOUT。
