@@ -15,7 +15,7 @@
 * 直接内存到对象，无需不必要的拷贝
 * 完整的数据类型支持
 * 支持存储过程
-* TLS/SSL 支持
+* 支持 TLS/SSL
 * MySQL 实用程序命令支持
 * 支持 MySQL 和 MariaDB
 * 丰富的字符排序（collation）和字符集支持
