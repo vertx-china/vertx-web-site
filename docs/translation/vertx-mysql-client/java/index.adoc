@@ -297,6 +297,7 @@ connectOptions.setCollation("utf8_general_ci");
 
 有关 MySQL 字符集和字符序的更多信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/charset.html[MySQL Reference Manual]。
 
+[[_connection_attributes]]
 ==== 连接属性
 
 还可以使用 `setProperties` 或 `addProperty` 方法配置连接属性。注意 `setProperties` 将覆盖默认客户端属性。
