@@ -1,7 +1,7 @@
 [[_cursors_and_streaming]]
 == 游标和流
 
-默认情况下，预处理查询执行将获取所有行，您可以使用 `link:../../apidocs/io/vertx/sqlclient/Cursor.html[Cursor]` 控制您想读取的行数量：
+默认情况下，执行预处理查询将获取所有行，您可以使用 `link:../../apidocs/io/vertx/sqlclient/Cursor.html[Cursor]` 控制想读取的行数：
 
 [source,java]
 ----
