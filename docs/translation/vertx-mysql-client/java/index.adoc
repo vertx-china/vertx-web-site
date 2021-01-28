@@ -1,7 +1,7 @@
 = 响应式 MySQL 客户端
 :PREPARED_PARAMS: `?`
 
-响应式 MySQL 客户端是具有简单易懂的 API，专注于可扩展性和低开销的MySQL的客户端。
+响应式 MySQL 客户端具有简单易懂的 API，专注于可扩展性和低开销。
 
 *特性*
 
