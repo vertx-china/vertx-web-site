@@ -1,6 +1,7 @@
 [[_using_connections]]
 == 使用连接
 
+[[_getting_a_connection]]
 === 获得一个连接
 
 当需要执行顺序查询（无事务）时，可以创建一个新连接或从连接池中借用一个：
