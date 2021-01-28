@@ -597,6 +597,7 @@ value = tuple.getInteger(2); // 期望得到 3
 === 处理 BIT
 `BIT` 是 `java.lang.Long` 类型的映射, 但是Java没有无符号数值的概念, 因此，如果您要插入或更新最大值为 `BIT(64)` 的记录 , 您可以通过一些技巧将参数设置为 `-1L`.
 
+[[_handling_time]]
 === 处理 TIME
 
 MySQL `TIME` 数据类型可用于表示一天中的时间或范围为 `-838:59:59` 到 `838:59:59` 的时间间隔。再响应式MySQL客户端， `TIME` 数据类型自然的被映射为`java.time.Duration`，但是您还可以通过 `Row#getLocalTime` 访问器以 `java.time.LocalTime` 检索它。
