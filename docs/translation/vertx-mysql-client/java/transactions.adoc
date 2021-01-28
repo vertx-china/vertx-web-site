@@ -1,6 +1,7 @@
 [[_using_transactions]]
 == 使用事务
 
+[[_transactions_with_connections]]
 === 带事务的连接
 
 您可以使用SQL `BEGIN`/`COMMIT`/`ROLLBACK` 执行事务，如果您必须这么做，就必须使用 `link:../../apidocs/io/vertx/sqlclient/SqlConnection.html[SqlConnection]` 自己管理事务。
