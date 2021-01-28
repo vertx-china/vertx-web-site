@@ -934,6 +934,7 @@ connection.ping(ar -> {
 });
 ----
 
+[[_com_reset_connection]]
 === COM_RESET_CONNECTION
 
 您可以使用 `COM_RESET_CONNECTION` 命令重置会话状态，这将重置连接状态，如：
