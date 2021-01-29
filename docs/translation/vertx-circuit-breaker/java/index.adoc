@@ -168,7 +168,7 @@ breaker.<String>execute(
 ----
 
 [[_retries]]
-== 重试（Retries）
+== 重试
 
 还可以通过 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#setMaxRetries-int-[setMaxRetries]`.
 设置重试次数,如果你设置大于0的数值，失败的情况下会重试，直到重试次数等于该数值，如果其中一次重试成功，
@@ -210,7 +210,7 @@ breaker.<String>execute(
 ----
 
 [[_callbacks]]
-== 回调（Callbacks）
+== 回调
 
 你可以配置熔断开路(OPEN)/闭路(CLOSE)时回调。
 
@@ -257,7 +257,7 @@ breaker.<String>execute(
 * `node` : 节点标识 (如果事件总线运行在单节模式，那么该值为：`local`)
 
 [[_the_half_open_state]]
-== 半开状态（half-open）
+== 半开状态
 
 当熔断器处于开路状态时，对其调用会立即失败，不会执行实际操作。经过适当的时间 (通过
 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#setResetTimeout-long-[setResetTimeout]` 配置）,
