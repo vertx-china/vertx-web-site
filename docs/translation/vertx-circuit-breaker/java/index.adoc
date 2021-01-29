@@ -5,7 +5,7 @@ Circuit Breaker 是Vert.x熔断模式的实现。
 
 支持以下故障:
 
-* 使用 `link:../../apidocs/io/vertx/core/Future.html[Future]` 时失败
+* 在 `link:../../apidocs/io/vertx/core/Future.html[Future]` 内记录的失败
 * 代码里主动抛出异常
 * 没有完成的``Future``（即超时）.
 
