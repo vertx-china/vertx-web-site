@@ -1,20 +1,20 @@
 = Vert.x Circuit Breaker
 
-Vert.x Circuit Breaker 是Vert.x熔断模式的实现。
-它用来追踪故障，当失败次数达到阈值时触发熔断，并且可选择性提供失败回调，以保证服务可用或长时间等待。
+Circuit Breaker 是Vert.x熔断模式的实现。
+它用来追踪故障，当失败次数达到阈值时触发熔断，并且可选择性提供失败回调。
 
 支持以下故障:
 
 * 使用 `link:../../apidocs/io/vertx/core/Future.html[Future]` 时失败
 * 代码里主动抛出异常
-* 没有完成的``Future``,例如:超时.
+* 没有完成的``Future``（即超时）.
 
-熔断器要旨是保护 Vert.x 的 非阻塞 和 异步 的行为，以便受益于Vert.x 执行模型。
+熔断器要旨是保障其操作是非阻塞且异步的，以便受益于Vert.x 执行模型。
 
 [[_using_the_vert_x_circuit_breaker]]
 == 准备工作
 
-使用Vert.x Circuit Breaker之前，你必须在你得项目当中添加依赖。
+使用Vert.x Circuit Breaker之前，你必须在你得项目当中添加 _依赖_ :
 
 * Maven (在 `pom.xml` 文件中):
 
@@ -137,8 +137,8 @@ breaker.executeWithFallback(
     });
 ----
 
-每当熔断器熔断的时候,都会调用失败回调(fallback), 或者调用
-`link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#isFallbackOnFailure--[isFallbackOnFailure]` 方法用于开启(关闭)失败回调.
+每当熔断器熔断的时候,都会调用失败回调(fallback), 也可以调用
+`link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#isFallbackOnFailure--[isFallbackOnFailure]` 方法开启(关闭)失败回调.
 调用失败回调的时候,其结果会以 `link:../../apidocs/java/lang/Throwable.html[Throwable]` 为参数返回预期对象.
 
 通过 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreaker.html[CircuitBreaker]` 设置全局的失败回调方法:
@@ -171,10 +171,10 @@ breaker.<String>execute(
 == 重试（Retries）
 
 还可以通过 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#setMaxRetries-int-[setMaxRetries]`.
-设置重试次数,如果你设置大于0的数值,在失败的情况下,会重试到该数值，如果在最后一次执行得到正确的结果，
-那么处理结果可以被正确的调用，剩下的重试次数将被跳过
+设置重试次数,如果你设置大于0的数值，失败的情况下会重试，直到重试次数等于该数值，如果其中一次重试成功，
+那么会跳过剩下的重试。
 
-*注意* 如果你设置最大重试次数 `maxRetries` 为2, 那么你得代码在失败的情况将会执行3次，三次分别为初次请求，2次重试次数。
+*注意* 如果你设置最大重试次数 `maxRetries` 为2, 那么你得代码在失败的情况将会执行3次，三次分别为初次请求，2次重试。
 
 在默认情况下超时时间(timeout)和重试次数(retries)为0,那么将会无延时的一直请求下去,这会导致调用服务负载增加
 导致服务恢复时间延长。所以为了减少这种情况设置延时和重试次数。
@@ -271,7 +271,7 @@ breaker.<String>execute(
 异常状态:
 
 * 当熔断器开路(OPEN)的情况,会抛出 `link:../../apidocs/io/vertx/circuitbreaker/OpenCircuitException.html[OpenCircuitException]` 异常
-* 当操作超时的时候,会抛出`link:../../apidocs/io/vertx/circuitbreaker/TimeoutException.html[TimeoutException]`
+* 当操作超时的时候,会抛出 `link:../../apidocs/io/vertx/circuitbreaker/TimeoutException.html[TimeoutException]`
 
 [[_pushing_circuit_breaker_metrics_to_the_hystrix_dashboard]]
 == 将熔断器指标推送到Hystrix看板（Dashboard）
