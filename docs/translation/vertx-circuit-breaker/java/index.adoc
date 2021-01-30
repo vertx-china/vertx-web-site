@@ -58,7 +58,7 @@ CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
 );
 
 // ---
-// Store the circuit breaker in a field and access it as follows
+// 将熔断器存放在某个领域中并像如下方式使用
 // ---
 
 breaker.execute(promise -> {
