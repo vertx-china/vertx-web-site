@@ -299,7 +299,7 @@ vertx.createHttpServer()
 
 在Hystrix 看板, 配置 stream url 地址,例如: `http://localhost:8080/metrics`. 现在就可以获取Vert.x的熔断器指标了。
 
-*注意*：这些指标量是由 Vert.x Web Handler 使用 Event Bus 事件通知收集的。
+*注意*：这些指标量是由 Vert.x Web Handler 使用 Event Bus 事件通知收集。
 如您不想使用默认的通知地址，请在创建的时候设置。
 
 [[_using_netflix_hystrix]]
