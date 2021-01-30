@@ -101,7 +101,7 @@ breaker.<String>execute(promise -> {
 
 操作的结果以下面的方式提供:
 
-* 调用 `execute` 方法时,返回 link:../../apidocs/io/vertx/core/Future.html[Future]`
+* 调用 `execute` 方法时,返回 `link:../../apidocs/io/vertx/core/Future.html[Future]`
 * 调用 `executeAndReport` 方法时,提供 `link:../../apidocs/io/vertx/core/Future.html[Future]` 参数
 
 也可以增加一个可选参数,用于熔断时进行失败回调(fallback):
