@@ -321,7 +321,8 @@ HystrixCommand<String> someCommand = getSomeCommandInstance();
 String result = someCommand.execute();
 ----
 
-但是，代码执行是阻塞的，必须使用 `executeBlocking` 方法去执行，或者在Worker Verticle中调用：
+但是，代码执行是阻塞的，必须使用 `executeBlocking` 方法去执行，
+或在Worker Verticle中调用：
 
 [source, java]
 ----
