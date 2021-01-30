@@ -217,7 +217,7 @@ breaker.<String>execute(
 [[_callbacks]]
 == 回调
 
-你可以配置熔断开路(OPEN)/闭路(CLOSE)时回调。
+您可以配置熔断开启或关闭时的回调函数：
 
 [source,java]
 ----
