@@ -56,7 +56,7 @@ CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
         .setMaxFailures(5) // 最大失败数
         .setTimeout(2000) // 超时时间
         .setFallbackOnFailure(true) // 失败后是否调用回退函数（fallback）
-        .setResetTimeout(10000) // 从，状态重置时间
+        .setResetTimeout(10000) // 在开启状态下，尝试重试之前所需时间
 );
 
 // ---
