@@ -275,7 +275,7 @@ breaker.<String>execute(
 
 异常状态:
 
-* 当熔断器开路(OPEN)的情况,会抛出 `link:../../apidocs/io/vertx/circuitbreaker/OpenCircuitException.html[OpenCircuitException]` 异常
+* 当熔断器开启时，会抛出 `link:../../apidocs/io/vertx/circuitbreaker/OpenCircuitException.html[OpenCircuitException]` 
 * 当操作超时的时候,会抛出 `link:../../apidocs/io/vertx/circuitbreaker/TimeoutException.html[TimeoutException]`
 
 [[_pushing_circuit_breaker_metrics_to_the_hystrix_dashboard]]
