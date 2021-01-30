@@ -283,7 +283,7 @@ breaker.<String>execute(
 
 Netflix Hystrix带有一个看板（dashboard），用于显示熔断器的当前状态。 Vert.x 熔断器可以发布其指标（metric），以供Hystrix 仪表板使用。 Hystrix 仪表板需要一个发送指标的SSE流，
 此流由 `link:../../apidocs/io/vertx/circuitbreaker/HystrixMetricHandler.html[HystrixMetricHandler]`
-这个 Vert.x Web Handler 提供
+该 Vert.x Web 处理器所提供：
 
 
 [source,java]
