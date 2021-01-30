@@ -37,7 +37,7 @@ compile 'io.vertx:vertx-circuit-breaker:4.0.0'
 [[_using_the_circuit_breaker]]
 == 使用熔断器
 
-为了使用熔断器我们需要以下的步骤：
+使用熔断器需要按以下步骤进行：
 
 1. 创建一个熔断器，并配置成你所需要的超时，最大故障次数等参数
 
