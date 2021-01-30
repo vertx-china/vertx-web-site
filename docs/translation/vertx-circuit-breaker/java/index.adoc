@@ -273,7 +273,7 @@ breaker.<String>execute(
 [[_reported_exceptions]]
 == 异常
 
-异常状态:
+回退函数将会接收到：
 
 * 当熔断器开启时，会抛出 `link:../../apidocs/io/vertx/circuitbreaker/OpenCircuitException.html[OpenCircuitException]` 
 * 当操作超时，会抛出 `link:../../apidocs/io/vertx/circuitbreaker/TimeoutException.html[TimeoutException]`
