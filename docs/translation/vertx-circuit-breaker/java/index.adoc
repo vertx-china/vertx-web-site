@@ -184,7 +184,7 @@ breaker.<String>execute(
 在默认情况下超时时间（timeout）和重试次数（retries）为0，那么将会无延时的一直请求下去,这会导致调用服务负载增加
 导致服务恢复时间延长。所以为了减少这种情况设置延时和重试次数。
 方法 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreaker.html#retryPolicy-java.util.function.Function-[retryPolicy]`
-用于设置重试策略。 该方法接收一个Function<Integer,Long>的函数体(传入参数为重试次数,返回具体超时时间,单位:毫秒),
+用于设置重试策略。该方法接收一个Function<Integer,Long>的函数体（传入参数为重试次数，返回具体超时时间，单位：毫秒），
 允许用户定制更加复杂的延时策略，例如：带抖动的延时补偿。
 
 下面是设置了重试策略的例子，重试超时时间与重试时间呈线指数增长。
