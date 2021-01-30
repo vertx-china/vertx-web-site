@@ -27,7 +27,7 @@ Circuit Breaker 是Vert.x熔断模式的实现。
 </dependency>
 ----
 
-* Gradle (在 `build.gradle` 文件中):
+* Gradle（在您的 `build.gradle` 文件中）：
 
 [source,groovy,subs="+attributes"]
 ----
