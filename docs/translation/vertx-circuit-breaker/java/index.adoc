@@ -141,7 +141,7 @@ breaker.executeWithFallback(
     });
 ----
 
-每当熔断器熔断的时候,都会调用失败回调(fallback), 也可以调用
+每当熔断器熔断的时候,都会调用失败回退（fallback），也可以调用
 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#isFallbackOnFailure--[isFallbackOnFailure]` 方法开启失败回退。
 调用失败回调的时候,其结果会以 `link:../../apidocs/java/lang/Throwable.html[Throwable]` 为参数返回预期对象。
 
