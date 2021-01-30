@@ -254,7 +254,7 @@ breaker.<String>execute(
 * `state` : 熔断器最新的状态（`OPEN`, `CLOSED`, `HALF_OPEN`）
 * `name` : 熔断器的名称
 * `failures` : 错误次数
-* `node` : 节点标识 (如果事件总线运行在单节模式，那么该值为：`local`)
+* `node` : 节点标识 (如果事件总线并非运行在集群模式中，那么该值为：`local`)
 
 [[_the_half_open_state]]
 == 半开状态
