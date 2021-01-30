@@ -1,6 +1,6 @@
 = Vert.x Circuit Breaker
 
-Circuit Breaker 是Vert.x熔断模式的实现。
+Circuit Breaker 是Vert.x 熔断 _模式_ 的实现。
 它用来追踪故障，当失败次数达到阈值时 _触发熔断_ ，并提供可选择的失败回退。
 
 支持以下故障:
