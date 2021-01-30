@@ -64,7 +64,7 @@ CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
 breaker.execute(promise -> {
   // 在熔断器中执行的代码
   // 这里的代码可以成功或者失败，
-  // 如果future在这里被标记为失败，熔断器将自增失败数
+  // 如果该 promise 在这里被标记为失败，熔断器将自增失败数
 }).onComplete(ar -> {
   // 处理结果.
 });
