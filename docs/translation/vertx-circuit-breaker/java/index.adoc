@@ -309,7 +309,7 @@ https://github.com/Netflix/Hystrix[Hystrix] 提供了熔断器模式的实现。
 本节介绍在Vert.x应用程序中使用Hystrix的技巧。
 
 首先，您需要将Hystrix添加到你的依赖中。详细信息请参阅Hystrix页面。然后，您需要使用 Command 隔离“受保护的”调用。
-你可以这样执行它：
+您可以这样执行之：
 
 [source, java]
 ----
