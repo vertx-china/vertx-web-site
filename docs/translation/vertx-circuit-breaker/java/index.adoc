@@ -7,7 +7,7 @@ Circuit Breaker 是Vert.x熔断模式的实现。
 
 * 在 `link:../../apidocs/io/vertx/core/Future.html[Future]` 内记录的失败
 * 代码里主动抛出异常
-* 没有完成的``Future``（即超时）.
+* 没有完成的 `Future`（即超时）。
 
 熔断器要旨是保障其操作是非阻塞且异步的，以便受益于Vert.x 执行模型。
 
