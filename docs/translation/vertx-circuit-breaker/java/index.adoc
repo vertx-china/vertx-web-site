@@ -251,7 +251,7 @@ breaker.<String>execute(
 
 每个总线通知都会包含一个 Json Object对象，该对象包括以下字段：
 
-* `state` : 熔断器最新的状态 (`OPEN`, `CLOSED`, `HALF_OPEN`)
+* `state` : 熔断器最新的状态（`OPEN`, `CLOSED`, `HALF_OPEN`）
 * `name` : 熔断器的名称
 * `failures` : 错误次数
 * `node` : 节点标识 (如果事件总线运行在单节模式，那么该值为：`local`)
