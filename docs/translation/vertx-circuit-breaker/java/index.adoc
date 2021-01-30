@@ -174,7 +174,7 @@ breaker.<String>execute(
 == 重试
 
 还可以通过 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#setMaxRetries-int-[setMaxRetries]`.
-设置重试次数,如果你设置大于0的数值，失败的情况下会重试，直到重试次数等于该数值，如果其中一次重试成功，
+设置重试次数,如设置大于0的数值，失败的情况下会重试，直到重试次数等于该数值，如果其中一次重试成功，
 那么会跳过剩下的重试。
 
 *注意* 如果你设置最大重试次数 `maxRetries` 为2, 那么你得代码在失败的情况将会执行3次，三次分别为初次请求，2次重试。
