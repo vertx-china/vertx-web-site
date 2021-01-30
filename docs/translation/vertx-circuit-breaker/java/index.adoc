@@ -180,7 +180,7 @@ breaker.<String>execute(
 *注意* 如您设置最大重试次数 `maxRetries` 为 2，那么您的代码在失败的情况将会执行3次，分别为初次请求，
 以及 2 次重试。
 
-在默认情况下超时时间(timeout)和重试次数(retries)为0,那么将会无延时的一直请求下去,这会导致调用服务负载增加
+在默认情况下超时时间（timeout）和重试次数（retries）为0，那么将会无延时的一直请求下去,这会导致调用服务负载增加
 导致服务恢复时间延长。所以为了减少这种情况设置延时和重试次数。
 方法 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreaker.html#retryPolicy-java.util.function.Function-[retryPolicy]`
 用于设置重试策略。 该方法接收一个Function<Integer,Long>的函数体(传入参数为重试次数,返回具体超时时间,单位:毫秒),
