@@ -70,7 +70,7 @@ breaker.execute(promise -> {
 });
 ----
 
-执行结果以 `link:../../apidocs/io/vertx/core/Future.html[Future]` 对象返回,其 `link:../../apidocs/io/vertx/core/Future.html[Future]` 对象,封装了成功结果集或失败结果集
+execute代码块接收 `link:../../apidocs/io/vertx/core/Future.html[Future]` 对象参数，以标识该操作以及结果的失败或成功。
 例如:在下面的例子中，对应的结果就是REST调用的输出：
 
 [source,java]
