@@ -13,6 +13,7 @@ Circuit Breaker 是Vert.x 熔断 _模式_ 的实现。
 以受益于Vert.x 执行模型。
 
 [[_using_the_vert_x_circuit_breaker]]
+[[_using_the_vert_x_circuit_breaker]]
 == 准备工作
 
 使用Vert.x Circuit Breaker之前，
