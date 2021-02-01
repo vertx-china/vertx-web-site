@@ -17,7 +17,7 @@ Vert.x OpenAPI 可以做到如下事情：
 
 要使用Vert.x OpenAPI，您需要添加如下依赖
 
-* Maven (在您的 `pom.xml` 文件):
+* Maven (在您的 `pom.xml` 文件)：
 
 [source,xml,subs="+attributes"]
 ----
