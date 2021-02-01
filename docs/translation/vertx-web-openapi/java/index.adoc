@@ -141,7 +141,7 @@ routerBuilder
 Vert.x OpenAPI 为您挂载了正确的 `link:../../apidocs/io/vertx/ext/web/validation/ValidationHandler.html[ValidationHandler]` ，所以您才可以获取到请求参数和请求体。
 请参考 https://vertx.io/docs/vertx-web-validation/java/[Vert.x Web 校验文档] 来学习如何获取请求参数以及请求体，并学习如何管理校验失败的处理方式。
 
-[[_map_authenticationhandler_to_openAPI_security_schemes]]
+[[_map_authenticationhandler_to_openapi_security_schemes]]
 == 将 `AuthenticationHandler` 映射到 OpenAPI 安全约束
 
 您可以将一个 `link:../../apidocs/io/vertx/ext/web/handler/AuthenticationHandler.html[AuthenticationHandler]` 映射到一个接口协议当中定义的安全约束。
