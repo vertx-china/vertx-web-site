@@ -28,7 +28,7 @@ Vert.x OpenAPI 可以做到如下事情：
 </dependency>
 ----
 
-* Gradle (在您的 `build.gradle` 文件):
+* Gradle (在您的 `build.gradle` 文件)：
 
 [source,groovy,subs="+attributes"]
 ----
