@@ -791,7 +791,7 @@ client.query("SELECT * FROM users").collecting(collector).execute(ar -> {
 [[_mysql_stored_procedure]]
 == MySQL 存储过程
 
-您可以在查询中运行存储过程。结果将按照 https://dev.mysql.com/doc/dev/mysql-server/8.0.12/page_protocol_command_phase_sp.html[MySQL protocol] 从服务器检索，无需任何魔法。
+您可以在查询中运行存储过程。结果将按照 https://dev.mysql.com/doc/dev/mysql-server/8.0.12/page_protocol_command_phase_sp.html[MySQL 协议] 从服务器获取，无需任何魔法。
 
 [source,java]
 ----
