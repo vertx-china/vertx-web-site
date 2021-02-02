@@ -863,7 +863,7 @@ MySQLConnectOptions options = new MySQLConnectOptions()
 [[_new_authentication_method_introduced_in_mysql_8]]
 === MySQL 8 中引入的新身份验证方法
 
-MySQL 8.0 引入了一种名为 `caching_sha2_password` 的身份验证方法，它被用于默认的身份验证方法。
+MySQL 8.0 引入了一种名为 `caching_sha2_password` 的身份验证方法，它是默认的身份验证方法。
 为了使用此新的身份验证方法连接到服务器，您需要使用安全连接（例如 启用 TLS/SSL）或使用 RSA 密钥对交换加密密码，以避免密码泄漏。RSA 密钥对在通信过程中会自动交换，但服务器 RSA 公钥可能会在这个过程中被黑客攻击，因为它通过不安全的连接传输。因此，如果您使用不安全的连接，并且希望避免暴露服务器 RSA 公钥的风险，可以这样设置服务器 RSA 公钥：
 
 [source,java]
