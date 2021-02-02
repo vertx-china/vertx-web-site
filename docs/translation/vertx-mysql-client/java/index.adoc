@@ -531,7 +531,7 @@ MySQL 数据类型编码是根据参数值推断的。下面是具体的类型�
 
 在 MySQL 中 `BOOLEAN` 和 `BOOL` 数据类型是 `TINYINT(1)` 的同义词。零值视为 false，非零值视为 true。
 `BOOLEAN` 数据类型值以 `java.lang.Byte` 类型存储在 `Row` 或 `Tuple` 中，调用 `Row#getValue` 可以获取到 `java.lang.Byte` 类型的值，
-`java.lang.Boolean` 
+也可以调用 `Row#getBoolean` 获取 `java.lang.Boolean` 类型的值。
 
 [source,java]
 ----
