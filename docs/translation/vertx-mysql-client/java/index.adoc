@@ -104,7 +104,8 @@ PoolOptions poolOptions = new PoolOptions()
 MySQLPool client = MySQLPool.pool(connectOptions, poolOptions);
 ----
 
-带连接池的客户端使用连接池，任何操作都将借用连接池中的连接来执行该操作并释放到连接池中。
+带连接池的客户端使用连接池，任何操作都将借用连接池中的连接来执行该操作，
+并将连接释放回连接池中。
 
 如果您使用 Vert.x 运行，您可以将 Vertx 实例传递给它：
 
