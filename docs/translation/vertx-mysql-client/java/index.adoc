@@ -1076,7 +1076,7 @@ connection.setOption(MySQLSetOption.MYSQL_OPTION_MULTI_STATEMENTS_OFF, ar -> {
 
 已知问题：
 
-- 重置连接实用程序命令在 MySQL 5.5、5.6 和 MariaDB 10.1 中不起作用
+- 重置连接实用程序命令在 MySQL 5.5、5.6 和 MariaDB 10.1 中不可用
 - MariaDB 10.2 和 10.3 不支持更改用户实用程序命令
 
 [[_pitfalls_good_practices]]
