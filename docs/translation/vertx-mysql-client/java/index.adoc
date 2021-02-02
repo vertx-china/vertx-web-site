@@ -1047,7 +1047,7 @@ connection.setOption(MySQLSetOption.MYSQL_OPTION_MULTI_STATEMENTS_OFF, ar -> {
 ----
 
 [[_mysql_and_mariadb_version_support_matrix]]
-== MySQL 和 MariaDB 版本支持矩阵
+== MySQL 和 MariaDB 版本支持情况
 
 [cols="^,^,^,^", options="header"]
 |====
