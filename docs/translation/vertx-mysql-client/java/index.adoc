@@ -894,7 +894,7 @@ MySQLConnectOptions options2 = new MySQLConnectOptions()
     "-----END PUBLIC KEY-----\n")); // 配置公钥缓冲
 ----
 
-有关 `caching_sha2_password` 身份验证方法的更多信息，请参见 https://dev.mysql.com/doc/refman/8.0/en/caching-sha2-pluggable-authentication.html[MySQL Reference Manual].
+有关 `caching_sha2_password` 身份验证方法的更多信息，请参见 https://dev.mysql.com/doc/refman/8.0/en/caching-sha2-pluggable-authentication.html[MySQL 参考手册].
 
 [[_using_ssltls]]
 == 使用 SSL/TLS
