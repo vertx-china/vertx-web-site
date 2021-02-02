@@ -278,7 +278,7 @@ MySQLConnectOptions connectOptions = new MySQLConnectOptions();
 connectOptions.setCharset("utf8");
 ----
 
-响应式 MySQL 客户端将 `utf8mb4` 作为默认字符集。字符串值，像密码和错误消息等总是使用 `UTF-8` 字符集解码。
+响应式 MySQL 客户端的默认字符集是 `utf8mb4` 。字符串值，如密码和错误消息等，总是使用 `UTF-8` 字符集解码。
 
 `characterEncoding` 选项用于设置字符串（例如查询字符串和参数值）使用的 Java 字符集，默认使用 `UTF-8` 字符集；如果设置为 `null` ，则客户端将使用 Java 的默认字符集。
 
