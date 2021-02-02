@@ -232,7 +232,7 @@ MySQLPool client = MySQLPool.pool(connectOptions, poolOptions);
 MySQLPool client2 = MySQLPool.pool(vertx, connectOptions, poolOptions);
 ----
 
-有关 native transport 的详细信息，请参阅 [Vert.x 文档](https://vertx.io/docs/vertx-core/java/#_native_transports)。
+有关 native transport 的详细信息，请参阅 https://vertx.io/docs/vertx-core/java/#_native_transports[Vert.x 文档] 。
 
 [[_configuration]]
 == 配置
