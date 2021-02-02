@@ -185,7 +185,7 @@ client.getConnection().compose(conn -> {
 
 有时为了简单，安全或性能原因，需要通过 https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_socket[Unix 域套接字] 进行连接。
 
-由于 JVM 不支持域套接字，因此首先必须向项目添加native transport扩展。
+由于 JVM 不支持域套接字，因此首先必须向项目添加本地传输（native transport）扩展。
 
 * Maven (在您的 `pom.xml`):
 
