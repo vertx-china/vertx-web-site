@@ -331,7 +331,7 @@ connectOptions.setProperties(attributes);
 [[_connection_uri]]
 === 连接 URI
 
-除了使用 `MySQLConnectOptions` 数据对象进行配置外，我们还另外为您提供了一个使用连接URI进行配置的方法：
+除了使用 `MySQLConnectOptions` 数据对象进行配置外，我们还为您提供了另外一种使用连接URI进行配置的方法：
 
 [source,java]
 ----
