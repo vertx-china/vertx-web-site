@@ -764,7 +764,8 @@ client.query("SELECT * FROM users").collecting(collector).execute(ar -> {
 集合类处理不能保留 `link:../../apidocs/io/vertx/sqlclient/Row.html[Row]` 
 的引用，因为只有一个 Row 对象用于处理整个集合。
 
-Java `Collectors` 提供了许多有趣的预定义集合类，例如，您可以直接从行集中轻松创建一个字符串：
+Java `Collectors` 提供了许多有趣的预定义集合类，例如，
+您可以直接用 Row 中的集合轻松拼接成一个字符串：
 
 [source,java]
 ----
