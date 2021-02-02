@@ -834,7 +834,7 @@ Note: 目前尚不支持绑定OUT参数的预处理语句。
 == MySQL 导入本地文件
 
 该客户端支持处理 LOCAL INFILE 请求, 如果要将数据从本地文件加载到服务器，则可以使用语句
-`LOAD DATA LOCAL INFILE '<filename>' INTO TABLE <table>;`。 更多有关信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/load-data.html[MySQL Reference Manual].
+`LOAD DATA LOCAL INFILE '<filename>' INTO TABLE <table>;`。 更多有关信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/load-data.html[MySQL 参考手册].
 
 [[_authentication]]
 == 认证
