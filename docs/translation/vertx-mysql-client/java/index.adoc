@@ -392,7 +392,7 @@ client
   });
 ----
 
-更多有关信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/getting-unique-id.html[How to Get the Unique ID for the Last Inserted Row]。
+更多有关信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/getting-unique-id.html[如何获取最近一条插入记录的唯一ID]。
 
 include::connections.adoc[]
 
