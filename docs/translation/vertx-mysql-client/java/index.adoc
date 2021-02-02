@@ -267,7 +267,7 @@ pool.getConnection(ar -> {
 ==== 字符序和字符集
 
 响应式 MySQL 客户端支持配置字符序或字符集，并将它们映射到一个相关的 `java.nio.charset.Charset` 。
-您可以为一个连接指定字符集，例如
+您可以为数据库连接指定字符集，例如
 
 [source,java]
 ----
