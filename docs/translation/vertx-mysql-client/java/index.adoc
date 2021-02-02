@@ -324,7 +324,7 @@ connectOptions.setProperties(attributes);
 
 您可以配置 `useAffectedRows` 选项以决定是否在连接到服务器时设置标志 `CLIENT_FOUND_ROWS`。如果 `CLIENT_FOUND_ROWS` 标志被指定，则受影响的行计数是找到的行的数量，而不是受影响的行数。
 
-更多有关信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/mysql-affected-rows.html[MySQL Reference Manual]
+更多有关信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/mysql-affected-rows.html[MySQL 参考手册]
 
 [[_connection_uri]]
 === 连接 URI
