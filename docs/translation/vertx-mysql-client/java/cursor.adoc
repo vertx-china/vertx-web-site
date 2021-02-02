@@ -42,7 +42,6 @@ cursor.read(50, ar2 -> {
 });
 ----
 
-A stream API is also available for cursors, which can be more convenient, specially with the Rxified version.
 游标还可以使用流式API，这可以更加方便，尤其是在Rx化的版本中。
 
 [source,java]

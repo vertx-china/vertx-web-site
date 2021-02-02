@@ -207,9 +207,9 @@ dependencies {
 }
 ----
 
-NOTE: ARM64 的原生 `epoll` 支持也可以与分类器 `linux-aarch64` 一起添加。
+NOTE: ARM64 的原生 `epoll` 支持也可以与分类器（classifier） `linux-aarch64` 一起添加。
 
-NOTE: 如果您的团队中有 Mac 用户，在 `osx-x86_64` 上添加 `netty-transport-native-kqueue` 分类器。
+NOTE: 如果您的团队中有 Mac 用户，在 `osx-x86_64` 上添加 `netty-transport-native-kqueue` 分类器（classifier）。
 
 然后通过 `link:../../apidocs/io/vertx/mysqlclient/MySQLConnectOptions.html#setHost-java.lang.String-[MySQLConnectOptions#setHost]` 设置域套接字的路径：
 
@@ -232,7 +232,7 @@ MySQLPool client = MySQLPool.pool(connectOptions, poolOptions);
 MySQLPool client2 = MySQLPool.pool(vertx, connectOptions, poolOptions);
 ----
 
-有关 native transport 的详细信息，请参阅 [Vert.x documentation](https://vertx.io/docs/vertx-core/java/#_native_transports)。
+有关 native transport 的详细信息，请参阅 [Vert.x 文档](https://vertx.io/docs/vertx-core/java/#_native_transports)。
 
 [[_configuration]]
 == 配置
@@ -265,7 +265,7 @@ pool.getConnection(ar -> {
 ----
 
 [[_collations_and_character_sets]]
-==== 字符序和字符集
+==== 字符序（collations）和字符集（character sets）
 
 响应式 MySQL 客户端支持配置字符序或字符集，并将它们映射到一个相关的 `java.nio.charset.Charset` 。
 您可以为数据库连接指定字符集，例如
@@ -282,13 +282,13 @@ connectOptions.setCharset("utf8");
 
 `characterEncoding` 选项用于设置字符串（例如查询字符串和参数值）使用的 Java 字符集，默认使用 `UTF-8` 字符集；如果设置为 `null` ，则客户端将使用 Java 的默认字符集。
 
-您还可以为连接指定字符，例如
+您还可以为连接指定字符序，例如
 
 [source,java]
 ----
 MySQLConnectOptions connectOptions = new MySQLConnectOptions();
 
-// 将连接的字符集设置为 utf8_general_ci 来代替默认字符集 utf8mb4_general_ci
+// 将连接的字符序设置为 utf8_general_ci 来代替默认字符序 utf8mb4_general_ci
 // 设置字符序将覆盖charset选项
 connectOptions.setCharset("gbk");
 connectOptions.setCollation("utf8_general_ci");
@@ -923,12 +923,12 @@ MySQLConnection.connect(vertx, options, res -> {
 });
 ----
 
-更多详细信息，请参阅 http://vertx.io/docs/vertx-core/java/#ssl[Vert.x documentation].
+更多详细信息，请参阅 http://vertx.io/docs/vertx-core/java/#ssl[Vert.x 文档].
 
 [[_mysql_utility_command]]
 == MySQL 实用程序命令
 
-有时您希望使用 MySQL 实用程序命令，我们为此提供支持。有关更多信息，请参阅 https://dev.mysql.com/doc/dev/mysql-server/8.0.12/page_protocol_command_phase_utility.html[MySQL utility commands].
+有时您希望使用 MySQL 实用程序命令，我们为此提供支持。有关更多信息，请参阅 https://dev.mysql.com/doc/dev/mysql-server/8.0.12/page_protocol_command_phase_utility.html[MySQL 实用程序命令].
 
 [[_com_ping]]
 === COM_PING
