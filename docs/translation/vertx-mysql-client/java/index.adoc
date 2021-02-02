@@ -210,7 +210,7 @@ NOTE: ARM64 的原生 `epoll` 支持也可以与分类器 `linux-aarch64` 一起
 
 NOTE: 如果您的团队中有 Mac 用户，在 `osx-x86_64` 上添加 `netty-transport-native-kqueue` 分类器。
 
-然后在 `link:../../apidocs/io/vertx/mysqlclient/MySQLConnectOptions.html#setHost-java.lang.String-[MySQLConnectOptions#setHost]` 中设置域套接字的路径：
+然后通过 `link:../../apidocs/io/vertx/mysqlclient/MySQLConnectOptions.html#setHost-java.lang.String-[MySQLConnectOptions#setHost]` 设置域套接字的路径：
 
 [source,java]
 ----
