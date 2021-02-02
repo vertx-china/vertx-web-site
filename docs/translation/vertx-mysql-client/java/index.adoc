@@ -303,7 +303,7 @@ connectOptions.setCollation("utf8_general_ci");
 [[_connection_attributes]]
 ==== 连接属性
 
-还可以使用 `setProperties` 或 `addProperty` 方法配置连接属性。注意 `setProperties` 将覆盖默认客户端属性。
+还可以使用 `setProperties` 或 `addProperty` 方法配置连接属性。注意 `setProperties` 将覆盖客户端的默认属性。
 
 [source,java]
 ----
