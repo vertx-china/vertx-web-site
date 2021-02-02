@@ -57,7 +57,9 @@ pool.getConnection(res -> {
 });
 ----
 
-当数据库服务器报告当前事务失败时（例如，臭名昭著的 _current transaction is aborted, commands ignored until end of transaction block_），事务被回滚，并且 `link:../../apidocs/io/vertx/sqlclient/Transaction.html#completion--[completion]` Future 随着 `link:../../apidocs/io/vertx/sqlclient/TransactionRollbackException.html[TransactionRollbackException]` 失败：
+当数据库服务器报告当前事务失败时（例如，臭名昭著的 _current transaction is aborted, commands ignored until end of transaction block_），
+事务被回滚，此时 `link:../../apidocs/io/vertx/sqlclient/Transaction.html#completion--[completion]` Future 会失败，
+并返回 `link:../../apidocs/io/vertx/sqlclient/TransactionRollbackException.html[TransactionRollbackException]` 异常：
 
 [source,java]
 ----
