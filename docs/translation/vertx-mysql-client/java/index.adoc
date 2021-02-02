@@ -406,7 +406,7 @@ include::tracing.adoc[]
 [[_mysql_type_mapping]]
 == MySQL 类型映射
 
-当前客户端支持以下MySQL类型
+当前客户端支持以下 MySQL 类型
 
 * BOOL,BOOLEAN (`java.lang.Byte`)
 * TINYINT (`java.lang.Byte`)
