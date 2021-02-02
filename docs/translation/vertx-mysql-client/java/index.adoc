@@ -344,7 +344,7 @@ MySQLConnection.connect(vertx, connectionUri, res -> {
 });
 ----
 
-有关连接字符串格式的有关更多信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/connecting-using-uri-or-key-value-pairs.html#connecting-using-uri[MySQL Reference Manual]。
+有关连接字符串格式的有关更多信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/connecting-using-uri-or-key-value-pairs.html#connecting-using-uri[MySQL 参考手册]。
 
 目前，客户端支持连接 uri 中的以下参数关键字（关键字不区分大小写）：
 
