@@ -295,6 +295,7 @@ connectOptions.setCollation("utf8_general_ci");
 ----
 
 请注意，在数据对象上设置字符序将覆盖 *charset* 和 *characterEncoding* 选项。
+
 您可以执行 SQL `SHOW COLLATION;` 或 `SHOW CHARACTER SET;` 获取服务器支持的字符序和字符集。
 
 有关 MySQL 字符集和字符序的更多信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/charset.html[MySQL 参考手册]。
