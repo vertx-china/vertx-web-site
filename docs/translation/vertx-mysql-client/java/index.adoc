@@ -636,7 +636,7 @@ client
   });
 ----
 
-您可以像下面的Java枚举一样检索ENUM列：
+您可以将 ENUM 类型的列读取为 Java 的枚举，如以下代码：
 
 [source,java]
 ----
