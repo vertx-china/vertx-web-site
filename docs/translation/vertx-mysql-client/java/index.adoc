@@ -319,7 +319,7 @@ attributes.put("_client_version", "1.0.0");
 connectOptions.setProperties(attributes);
 ----
 
-有关连接属性的更多信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/performance-schema-connection-attribute-tables.html[MySQL Reference Manual]。
+有关连接属性的更多信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/performance-schema-connection-attribute-tables.html[MySQL 参考手册]。
 
 [[_useaffectedrows]]
 ==== 配置 `useAffectedRows`
