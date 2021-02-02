@@ -551,7 +551,7 @@ client
 });
 ----
 
-当您想要使用一个 `BOOLEAN` 参数值执行预处理语句时，您可以简单的添加  `java.lang.Boolean` 值到参数列表中即可。
+当您想要使用一个 `BOOLEAN` 参数值执行预处理语句时，只要简单地在参数列表中添加  `java.lang.Boolean` 值即可。
 
 [source,java]
 ----
