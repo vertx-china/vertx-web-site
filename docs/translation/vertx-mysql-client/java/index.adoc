@@ -899,7 +899,8 @@ MySQLConnectOptions options2 = new MySQLConnectOptions()
 [[_using_ssltls]]
 == 使用 SSL/TLS
 
-配置客户端使用SSL连接, 您可以像 Vert.x `NetClient` 一样配置 `link:../../apidocs/io/vertx/mysqlclient/MySQLConnectOptions.html[MySQLConnectOptions]` 。
+配置客户端使用SSL连接, 您可以像 Vert.x `NetClient` 一样配置
+`link:../../apidocs/io/vertx/mysqlclient/MySQLConnectOptions.html[MySQLConnectOptions]` 。
 所有 https://dev.mysql.com/doc/refman/8.0/en/connection-options.html#option_general_ssl-mode[SSL modes] 都被支持并且您能够配置 `sslmode`. 客户端默认在 `DISABLED` SSL 模式。
  `ssl` 参数仅作为设置 `sslmode` 的快捷方式存在。`setSsl(true)` 等价于 `setSslMode(VERIFY_CA)` ， `setSsl(false)` 等价于 `setSslMode(DISABLED)`
 [source,java]
