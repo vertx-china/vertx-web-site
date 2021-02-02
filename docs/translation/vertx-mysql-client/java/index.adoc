@@ -373,7 +373,7 @@ include::queries.adoc[]
 [[_mysql_last_insert_id]]
 == MySQL LAST_INSERT_ID
 
-如果在表中插入一条记录，则可以获得自动递增的值。
+往表中插入一条记录后，可以获得自增值。
 
 [source,java]
 ----
