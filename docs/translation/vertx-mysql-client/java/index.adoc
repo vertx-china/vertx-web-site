@@ -1089,7 +1089,9 @@ connection.setOption(MySQLSetOption.MYSQL_OPTION_MULTI_STATEMENTS_OFF, ar -> {
 
 您可以调整服务器系统变量  `max_prepared_stmt_count` ，但它具有上限值，因此您无法以这种方式摆脱错误。
 
-缓解这种情况的最佳方法是启用预处理语句缓存，因此可以重用具有相同 SQL 字符串的预处理语句，并且客户端不必为每个请求创建全新的预处理语句。执行语句后，预处理语句将自动关闭。这样，虽然无法完全消除，但达到极限的机会可以大大减少。
+缓解这种情况的最佳方法是启用预处理语句缓存，因此可以重用具有相同 SQL 字符串的预处理语句，并且客户端不必为每个请求创建全新的预处理语句。
+执行语句后，预处理语句将自动关闭。
+这样，虽然无法完全消除错误，但达到极限的机会可以大大减少。
 
 还可以通过接口 `SqlConnection#prepare` 创建 `PreparedStatement` 对象来手动管理预处理语句的生命周期，以便可以选择何时释放语句句柄，甚至使用 https://dev.mysql.com/doc/refman/8.0/en/sql-prepared-statements.html[SQL syntax prepared statement].
 
