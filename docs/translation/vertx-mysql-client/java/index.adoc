@@ -1048,7 +1048,7 @@ connection.setOption(MySQLSetOption.MYSQL_OPTION_MULTI_STATEMENTS_OFF, ar -> {
 2+| MySQL
 2+| MariaDB
 
-| 版本 | 支持 | 版本 | 支持
+| 版本 | 是否支持 | 版本 | 是否支持
 
 |`5.5`
 |&#10004;
