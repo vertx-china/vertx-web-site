@@ -132,7 +132,8 @@ MySQLPool client = MySQLPool.pool(vertx, connectOptions, poolOptions);
 pool.close();
 ----
 
-当您需要在同一连接上执行多个操作时，您需要使用 `link:../../apidocs/io/vertx/mysqlclient/MySQLConnection.html[connection]` 客户端 。
+当您需要在同一连接上执行多个操作时，您需要使用 
+`link:../../apidocs/io/vertx/mysqlclient/MySQLConnection.html[connection]` 客户端 。
 
 您可以轻松地从连接池中获取一个：
 
