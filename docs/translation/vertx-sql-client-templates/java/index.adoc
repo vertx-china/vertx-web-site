@@ -110,9 +110,10 @@ SqlTemplate
 ----
 
 [[_anemic_json_row_mapping]]
-== Anemic JSON 映射
+== JSON行映射
+（译者注：原文为 anemic json row mapping，即anemic mapping，指单纯的属性映射，无行为）
 
-Anemic JSON 行映射是一个简单的模板映射，它用 `link:../../apidocs/io/vertx/sqlclient/Row.html#toJson--[toJson]` 来在数据行和JSON对象之间进行映射。
+JSON 行映射是一个简单的模板映射，它用 `link:../../apidocs/io/vertx/sqlclient/Row.html#toJson--[toJson]` 来在数据行和JSON对象之间进行映射。
 
 [source,java]
 ----
@@ -178,9 +179,10 @@ SqlTemplate
 ----
 
 [[_anemic_json_parameters_mapping]]
-== Anemic JSON 参数映射
+== JSON 参数映射
+（译者注：原文为 anemic json parameters mapping，即anemic mapping，指单纯的属性映射，无行为）
 
-Anemic JSON 参数映射是一个在模板参数和JSON对象之间的简单映射：
+JSON 参数映射是一个在模板参数和JSON对象之间的简单映射：
 
 [source,java]
 ----
