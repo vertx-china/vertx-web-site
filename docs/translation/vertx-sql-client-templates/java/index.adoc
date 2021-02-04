@@ -348,11 +348,12 @@ class UserDataObject {
 }
 ----
 
+[[_code_generation]]
 === 代码生成
 
 任何被 `link:../../apidocs/io/vertx/sqlclient/templates/annotations/RowMapped.html[@RowMapped]` 或 `link:../../apidocs/io/vertx/sqlclient/templates/annotations/ParametersMapped.html[@ParametersMapped]` 注解修饰的数据对象将触发相关映射类的生成。
 
-_codegen_ 注解执行器在编译期间生成这些类，这是Java编译器的特性，所以 _不能有额外步骤_ ，这仅仅需要在构建时保证配置的正确性：
+_codegen_ 注解执行器在编译期间生成这些类，这是Java编译器的特性，所以 _不需要额外步骤_ ，这仅仅需要在构建时保证配置的正确性：
 
 构建时添加 `io.vertx:vertx-codegen:processor` 和 `io.vertx:vertx-sql-client-templates`
 依赖：
