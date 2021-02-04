@@ -86,8 +86,8 @@ insert(docs, "vertx-web-api-service",
   {
     id: "vertx-web-openapi",
     name: "Web OpenAPI",
-    description: `Extends Vert.x Web to support OpenAPI 3, bringing a simple
-      interface for building web routers that conform to OpenAPI contracts.`,
+    description: `继承 Vert.x Web 以支持 OpenAPI 3 ，
+    提供一个简便的接口用来创建符合OpenAPI接口协议的web路由器。`,
     category: "web",
     href: "/vertx-web-openapi/java/",
     repository: "https://github.com/vert-x3/vertx-web",
