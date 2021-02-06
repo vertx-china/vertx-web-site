@@ -3,8 +3,8 @@
 
 Vert.x-redis 是与 Vert.x 一起使用的 Redis 客户端。
 
-该模块允许在 Redis 中保存、检索、搜索和删除数据。Redis 是一个开源的、先进的键值存储数据库。
-它通常被称为数据结构服务器，因为键可以包含字符串、散列、列表、集合和排序集合。
+该模块允许在 Redis 中保存、查询、搜索和删除数据。Redis 是一个开源的、先进的键值存储数据库。
+它通常被称为数据结构服务器，因为 Reids 的键可以存储字符串、散列、列表、集合和排序集合。
 要使用此模块，您的网络上必须运行一个 Redis 服务器实例。
 
 Redis 有着丰富的 API，可以分成以下几组：
@@ -24,6 +24,7 @@ Redis 有着丰富的 API，可以分成以下几组：
 * 事务 Transactions - 处理事务生命周期的命令。
 * 流 Streams - 处理流的命令。
 
+[[_using_vert_x_redis]]
 == 使用 Vert.x-Redis
 
 要使用 Vert.x Redis 客户端，请将以下依赖项添加到项目的 _dependencies_ 中：
@@ -46,6 +47,7 @@ Redis 有着丰富的 API，可以分成以下几组：
 compile 'io.vertx:vertx-redis-client:4.0.0'
 ----
 
+[[_connecting_to_redis]]
 == 连接到 Redis
 
 Redis 客户端可以在三种模式下操作:
@@ -64,7 +66,7 @@ Redis 客户端可以在三种模式下操作:
 * `role`: 默认为 `MASTER`
 * `useReplicas`: 默认为 `NEVER`
 
-用以下代码获得连接
+用以下代码获得连接：
 
 [source,java]
 ----
@@ -75,7 +77,8 @@ Redis.createClient(vertx)
   });
 ----
 
-配置中存在 `password` 或者 `select` 数据库，在连接时命令会自动执行。
+配置中包含 `password` 且/或 `select` 数据库，
+在成功建立连接后，这两个命令会自动执行。
 
 [source,java]
 ----
@@ -89,6 +92,7 @@ Redis.createClient(
   });
 ----
 
+[[_connection_string]]
 == 连接字符串
 
 客户端会识别表达式上的地址：
@@ -105,6 +109,7 @@ unix://[:password@]/domain/docker.sock[?select=db-number]
 
 当指定密码或数据库时，这些命令会在连接启动时执行。
 
+[[_running_commands]]
 == 执行命令
 
 Redis 客户端已连接到服务器，现在可以使用此模块执行所有命令。
@@ -122,8 +127,8 @@ redis
   });
 ----
 
-返回的对象是泛型类型，它允许从基本的 redis 类型转换为您的语言类型。
-例如，如果您的 response 类型为`INTEGER`，则可以通过任意数值基元类型 `int`、`long` 获取该值。
+返回的对象是泛型类型，它允许从基本的 redis 类型转换为您的编程语言类型。
+例如，如果返回对象类型为`INTEGER`，则可以通过任意数值基本类型获取该值，如 `int`、`long` 等等。
 
 或者，可以执行更复杂的任务，例如将返回的值作为迭代器处理：
 
@@ -136,6 +141,7 @@ if (response.type() == ResponseType.MULTI) {
 }
 ----
 
+[[_high_availability_mode]]
 == 高可用模式
 
 在高可用性模式下使用，创建连接的过程非常相似：
@@ -161,8 +167,10 @@ Redis.createClient(
 ----
 
 需要注意的是，在此模式下，将建立额外连接到服务器。
-客户端将在后台监听哨兵的事件。当哨兵通知我们切换了主机时，就会向客户端发送一个异常，您可以决定下一步做什么。
+客户端将在后台监听哨兵的事件。当哨兵通知我们切换了主机时，
+就会向客户端发送一个异常，您可以决定下一步做什么。
 
+[[_cluster_mode]]
 == 集群模式
 
 在集群模式下使用，创建连接的过程也非常相似：
@@ -178,14 +186,15 @@ final RedisOptions options = new RedisOptions()
   .addConnectionString("redis://127.0.0.1:7005");
 ----
 
-在这种情况下，配置需要知道群集的一个或多个成员。
-此列表用于向群集请求当前配置，这意味着如果列出的任何成员不可用，则将跳过该成员。
+在这种情况下，配置需要知道集群的一个或多个成员。
+此成员列表用于向集群请求当前配置，这意味着列表中不可用的成员将被跳过。
 
-在群集模式下将建立到每个节点的连接。
+在集群模式下将建立到每个节点的连接。
 在执行命令时需要特别小心，建议阅读Redis手册以了解集群如何工作。
-在此模式下操作的客户端会尽量识别执行的命令使用哪个槽，以便在正确的节点上执行它。
+在此模式下操作的客户端会尽量识别执行的命令使用哪个槽（slot），以便在正确的节点上执行它。
 如果出现无法识别的情况，最好在随机节点上运行该命令。
 
+[[_pubsub_mode]]
 == 发布/订阅模式
 
 Redis 支持队列和发布/订阅模式。
@@ -217,6 +226,7 @@ redis.send(Request.cmd(Command.PUBLISH).arg("channel1").arg("Hello World!"))
 注意: `SUBSCRIBE`, `UNSUBSCRIBE`, `PSUBSCRIBE`, `PUNSUBSCRIBE` 这些命令返回值是 `void`.
 这意味着成功的结果是 `null`，而不是响应的实例。所有消息都通过客户端上的 handler 进行路由。
 
+[[_domain_sockets]]
 == 域套接字
 
 大部分例子展示连接到 TCP 套接字，但也可以用 Redis 连接到 UNIX 域套接字。
@@ -232,19 +242,20 @@ Redis.createClient(vertx, "unix:///tmp/redis.sock")
   });
 ----
 
-请注意，高可用模式和群集模式报告的服务器地址始终位于 TCP 地址上，而不是域套接字上。
+请注意，高可用模式和集群模式报告的服务器地址始终位于 TCP 地址上，而不是域套接字上。
 这是 Redis 的原因而不是客户端的原因，因此混合使用是不行的。
 
+[[_connection_pooling]]
 == 连接池
 
 所有的客户端都有一个连接池。默认配置连接池大小为 1，这意味着操作和单个连接一样。连接池有四个可调项：
 
 * `maxPoolSize` 最大连接数 (默认为 `6`)
-* `maxPoolWaiting` 在队列上获取连接的最大等待处理程序数 (默认值为`24`)
-* `poolCleanerInterval` 清除连接的时间间隔 默认为`-1`(禁用)
-* `poolRecycleTimeout` 保持连接池池中打开的连接等待然后关闭的超时时间 (默认 `15_000`)
+* `maxPoolWaiting` 在队列上获取连接的最大等待处理程序数 (默认值为 `24`)
+* `poolCleanerInterval` 清除连接的时间间隔 默认为 `-1` (禁用)
+* `poolRecycleTimeout` 连接池中打开的连接保持等待到关闭的超时时间 (默认 `15_000`)
 
-连接池对于避免自定义连接管理非常有用，例如，您可以只使用：
+连接池非常有用，无需自己管理连接，例如，您只需要：
 
 [source,java]
 ----
