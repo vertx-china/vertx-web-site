@@ -9,7 +9,7 @@ Vert.x-redis 是与 Vert.x 一起使用的 Redis 客户端。
 
 Redis 有着丰富的 API，可以分成以下几组：
 
-* 集群 Cluster - 与集群管理相关的命令, 使用这些命令需要注意 redis server 版本 &gt;=3.0.0 。
+* 集群 Cluster - 与集群管理相关的命令, 使用这些命令需要注意 redis server 版本 >=3.0.0 。
 * 连接 Connection - 切换数据库，连接，断开连接以及身份认证的命令。
 * 哈希 Hashes - 对哈希进行操作的命令。
 * 基数统计 HyperLogLog - Commands to approximating the number of distinct elements in a multiset, a HyperLogLog.
@@ -290,6 +290,7 @@ Redis.createClient(
 注意：连接池不支持 `SUBSCRIBE`, `UNSUBSCRIBE`, `PSUBSCRIBE`, `PUNSUBSCRIBE` 这些命令。
 因为这些命令将修改连接的操作方式，而且连接不能重复使用。
 
+[[_implementing_reconnect_on_error]]
 == 出错时重连
 
 虽然连接池非常有用，但为了提高性能，连接不应自动管理，而应该由您控制。
