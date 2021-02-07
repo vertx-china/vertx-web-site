@@ -169,7 +169,7 @@ routerBuilder.securityHandler("jwt_auth",
 调试/测试时，您可以用 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilderOptions.html#setRequireSecurityHandlers-boolean-[setRequireSecurityHandlers]` 来禁用这个检验。
 
 [[_not_implemented_error]]
-== 未实现错误
+== 未实现的错误
 
 如果未指定处理器，那么Router builder会为一个operation自动挂载一个默认的处理器。
 这个默认的处理器会让 routing context 处于  405 `Method Not Allowed` 或者 501 `Not Implemented` 错误状态。
