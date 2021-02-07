@@ -311,7 +311,7 @@ public class LocalDateTimePojo {
 
 SQL Client Templates 组件可为Vert.x数据对象生成映射方法。
 
-一个Vert.x数据对象是一个 `@DataObject` 注解修饰过的普通的Java Bean。
+一个Vert.x数据对象是一个被 `@DataObject` 注解修饰的普通的Java Bean。
 
 [source,java]
 ----
