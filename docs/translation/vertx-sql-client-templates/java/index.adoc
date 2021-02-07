@@ -634,7 +634,7 @@ class UserDataObject {
 Vert.x提供了下列大小写模式：
 
 - `link:../../apidocs/io/vertx/codegen/format/CamelCase.html[CamelCase]` : `FirstName`
-- `link:../../apidocs/io/vertx/codegen/format/LowerCamelCase.html[LowerCamelCase]` : `firstName` - 类似 camel case 但是开头字母小写，这是默认方式。
+- `link:../../apidocs/io/vertx/codegen/format/LowerCamelCase.html[LowerCamelCase]` : `firstName` - 类似驼峰命名法但是小写字母开头，这是默认方式。
 - `link:../../apidocs/io/vertx/codegen/format/SnakeCase.html[SnakeCase]` : `first_name`
 - `link:../../apidocs/io/vertx/codegen/format/KebabCase.html[KebabCase]` : `first-name`
 - `link:../../apidocs/io/vertx/codegen/format/QualifiedCase.html[QualifiedCase]` : `first.name`
