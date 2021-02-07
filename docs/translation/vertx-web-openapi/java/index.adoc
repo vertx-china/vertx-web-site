@@ -208,7 +208,7 @@ routerBuilder
 ----
 
 [[_body_handler]]
-==请求体处理器
+== 请求体处理器
 
 Router builder自动挂载一个 `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]` 用以管理请求体。
 您可以用 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html#bodyHandler-io.vertx.ext.web.handler.BodyHandler-[bodyHandler]` 来配置 `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]` 对象（例如，更换上传目录）
