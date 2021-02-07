@@ -15,7 +15,7 @@ Vert.x OpenAPI 可以做到如下事情：
 [[_using_vert_x_openapi]]
 == 使用 Vert.x OpenAPI
 
-要使用Vert.x OpenAPI，您需要添加如下依赖
+要使用Vert.x OpenAPI，您需要添加如下依赖：
 
 * Maven (在您的 `pom.xml` 文件)：
 
