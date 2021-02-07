@@ -9,7 +9,7 @@ Vert.x OpenAPI 可以做到如下事情：
 * 根据您的约束来生成路由器（带有正确的路径以及方法）
 * 提供基于您接口协议的请求解析和校验的功能，该功能用 https://vertx.io/docs/vertx-web-validation/java/[Vert.x Web Validation] 实现。
 * 挂载必要的安全处理器
-* 在 OpenAPI风格和Vert.x风格之间路径的转换
+* 在 OpenAPI 风格和 Vert.x 风格之间转换路径
 * 用 https://vertx.io/docs/vertx-web-api-service/java/[Vert.x Web API Service] 来将请求路由到事件总线
 
 [[_using_vert_x_openapi]]
