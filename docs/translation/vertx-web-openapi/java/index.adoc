@@ -115,7 +115,7 @@ routerBuilder.setOptions(new RouterBuilderOptions());
 使用 `link:../../apidocs/io/vertx/ext/web/openapi/Operation.html#handler-io.vertx.core.Handler-[handler]` 为一个operation来挂载处理器，
 使用 `link:../../apidocs/io/vertx/ext/web/openapi/Operation.html#failureHandler-io.vertx.core.Handler-[failureHandler]` 来挂载失败处理器。
 
-您可以 ** 在一个operation当中添加多个处理器 **，而不覆盖已经存在的处理器。
+您可以 **在一个 operation 当中添加多个处理器** ，而不覆盖已经存在的处理器。
 
 例如：
 
