@@ -220,7 +220,7 @@ Router builder自动挂载一个 `link:../../apidocs/io/vertx/ext/web/handler/Bo
 
 * 如果参数中没有编码相关的字段：
 - 如果参数存在 `type: string` 和 `format: base64` ，或者存在 `format: binary` ，那么它就是 content-type请求头为 `application/octet-stream` 的一个请求。
-- 否则 就是一个表单请求
+- 否则是一个表单请求
 * 如果参数存在编码相关字段，则是一个文件上传的请求。
 
 对于表单属性，他们被解析、转换为Json、然后校验，
