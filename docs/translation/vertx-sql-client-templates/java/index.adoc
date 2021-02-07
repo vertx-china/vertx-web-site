@@ -113,7 +113,7 @@ SqlTemplate
 == JSON行映射
 （译者注：原文为 anemic json row mapping，即anemic mapping，指单纯的属性映射，无行为）
 
-JSON 行映射是一个简单的模板映射，它用 `link:../../apidocs/io/vertx/sqlclient/Row.html#toJson--[toJson]` 来在数据行和JSON对象之间进行映射。
+JSON 行映射是一个简单的模板映射，它用 `link:../../apidocs/io/vertx/sqlclient/Row.html#toJson--[toJson]` 将数据行映射成JSON对象。
 
 [source,java]
 ----
