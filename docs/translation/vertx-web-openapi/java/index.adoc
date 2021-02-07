@@ -41,7 +41,7 @@ dependencies {
 
 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html[RouterBuilder]` 是这个模块的主要元素，它提供了用来挂载请求处理器的接口，并且生成最终的 `link:../../apidocs/io/vertx/ext/web/Router.html[Router]`
 
-要使用 Vert.x Web OpenAPI ，您必须用 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html#create-io.vertx.core.Vertx-java.lang.String-io.vertx.core.Handler-[RouterBuilder.create]` 方法和您的接口协议来实例化 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html[RouterBuilder]`
+要使用 Vert.x Web OpenAPI ，您必须用 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html#create-io.vertx.core.Vertx-java.lang.String-io.vertx.core.Handler-[RouterBuilder.create]` 方法并传入您的接口协议来实例化 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html[RouterBuilder]`
 
 例如从本地文件系统来加载一个约束：
 
