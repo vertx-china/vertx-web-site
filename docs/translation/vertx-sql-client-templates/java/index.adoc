@@ -444,7 +444,7 @@ class UserDataObject {
 ----
 
 默认情况下，每一列的名称与数据对象属性的名称相对应，例如 `userName` 属性会
-与 `userName` 列绑定。
+绑定 `userName` 列。
 
 拜 `link:../../apidocs/io/vertx/sqlclient/templates/annotations/Column.html[@Column]` 注解所赐，您可以用自定义名称。
 
