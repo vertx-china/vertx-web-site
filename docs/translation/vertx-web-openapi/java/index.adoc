@@ -109,7 +109,7 @@ routerBuilder.setOptions(new RouterBuilderOptions());
 [[_access_to_operations]]
 == 获取operation
 
-为了获取协议中定义的 https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#operationObject[Operation] ，您需要用 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html#operation-java.lang.String-[operation]` 。
+为了获取协议中定义的 https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#operationObject[Operation] ，您需要用 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html#operation-java.lang.String-[operation]` 方法。
 这个方法返回了一个 `link:../../apidocs/io/vertx/ext/web/openapi/Operation.html[Operation]` 对象，您可以既可以用它来获取模型，又可以用来注册处理器。
 
 使用 `link:../../apidocs/io/vertx/ext/web/openapi/Operation.html#handler-io.vertx.core.Handler-[handler]` 为一个operation来挂载处理器，
