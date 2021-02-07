@@ -77,7 +77,7 @@ RouterBuilder.create(
 });
 ----
 
-您可以配置 `link:../../apidocs/io/vertx/ext/web/openapi/OpenAPILoaderOptions.html[OpenAPILoaderOptions]` 用以获取私有的远程约束：
+您可以通过配置 `link:../../apidocs/io/vertx/ext/web/openapi/OpenAPILoaderOptions.html[OpenAPILoaderOptions]` 以获取私有的远程约束：
 
 [source,java]
 ----
