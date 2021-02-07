@@ -165,7 +165,6 @@ routerBuilder.securityHandler("jwt_auth",
 当您生成 `link:../../apidocs/io/vertx/ext/web/Router.html[Router]` 之后，router builder会解析operation所必须的安全约束。
 如果一个operation所必须的 `AuthenticationHandler` 缺失，则这个过程会失败。
 
-
 调试/测试时，您可以用 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilderOptions.html#setRequireSecurityHandlers-boolean-[setRequireSecurityHandlers]` 来禁用这个检验。
 
 [[_not_implemented_error]]
