@@ -226,7 +226,7 @@ dependencies {
 }
 ----
 
-行映射是通过用每行key/value pair来创建 `JsonObject` 实现的，然后
+行映射是通过用键值对（key/value pair）来创建 `JsonObject` 实现的，然后
 调用 `link:../../apidocs/io/vertx/core/json/JsonObject.html#mapTo-java.lang.Class-[mapTo]` 来将它映射为任何Java类。
 
 [source,java]
