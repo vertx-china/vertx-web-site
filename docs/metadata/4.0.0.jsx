@@ -197,7 +197,7 @@ insert(docs, "vertx-mongo-client",
   {
     id: "vertx-sql-client-templates",
     name: "SQL Client Templates",
-    description: `一个轻量级的库，旨在增强SQL查询
+    description: `一个轻量级的库，
     和数据的处理`,
     category: "databases",
     href: "/vertx-sql-client-templates/java/",
