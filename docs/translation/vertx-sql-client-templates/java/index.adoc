@@ -133,7 +133,7 @@ SqlTemplate
 
 模板默认接收一个 `Map<String, Object>` 作为输入参数。
 
-您可以提供一个自定义的Mapper：
+您可以提供一个自定义的映射（Mapper）：
 
 [source,java]
 ----
