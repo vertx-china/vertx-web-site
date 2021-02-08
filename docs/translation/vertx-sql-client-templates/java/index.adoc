@@ -71,7 +71,7 @@ SqlTemplate
 [[_template_syntax]]
 == 模板语法
 
-模板语法使用 `#{XXX}` 的语法（ `{XXX}` 是一个有效的 https://docs.oracle.com/javase/specs/jls/se8/html/jls-3.html#jls-3.8[java identifier] 字符串）
+模板语法使用 `#{XXX}` 的语法，其中 `{XXX}` 是一个有效的 https://docs.oracle.com/javase/specs/jls/se8/html/jls-3.html#jls-3.8[java identifier] 字符串
 
 您可以用反斜杠（`\`）来转义 `#` 字符，例如 `\#{foo}` 会被解析成 `#{foo}` 字符串，而不是名为 `foo` 的参数。
 
