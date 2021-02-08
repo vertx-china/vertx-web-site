@@ -205,7 +205,7 @@ SqlTemplate
 
 您可以用Jackson的数据绑定功能来实现映射。
 
-您需要添加Jackson数据绑定依赖：
+您需要添加 jackson-databind 依赖：
 
 * Maven (在您的 `pom.xml` 文件):
 
