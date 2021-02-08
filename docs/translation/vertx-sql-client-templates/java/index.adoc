@@ -32,7 +32,7 @@ dependencies {
 
 以下是 SQL template 的最简易的使用方式。
 
-一个 SQL template 接收 _被命名的_ 参数，因此，默认情况下，它会接收一个map作为参数载体，而非接收元组（tuple）作为参数。
+一个 SQL template 接收 _已命名的_ 参数，因此，默认情况下，它会接收一个map作为参数载体，而非接收元组（tuple）作为参数。
 
 一个SQL template 默认情况下生成一个类似 `PreparedQuery` 的 `RowSet<Row>` 。
 实际上这个template是 `PreparedQuery` 的轻量级封装。
