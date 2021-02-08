@@ -589,7 +589,7 @@ class UserDataObject {
 }
 ----
 
-您可以用注解修饰 属性、getter、setter方法。
+您可以用注解修饰属性、getter、setter方法。
 
 生成的映射器可以用来做参数映射，正如 <<params_mapping_with_custom_mapper,parameter mapping chapter>> 所示
 
