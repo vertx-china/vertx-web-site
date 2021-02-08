@@ -295,7 +295,7 @@ ObjectMapper mapper = io.vertx.core.json.jackson.DatabindCodec.mapper();
 mapper.registerModule(new JavaTimeModule());
 ----
 
-您可以用 `java.time` 包中的类型 例如 `LocalDateTime` ：
+您可以用 `java.time` 包中的类型，例如 `LocalDateTime` ：
 
 [source,java]
 ----
