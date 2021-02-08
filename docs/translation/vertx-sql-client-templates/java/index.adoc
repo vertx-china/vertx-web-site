@@ -389,7 +389,8 @@ IDE都会对 annotation processors 提供支持
 codegen `processor` classifier 在jar中添加服务代理注解执行器的自动配置，
 这是通过 `META-INF/services` 机制实现的。
 
-按您所需，也可以用普通jar包，但是您需要额外声明注解执行器。maven示例：
+如果需要，也可以用普通jar包，但是您需要额外声明注解执行器。
+Maven 示例：
 
 [source,xml]
 ----
