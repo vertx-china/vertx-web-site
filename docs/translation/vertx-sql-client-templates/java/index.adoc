@@ -131,7 +131,7 @@ SqlTemplate
 [[_parameters_mapping]]
 == 参数映射
 
-模板接收一个 `Map<String, Object>` 作为默认输入参数。
+模板默认接收一个 `Map<String, Object>` 作为输入参数。
 
 您可以提供一个自定义的Mapper：
 
