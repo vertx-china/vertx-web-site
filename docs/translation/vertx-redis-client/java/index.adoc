@@ -4,7 +4,7 @@
 Vert.x-redis 是与 Vert.x 一起使用的 Redis 客户端。
 
 该模块允许在 Redis 中保存、查询、搜索和删除数据。Redis 是一个开源的、先进的键值存储数据库。
-它通常被称为数据结构服务器，因为 Reids 的键可以存储字符串、散列、列表、集合和排序集合。
+它通常被称为数据结构服务器，因为 Redis 的键可以存储字符串、散列、列表、集合和排序集合。
 要使用此模块，您的网络上必须运行一个 Redis 服务器实例。
 
 Redis 有着丰富的 API，可以分成以下几组：
@@ -12,7 +12,7 @@ Redis 有着丰富的 API，可以分成以下几组：
 * 集群 Cluster - 与集群管理相关的命令, 使用这些命令需要注意 redis server 版本 >=3.0.0 。
 * 连接 Connection - 切换数据库，连接，断开连接以及身份认证的命令。
 * 哈希 Hashes - 对哈希进行操作的命令。
-* 基数统计 HyperLogLog - Commands to approximating the number of distinct elements in a multiset, a HyperLogLog.
+* 基数统计 HyperLogLog - 对可重复集合中统计不重复元素的命令。
 * 键 Keys - 使用 key 相关的命令。
 * 列表 List - 使用 list 相关的命令。
 * 发布/订阅 Pub/Sub - 创建队列和发布/订阅客户端的命令。
@@ -84,7 +84,8 @@ Redis.createClient(vertx)
 ----
 Redis.createClient(
   vertx,
-  // 客户端处理 REDIS URLs.
+  // 客户端处理 REDIS URLs。
+  // 规范的数据库URL，密码是 URL 授权的密码字段。
   "redis://:abracadabra@localhost:6379/1")
   .connect()
   .onSuccess(conn -> {
@@ -113,7 +114,7 @@ unix://[:password@]/domain/docker.sock[?select=db-number]
 == 执行命令
 
 Redis 客户端已连接到服务器，现在可以使用此模块执行所有命令。
-例如，该模块提供了一个干净的 API 来执行命令，而不需要自己手写命令。
+例如，该模块提供了一个简洁的 API 来执行命令，而不需要自己手写命令。
 如果想要获取键的值，可以这样做：
 
 [source,java]
@@ -230,8 +231,6 @@ redis.send(Request.cmd(Command.PUBLISH).arg("channel1").arg("Hello World!"))
 == 域套接字
 
 大部分例子展示连接到 TCP 套接字，但也可以用 Redis 连接到 UNIX 域套接字。
-Most of the examples shown connecting to a TCP sockets, however it is also possible to use Redis connecting to a UNIX
-domain docket:
 
 [source,java]
 ----
@@ -266,10 +265,10 @@ Redis.createClient(vertx, "redis://localhost:7006")
   });
 ----
 
-需要注意的是，没有获取或返回任何连接都是由连接池处理的。
-但是，当超过1个并发请求尝试从连接池中获取连接时，可能会出现一些可伸缩性问题。
+需要注意的是，连接不需要手动获取或者归还，所有连接都由连接池处理。
+但是超过 1 个尝试从连接池中获取连接的并发请求可能会出现一些可伸缩性问题。
 为了克服这个问题，我们需要对连接池进行调优。
-常见的配置是将连接池的最大大小设置为可用CPU核心数，并允许请求从连接池中获取连接以进行排队：
+常见的配置是将连接池的最大大小设置为可用CPU核心数，并允许排队从连接池里面获取连接。
 
 [source,java]
 ----
@@ -307,8 +306,6 @@ Redis.createClient(
 
 为了给用户充分的灵活性，我们决定不应由客户端执行。
 但是，对于超时的简单重新连接可以按如下方式实现：
-In order to give the user full flexibility, this decision should not be performed by the client. However a simple
-reconnect with backoff timeout could be implemented as follows:
 
 [source,java]
 ----
@@ -367,7 +364,7 @@ class RedisVerticle extends AbstractVerticle {
 }
 ----
 
-在本例中，客户端对象将在重新连接时被替换，应用程序将重试最多16次，回退时间最长可达1280ms。
-通过丢弃客户端，我们可以确保所有旧的飞行响应都会丢失，而所有新的响应都会在新的连接上。
+在本例中，客户端对象将在重新连接时被替换，应用程序将重试最多 16 次，回退时间最长可达 1280 ms。
+通过弃用旧客户端，我们可以确保所有没有处理的响应都被抛弃。
 
 需要注意，重新连接将创建一个新的连接对象，因此不会每次都缓存和执行这些对象的引用。
