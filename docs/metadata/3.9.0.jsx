@@ -298,7 +298,7 @@ const entries = [
   {
     id: "vertx-config",
     name: "配置",
-    description: "一个用于配置Vert.x应用的可扩展方式",
+    description: "一种用于配置Vert.x应用的可扩展方式。",
     category: "microservices",
     href: "/vertx-config/java/",
     repository: "https://github.com/vert-x3/vertx-config",
