@@ -26,7 +26,7 @@ git配置中心是对 Vert.x Configuration Retriever 的扩展，用于
 </dependency>
 ----
 
-* Gradle (在您的 `build.gradle` 文件):
+* Gradle（在您的 `build.gradle` 文件）：
 
 [source,groovy,subs="+attributes"]
 ----
