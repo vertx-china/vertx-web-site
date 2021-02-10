@@ -1,14 +1,16 @@
-=== Redis Configuration Store
+[[_redis_configuration_store]]
+=== Redis配置中心
 
-The Redis Configuration Store extends the Vert.x Configuration Retriever and provides the
-way to retrieve configuration from a Redis server.
+Reids配置中心扩展了 Vert.x Configuration Retriever 并
+提供了从Redis服务获取配置的方法。
 
-==== Using the Redis Configuration Store
+[[_using_the_redis_configuration_store]]
+=== 使用Redis配置中心
 
-To use the Redis Configuration Store, add the following dependency to the
-_dependencies_ section of your build descriptor:
+要使用Redis配置中心
+添加如下依赖：
 
-* Maven (in your `pom.xml`):
+* Maven (在您的 `pom.xml` 文件):
 
 [source,xml,subs="+attributes"]
 ----
@@ -24,7 +26,7 @@ _dependencies_ section of your build descriptor:
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle (在您的 `build.gradle` 文件):
 
 [source,groovy,subs="+attributes"]
 ----
@@ -32,10 +34,11 @@ compile 'io.vertx:vertx-config:4.0.0'
 compile 'io.vertx:vertx-config-redis:4.0.0'
 ----
 
-==== Configuring the store
+[[_configuring_the_store]]
+== 设置配置中心
 
-Once added to your classpath or dependencies, you need to configure the
-`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` to use this store:
+将该库加入classpath或者项目依赖后，您需要配置
+`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` 来使用这个配置中心：
 
 [source, java]
 ----
@@ -51,11 +54,11 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
     new ConfigRetrieverOptions().addStore(store));
 ----
 
-The store configuration is used to create an instance of
-`link:../../apidocs/io/vertx/redis/client/Redis.html[Redis]`. check the documentation of the Vert.x Redis Client
-for further details.
+配置中心的配置用于创建 `link:../../apidocs/io/vertx/redis/client/Redis.html[Redis]` 对象。
+更多细节请查阅
+Vert.x Redis Client文档
 
-In addition, you can set the `key` instructing the store in which _field_ the configuration
-is stored. `configuration` is used by default.
+另外，您可以设置 `key` 属性来指示配置中心中的某一 _field_ ，
+默认为 `configuration` 属性。
 
-The created Redis client retrieves the configuration using the `HGETALL` configuration.
+Redis客户端使用 `HGETALL` 配置项来获取配置。

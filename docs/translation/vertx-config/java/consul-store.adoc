@@ -1,12 +1,14 @@
-=== Consul Configuration Store
+[[_consul_configuration_store]]
+=== Consul 配置中心
 
-The Consul Configuration Store extends the Vert.x Configuration Retriever and provides the
-way to retrieve configuration from a https://www.consul.io[Consul].
+Consul配置中心扩展了 Vert.x Configuration Retriever 并
+提供了从 https://www.consul.io[Consul] 获取配置的方法。
 
-==== Using the Consul Configuration Store
+[[_using_the_consul_configuration_store]]
+==== 使用Consul配置中心
 
-To use the Consul Configuration Store, add the following dependency to the
-_dependencies_ section of your build descriptor:
+要使用Consul配置中心
+则添加如下依赖：
 
 * Maven (in your `pom.xml`):
 
@@ -32,10 +34,10 @@ compile 'io.vertx:vertx-config:4.0.0'
 compile 'io.vertx:vertx-config-consul:4.0.0'
 ----
 
-==== Configuring the store
+==== 设置配置中心
 
-Once added to your classpath or dependencies, you need to configure the
-`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` to use this store:
+将该库加入classpath或者项目依赖后，您需要配置
+`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` 来使用这个配置中心：
 
 [source, java]
 ----
@@ -52,11 +54,11 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
     new ConfigRetrieverOptions().addStore(store));
 ----
 
-The store configuration is used to create an instance of
-`link:../../apidocs/io/vertx/ext/consul/ConsulClient.html[ConsulClient]`. Check the documentation of the Vert.x Consul Client
-for further details. And this is the parameters specific to the Consul Configuration Store:
+这个配置用来创建
+`link:../../apidocs/io/vertx/ext/consul/ConsulClient.html[ConsulClient]` 对象。更多详细信息请查阅Vert.x Consul Client文档。
+以下为指定Consul配置中心所需的参数：
 
-`prefix`:: A prefix that will not be taken into account when building the configuration tree. Defaults to empty.
-`delimiter`:: Symbol that used to split keys in the Consul storage to obtain levels in the configuration tree. Defaults to "/".
-`raw-data`:: If `raw-data` is `true` no attempts to convert values is made, and you'll be able to get raw values using
- `config.getString(key)`. Defaults to true.
+`prefix`:: 构建配置树时需要被忽略的前缀，默认为空。
+`delimiter`:: 用来分割Consul中的key的分隔符，用以维护配置树中的级别。默认为 "/"。
+`raw-data`:: 如果 `raw-data` 为 `true` ，则值不会被转换，并且您可以
+用 `config.getString(key)` 来获取原始数据。默认为 `true` 。

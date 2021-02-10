@@ -4,7 +4,7 @@ Vert.x Config 提供了一种配置您的Vert.x应用的方式。
 它：
 
 * 提供多种配置语法（JSON，properties，Yaml（extension），Hocon（extension）……）
-* 提供多种配置存储，例如文件、目录、HTTP、git（extension）、Redis（extension）、系统参数和环境变量。
+* 提供多种配置中心，例如文件、目录、HTTP、git（extension）、Redis（extension）、系统参数和环境变量。
 * 让您定义执行顺序以及覆盖规则
 * 支持运行时重新定义
 
@@ -13,7 +13,7 @@ Vert.x Config 提供了一种配置您的Vert.x应用的方式。
 
 该库主要围绕：
 
-**Config Retriever** 实例化并被Vert.x应用所使用。它配置了一系列配置存储（Configuration store）
+**Config Retriever** 实例化并被Vert.x应用所使用。它配置了一系列配置中心（Configuration store）
 **Configuration store** 定义了配置信息读取路径以及格式（默认JSON）
 
 配置以JSON Object格式被接收。
@@ -48,7 +48,7 @@ compile 'io.vertx:vertx-config:4.0.0'
 ConfigRetriever retriever = ConfigRetriever.create(vertx);
 ----
 
-默认情况下，Config Retriever被下列存储所配置（以此
+默认情况下，Config Retriever被下列配置中心所配置（以此
 为顺序）：
 
 * Vert.x verticle `config()`
@@ -57,7 +57,7 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx);
 * `conf/config.json` 文件。这个路径可以用 `vertx-config-path` 系统参数
 或者 `VERTX_CONFIG_PATH` 环境变量所覆盖
 
-您可以配置您自己的存储：
+您可以指定您自己的配置中心：
 
 [source]
 ----
@@ -79,10 +79,10 @@ ConfigRetrieverOptions options = new ConfigRetrieverOptions()
 ConfigRetriever retriever = ConfigRetriever.create(vertx, options);
 ----
 
-如下可见更多关于覆盖规则和可用存储的细节信息。每一种存储都可以标记为
-`可选值（optional）` 。如果正在从一个可选的存储中获取（或处理）配置的时候，一个失败事件被捕获，这个失败事件会
+如下可见更多关于覆盖规则和可用配置中心的细节信息。每一种配置中心都可以标记为
+`可选的（optional）` 。如果正在从一个可选的配置中心中获取（或处理）配置的时候，捕获到一个失败事件，那么这个失败事件会
 被日志所记录，但是执行过程并没有失败。相反的，会返回一个空的Json object （即： `{}` ）。
-想要将一个存储标记为可选的，那么就使用 `optional` 属性：
+想要将一个配置中心标记为可选的，那么就使用 `optional` 属性：
 
 [source]
 ----
@@ -114,10 +114,10 @@ retriever.getConfig(ar -> {
 [[_overloading_rules]]
 == 覆盖规则
 
-配置存储的声明顺序非常重要，因为
-它定义了覆盖顺序。对于冲突的key， _后_ 声明的配置存储会
+配置中心的声明顺序非常重要，因为
+它定义了覆盖顺序。对于冲突的key， _后_ 声明的配置中心会
 覆盖之前的。我们举个例子。我们
-有两个配置存储：
+有两个配置中心：
 
 * `A` 提供 `{a:value, b:1}` 配置
 * `B` 提供 `{a:value2, c:2}` 配置
@@ -142,7 +142,7 @@ retriever.getConfig(ar -> {
 === 配置一个单独的Verticle
 
 以下示例代码可以放到 verticle 的 `start` 方法中。它获取了配置（用默认
-存储），并且利用该配置创建了一个HTTP服务。
+配置中心），并且利用该配置创建了一个HTTP服务。
 
 [source]
 ----
@@ -227,23 +227,23 @@ retriever.listen(change -> {
 ----
 
 [[_available_configuration_stores]]
-== 可用的配置存储
+== 可用的配置中心
 
-Config Retriever 提供一系列的配置存储和配置格式。
+Config Retriever 提供一系列的配置中心和配置格式。
 更多信息可见于 extensions，并且您可以也自己实现
 
 [[_structure_of_the_configuration]]
 === 配置的结构
 
-每一个声明的数据存储必须要指定 `类型（type）` ，它也定义了 `格式（format）` 。
+每一个声明的数据配置中心必须要指定 `类型（type）` ，它也定义了 `格式（format）` 。
 如果没有设置，默认用JSON。
 
-一些配置存储要求额外的配置（比如路径……）。这项配置需要用 `link:../../apidocs/io/vertx/config/ConfigStoreOptions.html#setConfig-io.vertx.core.json.JsonObject-[setConfig]` 方法传入一个JSON Object来指定。
+一些配置中心要求额外的配置（比如路径……）。这项配置需要用 `link:../../apidocs/io/vertx/config/ConfigStoreOptions.html#setConfig-io.vertx.core.json.JsonObject-[setConfig]` 方法传入一个JSON Object来指定。
 
 [[_file]]
 === 文件
 
-此配置存储仅从文件中获得配置。
+此配置中心仅从文件中获得配置。
 他支持所有的格式。
 
 [source, java]
@@ -258,7 +258,7 @@ ConfigStoreOptions file = new ConfigStoreOptions()
 
 === JSON
 
-JSON配置存储按原样提供给定的JSON配置
+JSON配置中心按原样提供给定的JSON配置
 
 [source, java]
 ----
@@ -267,12 +267,12 @@ ConfigStoreOptions json = new ConfigStoreOptions()
   .setConfig(new JsonObject().put("key", "value"));
 ----
 
-这个配置存储仅仅支持JSON格式。
+这个配置中心仅仅支持JSON格式。
 
 [[_environment_variables]]
 === 环境变量
 
-这个配置存储将环境变量转换为用于
+这个配置中心将环境变量转换为用于
 全局配置的 JSON obejct
 
 [source, java]
@@ -281,7 +281,7 @@ ConfigStoreOptions json = new ConfigStoreOptions()
   .setType("env");
 ----
 
-这个配置存储不支持 `format` 配置项。默认地，获取到的值
+这个配置中心不支持 `format` 配置项。默认地，获取到的值
 会被传输到JSON兼容的结构当中（数字，字符串，布尔，JSON object和JSON Array）。如果要避免这种
 转换，则需要配置 `raw-data` 属性：
 
@@ -309,7 +309,7 @@ ConfigStoreOptions json = new ConfigStoreOptions()
 [[_system_properties]]
 === 系统参数
 
-这个配置存储将系统参数转换为用于
+这个配置中心将系统参数转换为用于
 全局配置的 JSON obejct
 
 [source, java]
@@ -319,7 +319,7 @@ ConfigStoreOptions json = new ConfigStoreOptions()
   .setConfig(new JsonObject().put("cache", "false"));
 ----
 
-这个配置存储不支持 `format` 配置项。
+这个配置中心不支持 `format` 配置项。
 
 您可以配置 `cache` 属性（默认为 `true`）来决定
 是否在第一次访问时缓存系统参数而后不再重新加载他们。
@@ -330,7 +330,7 @@ ConfigStoreOptions json = new ConfigStoreOptions()
 
 === HTTP
 
-这个配置存储从HTTP地址获取配置。他可以用
+这个配置中心从HTTP地址获取配置。他可以用
 任何支持的格式。
 
 [source, java]
@@ -343,7 +343,7 @@ ConfigStoreOptions http = new ConfigStoreOptions()
     .put("path", "/A"));
 ----
 
-他创建了一个带有存储配置的Vert.x HTTP客户端（见下一小段）。
+他创建了一个带有 `配置中心的配置` 的Vert.x HTTP客户端（见下一小段）。
 为了简化配置，您也可以用
 `host`, `port` 和 `path` 属性来分别配置
 他们。您也可以用 `headers` 属性来配置可选的HTTP请求头，
@@ -366,8 +366,8 @@ ConfigStoreOptions http = new ConfigStoreOptions()
 [[_event_bus]]
 === 事件总线
 
-这个配置存储从事件总线获取配置。
-此种存储可以让您在本地和分布式组件之间传输配置。
+这个配置中心从事件总线获取配置。
+此种配置中心可以让您在本地和分布式组件之间传输配置。
 
 [source, java]
 ----
@@ -378,15 +378,15 @@ ConfigStoreOptions eb = new ConfigStoreOptions()
   );
 ----
 
-这个配置存储支持任何格式。
+这个配置中心支持任何格式。
 
 [[_directory]]
 === 目录
 
-这个配置存储和 `文件` 配置存储很相似，但是它并不是
+这个配置中心和 `文件` 配置中心很相似，但是它并不是
 去读单个文件，而是从一个目录中读取多个文件
 
-这个配置存储必须要配置如下项：
+这个配置中心必须要配置如下项：
 
 * 一个 `path` - 读取文件的根目录
 * 至少一个 `fileset` - 一个用于选择文件的对象
@@ -577,9 +577,9 @@ future.onComplete(ar -> {
 * `link:../../apidocs/io/vertx/config/spi/ConfigProcessor.html[ConfigProcessor]` SPI 来增加对
 新格式的支持
 * `link:../../apidocs/io/vertx/config/spi/ConfigStoreFactory.html[ConfigStoreFactory]` SPI
-来增加配置存储的支持（获取配置数据的位置）
+来增加配置中心的支持（获取配置数据的位置）
 
-== 额外的格式
+== 其他格式
 
 尽管Vert.x对于开箱即用的格式都提供了支持，但是Vert.x Config还是提供了
 额外的格式以供您的应用使用。
@@ -588,9 +588,9 @@ include::hocon-format.adoc[]
 
 include::yaml-format.adoc[]
 
-== Additional stores
+== 其他配置中心
 
-尽管Vert.x对于开箱即用的存储都提供了支持，但是Vert.x Config还是提供了
+尽管Vert.x对于开箱即用的配置中心都提供了支持，但是Vert.x Config还是提供了
 额外的格式以供您的应用使用。
 
 include::git-store.adoc[]

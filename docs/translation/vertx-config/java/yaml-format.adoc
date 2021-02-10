@@ -1,14 +1,16 @@
-=== Yaml Configuration Format
+=== Yaml 配置格式
+[[_yaml_configuration_format]]
 
-The Yaml Configuration Format extends the Vert.x Configuration Retriever and provides the
-support for the Yaml Configuration Format format.
+Yaml 配置格式扩展了 Vert.x Configuration Retriever 并提供了
+对 Yaml格式 的支持
 
-==== Using the Yaml Configuration Format
+[[_using_the_yaml_configuration_format]]
+==== 使用Yaml配置格式
 
-To use the Yaml Configuration Format, add the following dependency to the
-_dependencies_ section of your build descriptor:
+要使用Yaml配置格式，
+添加如下依赖：
 
-* Maven (in your `pom.xml`):
+* Maven (在您的 `pom.xml` 文件):
 
 [source,xml,subs="+attributes"]
 ----
@@ -24,7 +26,7 @@ _dependencies_ section of your build descriptor:
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle (在您的 `build.gradle` 文件):
 
 [source,groovy,subs="+attributes"]
 ----
@@ -32,10 +34,11 @@ compile 'io.vertx:vertx-config:4.0.0'
 compile 'io.vertx:vertx-config-yaml:4.0.0'
 ----
 
-==== Configuring the store to use YAML
+[[_configuring_the_store_to_use_yaml]]
+==== 指定配置中心以使用yaml
 
-Once added to your classpath or dependencies, you need to configure the
-`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` to use this format:
+将该库加入classpath或者项目依赖后，您需要配置
+`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` 来使用这个格式：
 
 [source, java]
 ----
@@ -50,4 +53,4 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
     new ConfigRetrieverOptions().addStore(store));
 ----
 
-You just need to set `format` to `yaml`.
+您必须将 `format` 设置为 `yaml` 。
