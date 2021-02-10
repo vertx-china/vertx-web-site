@@ -37,7 +37,7 @@ compile 'io.vertx:vertx-config-consul:4.0.0'
 ==== 设置配置中心
 
 将该库加入classpath或者项目依赖后，您需要配置
-`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` 来使用这个配置中心：
+`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` 以使用该配置中心：
 
 [source, java]
 ----
