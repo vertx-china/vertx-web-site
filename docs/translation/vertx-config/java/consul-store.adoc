@@ -34,6 +34,7 @@ compile 'io.vertx:vertx-config:4.0.0'
 compile 'io.vertx:vertx-config-consul:4.0.0'
 ----
 
+[[_configuring_the_store_5]]
 ==== 设置配置中心
 
 将该库加入classpath或者项目依赖后，您需要配置
