@@ -26,7 +26,7 @@ Consul配置中心扩展了 Vert.x Configuration Retriever 并
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle （在您的 `build.gradle` 文件）:
 
 [source,groovy,subs="+attributes"]
 ----

@@ -10,7 +10,7 @@ Spring配置中心扩展了 Vert.x Configuration Retriever 并
 要使用Spring配置中心
 则添加如下依赖：
 
-* Maven (in your `pom.xml`):
+* Maven （在您的 `pom.xml` 文件）：
 
 [source,xml,subs="+attributes"]
 ----
@@ -26,7 +26,7 @@ Spring配置中心扩展了 Vert.x Configuration Retriever 并
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle （在您的 `build.gradle` 文件）：
 
 [source,groovy,subs="+attributes"]
 ----

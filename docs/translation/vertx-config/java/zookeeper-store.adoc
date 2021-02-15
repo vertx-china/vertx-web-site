@@ -11,7 +11,7 @@ Zookeeper配置中心扩展了 Vert.x Configuration Retriever 并
 要使用zookeeper配置中心，
 添加如下依赖：
 
-* Maven (in your `pom.xml`):
+* Maven （在您的 `pom.xml` ）：
 
 [source,xml,subs="+attributes"]
 ----
@@ -27,7 +27,7 @@ Zookeeper配置中心扩展了 Vert.x Configuration Retriever 并
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle （在您的 `build.gradle` 文件）：
 
 [source,groovy,subs="+attributes"]
 ----
