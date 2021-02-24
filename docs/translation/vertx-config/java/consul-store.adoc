@@ -8,7 +8,7 @@ Consul配置中心扩展了 Vert.x Configuration Retriever ，
 ==== 使用Consul配置中心
 
 使用Consul配置中心
-需在您的构建描述中添加如下 _依赖_ ：
+需在您的项目构建配置中添加如下 _依赖_ ：
 
 * Maven（在您的 `pom.xml` 文件中）：
 
