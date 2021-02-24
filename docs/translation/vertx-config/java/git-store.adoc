@@ -60,20 +60,20 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
 * `path` ：仓库被clone的路径（本地目录）
 * `user` ：仓库的git用户名（默认不需要认证）
 * `password` ： git用户的密码
-* `idRsaKeyPath` ：私有仓库的 ssh uri
+* `idRsaKeyPath` ：私有仓库所需的 ssh rsa 密钥 uri
 * `fileset` ：指定要读取的文件集
 合（与配置中心的目录配置意义相同）
 
-您也可以配置 `branch` 参数 （默认为 `master` ）来使用
-`远程` 仓库（默认为 `origin` ）
+您也可以配置要使用的分支（ `branch` 参数，默认为 `master` ），以及
+远程仓库名（ `remote` 参数，默认为 `origin` ）
 
 [[_how_does_it_works]]
 ==== 如何工作
 
-如果本地的 `path` 参数不存在，那么配置中心会clone远程仓库到
-这个本地目录。然后它会读取符合不同filesets的文件。
+如果本地的仓库目录（由 `path` 参数指定）不存在，那么配置中心会 clone 远程仓库到这个本地目录。
+然后它会读取符合 `fileset` 配置的文件。
 
-如果本地的 `path` 参数存在，它会尝试更新（如果需要，则切换分支）。如果更新失败
-则配置获取失败。
+如果本地的仓库目录（由 `path` 参数指定）存在，它会尝试更新（按需切换分支）。
+如果更新失败，则视为获取配置失败。
 
-配置中心会周期性更新git仓库来检查配置是否跟更新。
+配置中心会周期性更新 git 仓库来检查配置是否更新。

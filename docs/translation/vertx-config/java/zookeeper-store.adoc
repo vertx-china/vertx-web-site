@@ -57,9 +57,8 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
 这个配置用来配置 Apache Curator 客户端和
 包含配置的zookeeper节点的 _路径_ 。注意：配置的格式可以是JSON等任何Vert.x支持的格式。
 
-
 这项配置必须需要 `configuration` 属性来指示zk服务的connection _string_ ，还要 `path` 属性来
-指示节点的路径
+以及 `path` 属性指定包含配置项的节点（znode）的路径。
 
 额外您可以配置：
 

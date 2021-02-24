@@ -1,7 +1,8 @@
 [[_kubernetes_configmap_store]]
 === Kubernetes ConfigMap 配置中心
 
-Kubernetes ConfigMap 配置中心扩展了 Vert.x Configuration Retriever 并提供了 对于 Kubernetes 的 ConfigMap 和 Secrets 的支持。所以，配置是从k8s里的configMap或者secret对象中读取的。
+Kubernetes ConfigMap 配置中心扩展了 Vert.x Configuration Retriever 并提供了 对于 Kubernetes 的 ConfigMap 和 Secrets 的支持。
+所以，配置是从 k8s 里的 configMap 或者 secret 对象中读取的。
 
 [[_using_the_kubernetes_configmap_store]]
 ==== 使用 Kubernetes ConfigMap 配置中心

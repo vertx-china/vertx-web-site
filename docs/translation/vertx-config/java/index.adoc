@@ -1,6 +1,6 @@
 = Vert.x Config
 
-Vert.x Config 提供了一种配置您的Vert.x应用的方式。
+您可以使用 Vert.x Config 配置 Vert.x 应用。
 它：
 
 * 提供多种配置语法（JSON，properties，Yaml（extension），Hocon（extension）……）
@@ -13,7 +13,8 @@ Vert.x Config 提供了一种配置您的Vert.x应用的方式。
 
 该库主要围绕：
 
-**Config Retriever** 实例化并被Vert.x应用所使用。它配置了一系列配置中心（Configuration store）
+**Config Retriever** 的实例化，并用于 Vert.x 应用。
+它配置了一系列配置中心（Configuration store）
 **Configuration store** 定义了配置信息读取路径以及格式（默认JSON）
 
 配置以JSON Object格式被接收。
@@ -97,7 +98,7 @@ ConfigRetrieverOptions options = new ConfigRetrieverOptions().addStore(fileStore
 ConfigRetriever retriever = ConfigRetriever.create(vertx, options);
 ----
 
-一旦你拥有了 Config Retriever 示例， 按如下
+获取 Config Retriever 示例后，可按如下
 所示 _获取_ 配置：
 
 [source]
@@ -130,7 +131,7 @@ retriever.getConfig(ar -> {
 [[_using_the_retrieve_configuration]]
 == 使用配置
 
-获取到的配置允许：
+获取到的配置可用于：
 
 * 配置verticles，
 * 配置端口，客户端，location等等，
