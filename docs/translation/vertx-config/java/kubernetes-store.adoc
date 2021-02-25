@@ -7,8 +7,8 @@ Kubernetes ConfigMap 配置中心扩展了 Vert.x Configuration Retriever 并提
 [[_using_the_kubernetes_configmap_store]]
 ==== 使用 Kubernetes ConfigMap 配置中心
 
-要使用 Kubernetes ConfigMap 配置中心，则添加
-如下依赖：
+要使用 Kubernetes ConfigMap 配置中心，
+则添加如下依赖：
 
 * Maven (在您的 `pom.xml` 文件):
 
@@ -60,10 +60,10 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
 * `name` - configMap的名称
 * `optional` - configMap是否是可选项（默认为 `true` ）
 
-如果configMap是由数个元素组成，您可以用 `key` 参数来告诉Vert.x
+如果configMap是由数个元素组成，您可以用 `key` 参数来告诉 Vert.x
 来读取哪一个 `key` 。
 
-Vert.x应用必须要有读取configMap的权限
+Vert.x应用必须要有读取configMap的权限。
 
 要从secret中读取数据，只需要将 `secret` 属性配置为 `true` ：
 
@@ -81,5 +81,5 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
     new ConfigRetrieverOptions().addStore(store));
 ----
 
-如果configMap访问不到，那么您会得到一个空的JSON object对象作为配置块。要禁用这个行为
-并显式声明失败，您需要设置 `optional` 为 `false` .
+如果configMap访问不到，那么您会得到一个空的JSON object对象作为配置块。
+要禁用这个行为并显式声明失败，您需要设置 `optional` 为 `false` .
