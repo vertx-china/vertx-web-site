@@ -80,7 +80,7 @@ ConfigRetrieverOptions options = new ConfigRetrieverOptions()
 ConfigRetriever retriever = ConfigRetriever.create(vertx, options);
 ----
 
-如下可见更多关于覆盖规则和可用配置中心的细节信息。每一种配置中心都可以标记为
+如下可见更多关于覆盖规则和可用配置中心的细节信息。每一种配置中心都可以标记为`可选的（optional）` 。
 如果正在从一个可选的配置中心中获取（或处理）配置的时候，捕获到一个失败事件，那么这个失败事件会被日志所记录，但是执行过程并没有失败。
 相反会返回一个空的 Json object（即：`{}`）。
 想要将一个配置中心标记为可选的，那么就使用 `optional` 属性：
