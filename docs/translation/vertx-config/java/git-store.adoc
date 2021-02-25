@@ -64,8 +64,8 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
 * `fileset` ：指定要读取的文件集合
 （与配置中心的目录配置意义相同）
 
-您也可以配置要使用的分支（ `branch` 参数，默认为 `master` ），以及
-远程仓库名（ `remote` 参数，默认为 `origin` ）
+您也可以配置要使用的分支（ `branch` 参数，默认为 `master` ），
+以及远程仓库名（ `remote` 参数，默认为 `origin` ）
 
 [[_how_does_it_works]]
 ==== 如何工作
