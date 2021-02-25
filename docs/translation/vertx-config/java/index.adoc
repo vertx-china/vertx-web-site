@@ -50,13 +50,13 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx);
 ----
 
 默认情况下，Config Retriever 可以使用下列配置中心进行配置
-为顺序）：
+（按下列顺序）：
 
 * Vert.x verticle `config()`
 * 系统参数
 * 环境变量
-* `conf/config.json` 文件。这个路径可以用 `vertx-config-path` 系统参数
-或者 `VERTX_CONFIG_PATH` 环境变量所覆盖
+* `conf/config.json` 文件。这个路径可以用 `vertx-config-path` 系统参数或者
+`VERTX_CONFIG_PATH` 环境变量所覆盖。
 
 您可以指定您自己的配置中心：
 
@@ -98,8 +98,8 @@ ConfigRetrieverOptions options = new ConfigRetrieverOptions().addStore(fileStore
 ConfigRetriever retriever = ConfigRetriever.create(vertx, options);
 ----
 
-获取 Config Retriever 示例后，可按如下
-所示 _获取_ 配置：
+获取 Config Retriever 示例后，可按如下所示 
+_获取_ 配置：
 
 [source]
 ----
@@ -115,10 +115,10 @@ retriever.getConfig(ar -> {
 [[_overloading_rules]]
 == 覆盖规则
 
-配置中心的声明顺序非常重要，因为
-它定义了覆盖顺序。对于冲突的key， _后_ 声明的配置中心会
-覆盖之前的。我们举个例子。我们
-有两个配置中心：
+配置中心的声明顺序非常重要，
+因为它定义了覆盖顺序。对于冲突的key， _后_ 
+声明的配置中心会覆盖之前的。我们举个例子。
+我们有两个配置中心：
 
 * `A` 提供 `{a:value, b:1}` 配置
 * `B` 提供 `{a:value2, c:2}` 配置
@@ -142,8 +142,8 @@ retriever.getConfig(ar -> {
 [[_configuring_a_single_verticle]]
 === 配置一个单独的Verticle
 
-以下示例代码可以放到 verticle 的 `start` 方法中。它获取了配置（用默认
-配置中心），并且利用该配置创建了一个HTTP服务。
+以下示例代码可以放到 verticle 的 `start` 方法中。它获取了配置
+（用默认配置中心），并且利用该配置创建了一个HTTP服务。
 
 [source]
 ----
@@ -179,8 +179,8 @@ retriever.getConfig(json -> {
 [[_configuring_vert_x_itself]]
 === 配置Vert.x自身
 
-您也可以直接配置Vert.x自身。您需要一个临时Vert.x对象用来获取
-配置。然后创建实际Vert.x实例：
+您也可以直接配置Vert.x自身。您需要一个临时Vert.x对象用来获取配置。
+然后创建实际Vert.x实例：
 
 [source]
 ----
@@ -207,10 +207,10 @@ retriever.getConfig(json -> {
 [[_propagating_configuration_changes_to_the_event_bus]]
 === 向事件总线传播配置变更
 
-当配置变化时，Vert.x Config 会通知您。如果您需要对这个事件做出响应，您需要
-自己实现这个逻辑。例如，您可以下线/重新部署verticle或者向事件总线发送新的配置。
-下列实例展示了后者的场景。它向事件总线发送新的配置。与事件关联的 verticle
-可以监听这个address并更新自身：
+当配置变化时，Vert.x Config 会通知您。如果您需要对这个事件做出响应，您需要自己实现这个逻辑。
+例如，您可以下线/重新部署verticle或者向事件总线发送新的配置。
+下列实例展示了后者的场景。它向事件总线发送新的配置。
+与事件关联的 verticle可以监听这个address并更新自身：
 
 [source]
 ----
@@ -231,7 +231,7 @@ retriever.listen(change -> {
 == 可用的配置中心
 
 Config Retriever 提供一系列的配置中心和配置格式。
-更多信息可见于 extensions，并且您可以也自己实现
+更多信息可见于 extensions，您可以也自己实现.
 
 [[_structure_of_the_configuration]]
 === 配置的结构
@@ -273,8 +273,8 @@ ConfigStoreOptions json = new ConfigStoreOptions()
 [[_environment_variables]]
 === 环境变量
 
-这个配置中心将环境变量转换为用于
-全局配置的 JSON obejct
+这个配置中心将环境变量转换为用于全局配置的
+JSON obejct
 
 [source, java]
 ----
@@ -282,9 +282,9 @@ ConfigStoreOptions json = new ConfigStoreOptions()
   .setType("env");
 ----
 
-这个配置中心不支持 `format` 配置项。默认地，获取到的值
-会被传输到JSON兼容的结构当中（数字，字符串，布尔，JSON object和JSON Array）。如果要避免这种
-转换，则需要配置 `raw-data` 属性：
+这个配置中心不支持 `format` 配置项。
+获取到的值默认会被传输到JSON兼容的结构当中（数字，字符串，布尔，JSON object和JSON Array）。
+如果要避免这种转换，则需要配置 `raw-data` 属性：
 
 [source, java]
 ----
@@ -293,9 +293,9 @@ ConfigStoreOptions json = new ConfigStoreOptions()
   .setConfig(new JsonObject().put("raw-data", true));
 ----
 
-您可以配置 `raw-data` 属性（默认为 `false` ）。如果 `raw-data` 为 `true` ，则
-不会对值进行转换。用 `config.getString(key)` 方法，您会得到原始值。当操作
-大整型数时，这很有用。
+您可以配置 `raw-data` 属性（默认为 `false` ）。如果 `raw-data` 为 `true` ，
+则不会对值进行转换。用 `config.getString(key)` 方法，您会得到原始值。
+当操作大整型数时，这很有用。
 
 如果您想选择一系列key值来导入，那么用 `keys` 属性。他将未选择的key值都过滤掉了。
 key必须独立列出：
@@ -310,8 +310,8 @@ ConfigStoreOptions json = new ConfigStoreOptions()
 [[_system_properties]]
 === 系统参数
 
-这个配置中心将系统参数转换为用于
-全局配置的 JSON obejct
+这个配置中心将系统参数转换为用于全局配置的 
+JSON obejct
 
 [source, java]
 ----
@@ -322,17 +322,17 @@ ConfigStoreOptions json = new ConfigStoreOptions()
 
 这个配置中心不支持 `format` 配置项。
 
-您可以配置 `cache` 属性（默认为 `true`）来决定
-是否在第一次访问时缓存系统参数而后不再重新加载他们。
+您可以配置 `cache` 属性（默认为 `true`）
+来决定是否在第一次访问时缓存系统参数而后不再重新加载他们。
 
-您也可以配置 `raw-data` 属性（默认为 `false` ）。如果 `raw-data` 为 `true` ，则
-不会对值进行转换。用 `config.getString(key)` 方法，您会得到原始值。当操作
-大整型数时，这很有用。
+您也可以配置 `raw-data` 属性（默认为 `false` ）。如果 `raw-data` 为 `true` ，
+则不会对值进行转换。用 `config.getString(key)` 方法，您会得到原始值。
+当操作大整型数时，这很有用。
 
 === HTTP
 
-这个配置中心从HTTP地址获取配置。他可以用
-任何支持的格式。
+这个配置中心从HTTP地址获取配置。
+可以用任何支持的格式。
 
 [source, java]
 ----
@@ -346,10 +346,10 @@ ConfigStoreOptions http = new ConfigStoreOptions()
 
 他创建了一个带有 `配置中心的配置` 的Vert.x HTTP客户端（见下一小段）。
 为了简化配置，您也可以用
-`host`, `port` 和 `path` 属性来分别配置
-他们。您也可以用 `headers` 属性来配置可选的HTTP请求头，
-`timeout` 属性配置超时时间（默认3000毫秒），
- `followRedirects` 属性来指定是否重定向（默认情况下为false）。
+`host`, `port` 和 `path` 属性来分别配置他们。
+您也可以用 `headers` 属性来配置可选的HTTP请求头，
+`timeout` 属性配置超时时间（默认3000毫秒）， 
+`followRedirects` 属性来指定是否重定向（默认情况下为false）。
 
 
 [source, java]
@@ -384,8 +384,8 @@ ConfigStoreOptions eb = new ConfigStoreOptions()
 [[_directory]]
 === 目录
 
-这个配置中心和 `文件` 配置中心很相似，但是它并不是
-去读单个文件，而是从一个目录中读取多个文件
+这个配置中心和 `文件` 配置中心很相似，
+但是它并不是去读单个文件，而是从一个目录中读取多个文件
 
 这个配置中心必须要配置如下项：
 
@@ -395,10 +395,10 @@ ConfigStoreOptions eb = new ConfigStoreOptions()
 
 每一个 `fileset` 都包含：
 
-* 一个 `pattern` ：一个Ant风格的pattern用于选择文件。这个pattern应用于
-相对当前工作目录的相对路径。
-* 一个可选的 `format` ，它制定了文件的格式（每一个fileset可以用一个
-不同的format，但是同一个fileset共用一个format）
+* 一个 `pattern` ：一个Ant风格的pattern用于选择文件。
+这个pattern应用于相对当前工作目录的相对路径。
+* 一个可选的 `format` ，它制定了文件的格式（每一个fileset可以用一个不同的format，
+但是同一个fileset共用一个format）
 
 [source, java]
 ----
@@ -423,9 +423,9 @@ ConfigStoreOptions dirWithRawData = new ConfigStoreOptions()
 
 === Properties 文件和原始数据
 
-Vert.x Config可以读一个properties文件。当读取一个这样的文件，您可以传入 `raw-data` 参数来
-提醒Vert.x不要转换它的值。这在操作大整型数字时很有用。这些值可以
-用 `config.getString(key)` 方法来获取
+Vert.x Config可以读一个properties文件。当读取一个这样的文件，您可以传入 `raw-data` 
+参数来提醒Vert.x不要转换它的值。这在操作大整型数字时很有用。
+这些值可以用 `config.getString(key)` 方法来获取。
 
 [source, java]
 ----
@@ -437,8 +437,8 @@ ConfigStoreOptions propertyWithRawData = new ConfigStoreOptions()
 ----
 
 一些properties配置可能本来就是多级的。
-当读取到这样的文件，您可以设置 `hierarchical` 参数来
-提醒Vert.x，当操作这个多级属性时，则将配置转换到Json Object当中，
+当读取到这样的文件，您可以设置 `hierarchical` 
+参数来提醒Vert.x，当操作这个多级属性时，则将配置转换到Json Object当中，
 这与前述方法设置扁平结构形成了对比。
 
 例如：
@@ -476,9 +476,9 @@ configRetriever.configStream().handler(config -> {
 [[_listening_for_configuration_changes]]
 监听配置的变更
 
-Configuration Retriever 定期获取配置信息，如果
-获取到的结果与当前不同，那么您可以重新配置应用。默认情况下
-配置每5秒重新加载一次。
+Configuration Retriever 定期获取配置信息，
+如果获取到的结果与当前不同，那么您可以重新配置应用。
+默认情况下配置每5秒重新加载一次。
 
 [source, java]
 ----
@@ -546,12 +546,12 @@ retriever.configStream()
 [[_processing_the_configuration]]
 == 处理配置
 
-您可以配置一个 _processor_ ，它可以校验并更新配置。这是
-通过使用 `link:../../apidocs/io/vertx/config/ConfigRetriever.html#setConfigurationProcessor-java.util.function.Function-[setConfigurationProcessor]` 方法而实现的。
+您可以配置一个 _processor_ ，它可以校验并更新配置。
+可以通过调用 `link:../../apidocs/io/vertx/config/ConfigRetriever.html#setConfigurationProcessor-java.util.function.Function-[setConfigurationProcessor]` 方法来实现。
 
-处理过程绝对不能返回 `null` 。处理器获取到配置然后返回处理过的配置。如果处理器
-不更新配置，它必须将输入的配置返回。处理器可以抛出
-异常（例如，校验失败）。
+处理过程绝对不能返回 `null` 。处理器获取到配置然后返回处理过的配置。
+如果处理器不更新配置，它必须将输入的配置返回。
+处理器可以抛出异常（例如，校验失败）。
 
 == 以Future形式获取配置
 
@@ -575,15 +575,15 @@ future.onComplete(ar -> {
 
 通过实现如下方式，您可以扩展配置：
 
-* `link:../../apidocs/io/vertx/config/spi/ConfigProcessor.html[ConfigProcessor]` SPI 来增加对
-新格式的支持
-* `link:../../apidocs/io/vertx/config/spi/ConfigStoreFactory.html[ConfigStoreFactory]` SPI
-来增加配置中心的支持（获取配置数据的位置）
+* `link:../../apidocs/io/vertx/config/spi/ConfigProcessor.html[ConfigProcessor]`
+SPI 来增加对新格式的支持
+* `link:../../apidocs/io/vertx/config/spi/ConfigStoreFactory.html[ConfigStoreFactory]`
+SPI来增加配置中心的支持（获取配置数据的位置）
 
 == 其他格式
 
-尽管Vert.x对于开箱即用的格式都提供了支持，但是Vert.x Config还是提供了
-额外的格式以供您的应用使用。
+尽管Vert.x对于开箱即用的格式都提供了支持，但是 Vert.x Config 
+还是提供了额外的格式以供您的应用使用。
 
 include::hocon-format.adoc[]
 
@@ -591,8 +591,8 @@ include::yaml-format.adoc[]
 
 == 其他配置中心
 
-尽管Vert.x对于开箱即用的配置中心都提供了支持，但是Vert.x Config还是提供了
-额外的格式以供您的应用使用。
+尽管Vert.x对于开箱即用的配置中心都提供了支持，但是 Vert.x Config 
+还是提供了额外的格式以供您的应用使用。
 
 include::git-store.adoc[]
 
