@@ -1,13 +1,13 @@
 [[_redis_configuration_store]]
 === Redis配置中心
 
-Reids配置中心扩展了 Vert.x Configuration Retriever 并
-提供了从Redis服务获取配置的方法。
+Reids配置中心扩展了 Vert.x Configuration Retriever 
+并提供了从Redis服务获取配置的方法。
 
 [[_using_the_redis_configuration_store]]
 === 使用Redis配置中心
 
-要使用Redis配置中心
+要使用Redis配置中心，
 添加如下依赖：
 
 * Maven (在您的 `pom.xml` 文件):
@@ -56,7 +56,7 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
 
 配置中心的配置用于创建 `link:../../apidocs/io/vertx/redis/client/Redis.html[Redis]` 对象。
 更多细节请查阅
-Vert.x Redis Client文档
+Vert.x Redis Client 文档
 
 另外，您可以设置 `key` 属性来指示配置中心中的某一 _field_ ，
 默认为 `configuration` 属性。
