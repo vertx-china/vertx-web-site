@@ -60,7 +60,7 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
 这项配置必须需要 `connection ` 属性指定zk服务的连接 _字符串_ （译者注：英文逗号隔开的多个zk服务节点），
 以及 `path` 属性指定包含配置项的节点（znode）的路径。
 
-额外您可以配置：
+您还可以额外配置：
 
 * `maxRetries` ：重连次数，默认3次。
 * `baseSleepTimeBetweenRetries` ：重试间隔毫秒值，默认1000毫秒。
