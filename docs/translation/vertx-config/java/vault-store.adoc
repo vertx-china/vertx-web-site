@@ -9,7 +9,7 @@ Vault配置中心扩展了 Vert.x Configuration Retriever 并提供了从 Vault 
 [[_using_the_vault_config_store]]
 ==== 使用Vault配置中心
 
-要使用Vault配置中心
+要使用Vault配置中心，
 添加如下依赖：
 
 * Maven （在您的 `pom.xml` 文件）：
@@ -83,9 +83,9 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
   new ConfigRetrieverOptions().addStore(store));}
 ----
 
-`vault_config` 对象可以包含 HTTP client / Web client 的配置，例如
-trust stores、timeout、certificates、port和host。 `path` 和 `host` 强制必填。 `path` 指定了需要
-获取的secret。 `host` 是Vault服务的hostname。默认情况下使用8200端口。
+`vault_config` 对象可以包含 HTTP client / Web client 的配置，
+例如 trust stores、timeout、certificates、port和host。 `path` 和 `host` 强制必填。 
+`path` 指定了需要获取的secret。 `host` 是Vault服务的hostname。默认情况下使用8200端口。
 默认SSL关闭，但是生产环境下您需要开启它。
 
 然后，您需要用如下中的一个方法来配置token或者认证机制。
@@ -115,8 +115,8 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
   new ConfigRetrieverOptions().addStore(store));
 ----
 
-您可以使用root token，但是不建议这样做。当token被回收，则对secret的访问也会
-受阻。如果token可刷新，则当它过期的时候会被刷新。
+您可以使用root token，但是不建议这样做。当token被回收，则对secret的访问也会受阻。
+如果token可刷新，则当它过期的时候会被刷新。
 
 [[_generating_a_token]]
 ==== 生成token
@@ -155,8 +155,8 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
 ----
 
 当用这种方式，根配置中不必提供token，然后，用于生成token的token嵌于JSON数据被传入。
-如果生成的token可刷新，那么在它过期的时候会
-自动刷新。 `renew-window` 是更新token有效性的时间窗口。
+如果生成的token可刷新，那么在它过期的时候会自动刷新。 
+`renew-window` 是更新token有效性的时间窗口。
 如果生成的token失效，则访问权限受阻。
 
 ==== 使用证书
