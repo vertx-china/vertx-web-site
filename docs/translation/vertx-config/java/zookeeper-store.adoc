@@ -63,6 +63,5 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
 额外您可以配置：
 
 * `maxRetries`: the number of connection attempt, 3 by default
-* `baseSleepTimeBetweenRetries`: the amount of milliseconds to wait between retries (exponential backoff strategy).
 * `maxRetries` ：重连次数，默认3次。
 * `baseSleepTimeBetweenRetries` ：重试间隔毫秒值，默认1000毫秒。
