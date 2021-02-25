@@ -231,7 +231,7 @@ retriever.listen(change -> {
 == 可用的配置中心
 
 Config Retriever 提供一系列的配置中心和配置格式。
-更多信息可见于 extensions，您可以也自己实现.
+更多可用的配置中心请参考本文后续介绍的扩展，您可以也自己实现.
 
 [[_structure_of_the_configuration]]
 === 配置的结构
