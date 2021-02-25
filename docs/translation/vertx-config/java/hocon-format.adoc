@@ -1,8 +1,8 @@
 [[_hocon_configuration_format]]
 === Hocon 配置格式
 
-Hocon 配置格式扩展了 Vert.x Configuration Retriever 并提供了
-对 HOCON格式(https://github.com/typesafehub/config/blob/master/HOCON.md) 的支持
+Hocon 配置格式扩展了 Vert.x Configuration Retriever 并提供了对 HOCON 格式
+（https://github.com/typesafehub/config/blob/master/HOCON.md）的支持
 
 它支持 json、properties、macros 等格式
 

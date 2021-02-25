@@ -61,5 +61,5 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
 
 `prefix`:: 构建配置树时需要被忽略的前缀，默认为空。
 `delimiter`:: 用来分割Consul中的key的分隔符，用以维护配置树中的级别。默认为 "/"。
-`raw-data`:: 如果 `raw-data` 为 `true` ，则配置值不会进行类型转换，并且您可以
-用 `config.getString(key)` 来获取原始数据。默认为 `true` 。
+`raw-data`:: 如果 `raw-data` 为 `true` ，则配置值不会进行类型转换，并且您可以用
+`config.getString(key)` 来获取原始数据，默认为 `true` 。

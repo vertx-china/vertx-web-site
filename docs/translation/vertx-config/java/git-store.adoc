@@ -1,14 +1,14 @@
 [[_git_configuration_store]]
 === Git配置中心
 
-git配置中心是对 Vert.x Configuration Retriever 的扩展，用于
-从Git仓库获取配置。
+git配置中心是对 Vert.x Configuration Retriever 的扩展，
+用于从Git仓库获取配置。
 
 [[_using_the_git_configuration_store]]
 ==== 使用git配置中心
 
-要使用Git配置中心，则
-添加如下依赖：
+要使用Git配置中心，
+则添加如下依赖：
 
 * Maven（在您的 `pom.xml` 文件）：
 
@@ -61,8 +61,8 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
 * `user` ：仓库的git用户名（默认不需要认证）
 * `password` ： git用户的密码
 * `idRsaKeyPath` ：私有仓库所需的 ssh rsa 密钥 uri
-* `fileset` ：指定要读取的文件集
-合（与配置中心的目录配置意义相同）
+* `fileset` ：指定要读取的文件集合
+（与配置中心的目录配置意义相同）
 
 您也可以配置要使用的分支（ `branch` 参数，默认为 `master` ），以及
 远程仓库名（ `remote` 参数，默认为 `origin` ）
