@@ -1,8 +1,8 @@
 === Yaml 配置格式
 [[_yaml_configuration_format]]
 
-Yaml 配置格式扩展了 Vert.x Configuration Retriever 并提供了
-对 Yaml格式 的支持
+Yaml 配置格式扩展了 Vert.x Configuration Retriever 
+并提供了对 Yaml格式 的支持
 
 [[_using_the_yaml_configuration_format]]
 ==== 使用Yaml配置格式
