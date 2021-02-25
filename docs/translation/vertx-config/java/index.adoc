@@ -49,7 +49,7 @@ compile 'io.vertx:vertx-config:4.0.0'
 ConfigRetriever retriever = ConfigRetriever.create(vertx);
 ----
 
-默认情况下，Config Retriever被下列配置中心所配置（以此
+默认情况下，Config Retriever 可以使用下列配置中心进行配置
 为顺序）：
 
 * Vert.x verticle `config()`
