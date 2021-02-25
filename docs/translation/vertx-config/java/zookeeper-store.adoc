@@ -1,8 +1,8 @@
 [[_zookeeper_configuration_store]]
 === Zookeeper配置中心
 
-Zookeeper配置中心扩展了 Vert.x Configuration Retriever 并
-提供了从Zookeeper服务获取配置的方法。它使用 Apache Curator 作为客户端
+Zookeeper配置中心扩展了 Vert.x Configuration Retriever 
+并提供了从Zookeeper服务获取配置的方法。它使用 Apache Curator 作为客户端
 
 
 [[_using_the_zookeeper_configuration_store]]
@@ -54,8 +54,8 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
     new ConfigRetrieverOptions().addStore(store));
 ----
 
-这个配置用来配置 Apache Curator 客户端和
-包含配置的zookeeper节点的 _路径_ 。注意：配置的格式可以是JSON等任何Vert.x支持的格式。
+这个配置用来配置 Apache Curator 客户端和包含配置的zookeeper节点的 _路径_ 。
+注意：配置的格式可以是JSON等任何Vert.x支持的格式。
 
 这项配置必须需要 `connection ` 属性指定zk服务的连接 _字符串_ （译者注：英文逗号隔开的多个zk服务节点），
 以及 `path` 属性指定包含配置项的节点（znode）的路径。
