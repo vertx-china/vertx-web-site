@@ -109,8 +109,8 @@ docs.entries.push({
 
 docs.entries.push({
   id: "vertx-lang-groovy",
-  name: "Vert.x for Groovy",
-  description: "Groovy bindings and helpers for Vert.x.",
+  name: "Vert.x 版 Groovy",
+  description: "Vert.x 的 Groovy 绑定及帮助。",
   category: "groovy",
   href: "/vertx-core/groovy/",
   repository: "https://github.com/vert-x3/vertx-lang-groovy",
