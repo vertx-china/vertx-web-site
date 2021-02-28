@@ -109,7 +109,7 @@ docs.entries.push({
 
 docs.entries.push({
   id: "vertx-lang-groovy",
-  name: "Vert.x 版 Groovy",
+  name: "Groovy 版 Vert.x",
   description: "Vert.x 的 Groovy 绑定及帮助。",
   category: "groovy",
   href: "/vertx-core/groovy/",
