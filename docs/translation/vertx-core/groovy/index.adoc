@@ -29,6 +29,7 @@ compile "io.vertx:vertx-lang-groovy:4.0.2"
 [[_verticles]]
 == Verticles
 
+[[_writing_verticles]]
 === 编写 Verticles
 
 在Groovy中有两种方式可以用于创建Verticles:
@@ -80,11 +81,12 @@ void stop() {
 当Vert.x部署verticle时，将会调用其 `start` 方法。此方法执行完毕后，
 该verticle将可被视为已经启动。
 
-此外您也可以重写verticle的 `stop` 方法，在verticle被反部署时该方法将会被Vert.x所调用，
+此外您也可以重写verticle的 `stop` 方法，在verticle被卸载时该方法将会被Vert.x所调用，
 并且在该方法执行完毕后， verticle可被视为已经关闭。
 
 跟前面一样，这些方法也是同步的，在这些方法执行后，该verticle将可被视为已经启动或者已经关闭。
 
+[[_accessing_the_vertx_instance_from_a_verticle]]
 === 从verticle中访问vertx实例
 
 不管您选择哪种方法去实现verticle，您都可以通过 `vertx` 变量 / 字段来访问
@@ -109,6 +111,7 @@ class HelloWorldHttpVerticle extends AbstractVerticle {
 }
 ----
 
+[[_asynchronous_verticle_start_and_stop]]
 === Verticle的异步启动与关闭
 
 有时您可能想在verticle启动时执行某些耗时操作，但又不想等这些操作完成后才完成verticle的部署。
@@ -178,8 +181,9 @@ void stop(Promise<Void> future) {
 }
 ----
 
-注意: 在verticle的stop方法中，您并不需要手动反部署子verticle。Vert.x将会在父verticle被反部署时自动反部署它的所有子verticle。
+NOTE: 在verticle的stop方法中，您并不需要手动卸载子verticle。Vert.x将会在父verticle被卸载时自动卸载它的所有子verticle。
 
+[[_passing_configuration_to_a_verticle]]
 === 往verticle中传递配置信息
 
 在部署时，配置信息可以以Map的形式传入verticle:
@@ -202,8 +206,9 @@ vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
 println vertx.getOrCreateContext().config()["name"]
 ----
 
-注意: 这个配置信息可以为 `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` 对象。
+NOTE: 这个配置信息可以为 `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` 对象。
 
+[[_accessing_environment_variables_in_a_verticle]]
 === 在Verticle中访问环境变量
 
 环境变量和系统属性可以通过Java API访问：
@@ -225,8 +230,9 @@ println System.getenv("HOME")
 或者使用 (http://www.groovy-lang.org/json.html)[JSON support from Groovy]。
 本章节将会介绍如何使用这两个Vert.x的类。
 
-注意: 大多数接收JSON作为参数的vert.x方法的Java版本，是以Map的形式接收输入的。
+NOTE: 大多数接收JSON作为参数的vert.x方法的Java版本，是以Map的形式接收输入的。
 
+[[_data_object_conversion]]
 === 数据对象变换
 
 在Vert.x API中使用被 `@DataObject` 注解的类，得益于Groovy的 `as` 操作符，
@@ -251,6 +257,7 @@ server = vertx.createHttpServer([
    ] as HttpServerOptions)
 ----
 
+[[_json_objects]]
 === JSON对象
 
 `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` 类代表JSON对象。
@@ -260,6 +267,7 @@ server = vertx.createHttpServer([
 
 JSON对象也支持 `null` 值。
 
+[[_creating_json_objects]]
 ==== 创建JSON对象
 
 可以使用默认的构造函数创建空JSON对象。
@@ -294,6 +302,7 @@ def map = [ "foo" : "bar" ]
 def json = map as JsonObject
 ----
 
+[[_putting_entries_into_a_json_object]]
 ==== 往JSON对象插入条目
 
 使用 `link:../../apidocs/io/vertx/core/json/JsonObject.html#put-java.lang.String-java.lang.Object-[put]` 方法往JSON对象中插入数据。
@@ -316,6 +325,7 @@ object["num"] = 123
 object["mybool"] = true
 ----
 
+[[_getting_values_from_a_json_object]]
 ==== 从JSON对象中读取值
 
 您可以用 `getXXX` 的方法从JSON对象中读取值，例如：
@@ -334,12 +344,14 @@ def val1 = jsonObject["some-key"]
 def val2 = jsonObject["some-other-key"]
 ----
 
+[[_encoding_the_json_object_to_a_string]]
 ==== 将JSON对象编码为字符串
 
 您可以使用 `link:../../apidocs/io/vertx/core/json/JsonObject.html#encode--[encode]`
 方法来将对象转换为字符串。也可以使用 `link:../../apidocs/io/vertx/core/json/JsonObject.html#encodePrettily--[encodePrettily]`
 让输出更加美观（推断多行和缩进）。
 
+[[_json_arrays]]
 === JSON数组
 
 `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` 类代表JSON数组。
@@ -348,6 +360,7 @@ def val2 = jsonObject["some-other-key"]
 
 JSON数组也可以包含 `null` 值。
 
+[[_creating_json_arrays]]
 ==== 创建JSON数组
 
 空的JSON数组可以使用默认的构造函数创建。
@@ -382,6 +395,7 @@ def list = [ "foo", "bar" ]
 def json = map as JsonArray
 ----
 
+[[_adding_entries_into_a_json_array]]
 ==== 添加条目到JSON数组中
 
 您可以通过 `link:../../apidocs/io/vertx/core/json/JsonArray.html#add-java.lang.Object-[add]` 方法添加新的条目到JSON数组中。
@@ -402,6 +416,7 @@ array << 123
 array << false
 ----
 
+[[_getting_values_from_a_json_array]]
 ==== 从JSON数组中读取值
 
 您可以通过 `getXXX` 方法来读取JSON数组中的值，例如：
@@ -422,6 +437,7 @@ def intVal = array[1]
 def boolVal = array[2]
 ----
 
+[[_encoding_the_json_array_to_a_string]]
 ==== 将JSON数组编码为字符串
 
 您可以使用 `link:../../apidocs/io/vertx/core/json/JsonArray.html#encode--[encode]` 方法把数组转换为字符串的形式。
