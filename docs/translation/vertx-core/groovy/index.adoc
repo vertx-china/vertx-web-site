@@ -1,6 +1,6 @@
 = Vert.x for Groovy
 
-如果你正在使用Maven或者Gradle，可添加以下的依赖项到你的项目中，
+如果您正在使用Maven或者Gradle，可添加以下的依赖项到您的项目中，
 以访问Vert.x Core API并启用对Groovy的支持:
 
 * Maven (在 `pom.xml` 文件中):
@@ -26,7 +26,7 @@
 compile "io.vertx:vertx-core:4.0.2"
 compile "io.vertx:vertx-lang-groovy:4.0.2"
 ----
-
+[[_verticles]]
 == Verticles
 
 === 编写 Verticles
@@ -43,7 +43,7 @@ compile "io.vertx:vertx-lang-groovy:4.0.2"
 println "Hello from vertx"
 ----
 
-在部署时，默认的，Vert.x将会执行该脚本。此外，你的脚本中也可以提供 `startVertx` 和 `stopVertx` 方法。相应地，这些方法将会在verticle启动或者关闭时被调用：
+在部署时，默认的，Vert.x将会执行该脚本。此外，您的脚本中也可以提供 `startVertx` 和 `stopVertx` 方法。相应地，这些方法将会在verticle启动或者关闭时被调用：
 
 [source, groovy]
 ----
@@ -58,7 +58,7 @@ println "stopping"
 
 上述这些方法是同步的，在这些方法执行后，该verticle将可被视为已经启动或者已经关闭。
 
-或者，你也可以继承 `link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]`
+或者，您也可以继承 `link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]`
 类并实现它的 `start` 和 `stop` 方法：
 
 [source, groovy]
@@ -80,14 +80,14 @@ void stop() {
 当Vert.x部署verticle时，将会调用其 `start` 方法。此方法执行完毕后，
 该verticle将可被视为已经启动。
 
-此外，你也可以重写verticle的 `stop` 方法，在verticle被反部署时该方法将会被Vert.x所调用，
+此外您也可以重写verticle的 `stop` 方法，在verticle被反部署时该方法将会被Vert.x所调用，
 并且在该方法执行完毕后， verticle可被视为已经关闭。
 
 跟前面一样，这些方法也是同步的，在这些方法执行后，该verticle将可被视为已经启动或者已经关闭。
 
 === 从verticle中访问vertx实例
 
-不管你选择哪种方法去实现verticle，你都可以通过 `vertx` 变量 / 字段来访问
+不管您选择哪种方法去实现verticle，您都可以通过 `vertx` 变量 / 字段来访问
 vert.x的实例。
 
 .在Groovy脚本中访问vert.x实例
@@ -111,22 +111,22 @@ class HelloWorldHttpVerticle extends AbstractVerticle {
 
 === Verticle的异步启动与关闭
 
-有时你可能想在verticle启动时执行某些耗时操作，但又不想等这些操作完成后才完成verticle的部署。
-例如，你可能想在start方法里部署其他的verticle。
+有时您可能想在verticle启动时执行某些耗时操作，但又不想等这些操作完成后才完成verticle的部署。
+例如，您可能想在start方法里部署其他的verticle。
 
-根据黄金定律，在start方法中，你不应该阻塞以等待其他verticle部署完成。
+根据黄金定律，在start方法中，您不应该阻塞以等待其他verticle部署完成。
 
 所以应该如何实现这个需求？
 
 需要做的只是去实现 *异步* 的start方法，这个异步start方法接收一个 `link:../../apidocs/io/vertx/core/Promise.html[Promise]` 作为参数。
 当该方法返回时 *不* 代表verticle已经部署完成。
 
-经过一段时间，当你完成所有需要做的事（如：启动其他verticle），你可以在调用Promise的complete（或者fail）来表示你的事已经完成。
+经过一段时间，当您完成所有需要做的事（如：启动其他verticle），您可以在调用Promise的complete（或者fail）来表示您的事已经完成。
 类似地，也有一个异步版本的stop方法。
 
-你可以使用异步的stop去执行一些如清理verticle等耗时的操作。
+您可以使用异步的stop去执行一些如清理verticle等耗时的操作。
 
-当你用脚本实现verticle，异步start和stop需要这样实现:
+当您用脚本实现verticle，异步start和stop需要这样实现:
 
 [source, groovy]
 ----
@@ -149,7 +149,7 @@ promise.complete()
 }
 ----
 
-当你使用类去继承 `link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]` ， 你需要重写
+当您使用类去继承 `link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]` ， 您需要重写
 `link:../../apidocs/io/vertx/core/AbstractVerticle.html#start-io.vertx.core.Promise-[start]` 和
 `link:../../apidocs/io/vertx/core/AbstractVerticle.html#stop-io.vertx.core.Promise-[stop]` 方法：
 
@@ -178,7 +178,7 @@ void stop(Promise<Void> future) {
 }
 ----
 
-注意: 在verticle的stop方法中，你并不需要手动反部署子verticle。Vert.x将会在父verticle被反部署时自动反部署它的所有子verticle。
+注意: 在verticle的stop方法中，您并不需要手动反部署子verticle。Vert.x将会在父verticle被反部署时自动反部署它的所有子verticle。
 
 === 往verticle中传递配置信息
 
@@ -195,7 +195,7 @@ vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
 ----
 
 这个配置信息可以在 `link:../../apidocs/io/vertx/core/Context.html[Context]` 中访问，它会以Map的格式返回，
-所以你可以这样访问数据：
+所以您可以这样访问数据：
 
 [source,Groovy]
 ----
@@ -214,13 +214,14 @@ println System.getProperty("foo")
 println System.getenv("HOME")
 ----
 
+[[_json]]
 == JSON
 
 为了处理JSON对象，Vert.x提出了自己的 `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]`
 和 `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` 实现。
 这是因为Java与其他语言不同，并没有为 http://json.org/[JSON]提供一等的支持。
 
-当使用Groovy开发vert.x应用时，你可以使用上述两个类，
+当使用Groovy开发vert.x应用时，您可以使用上述两个类，
 或者使用 (http://www.groovy-lang.org/json.html)[JSON support from Groovy]。
 本章节将会介绍如何使用这两个Vert.x的类。
 
@@ -263,7 +264,7 @@ JSON对象也支持 `null` 值。
 
 可以使用默认的构造函数创建空JSON对象。
 
-你可以从字符串或者JSON格式的g-string创建JSON对象：
+您可以从字符串或者JSON格式的g-string创建JSON对象：
 
 [source,groovy]
 ----
@@ -317,7 +318,7 @@ object["mybool"] = true
 
 ==== 从JSON对象中读取值
 
-你可以用 `getXXX` 的方法从JSON对象中读取值，例如：
+您可以用 `getXXX` 的方法从JSON对象中读取值，例如：
 
 [source,java]
 ----
@@ -335,7 +336,7 @@ def val2 = jsonObject["some-other-key"]
 
 ==== 将JSON对象编码为字符串
 
-你可以使用 `link:../../apidocs/io/vertx/core/json/JsonObject.html#encode--[encode]`
+您可以使用 `link:../../apidocs/io/vertx/core/json/JsonObject.html#encode--[encode]`
 方法来将对象转换为字符串。也可以使用 `link:../../apidocs/io/vertx/core/json/JsonObject.html#encodePrettily--[encodePrettily]`
 让输出更加美观（推断多行和缩进）。
 
@@ -351,7 +352,7 @@ JSON数组也可以包含 `null` 值。
 
 空的JSON数组可以使用默认的构造函数创建。
 
-你可以从JSON格式的字符串或者一个列表创建JSON数组：
+您可以从JSON格式的字符串或者一个列表创建JSON数组：
 
 [source,groovy]
 ----
@@ -383,7 +384,7 @@ def json = map as JsonArray
 
 ==== 添加条目到JSON数组中
 
-你可以通过 `link:../../apidocs/io/vertx/core/json/JsonArray.html#add-java.lang.Object-[add]` 方法添加新的条目到JSON数组中。
+您可以通过 `link:../../apidocs/io/vertx/core/json/JsonArray.html#add-java.lang.Object-[add]` 方法添加新的条目到JSON数组中。
 
 [source,groovy]
 ----
@@ -403,7 +404,7 @@ array << false
 
 ==== 从JSON数组中读取值
 
-你可以通过 `getXXX` 方法来读取JSON数组中的值，例如：
+您可以通过 `getXXX` 方法来读取JSON数组中的值，例如：
 
 [source,groovy]
 ----
@@ -423,6 +424,6 @@ def boolVal = array[2]
 
 ==== 将JSON数组编码为字符串
 
-你可以使用 `link:../../apidocs/io/vertx/core/json/JsonArray.html#encode--[encode]` 方法把数组转换为字符串的形式。
+您可以使用 `link:../../apidocs/io/vertx/core/json/JsonArray.html#encode--[encode]` 方法把数组转换为字符串的形式。
 同样，也可以使用 `link:../../apidocs/io/vertx/core/json/JsonObject.html#encodePrettily--[encodePrettily]`
 方法美化输出（推断多行和缩进）。
