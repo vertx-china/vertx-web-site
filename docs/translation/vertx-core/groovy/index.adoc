@@ -3,7 +3,7 @@
 如果您正在使用Maven或者Gradle，可添加以下的依赖项到您的项目中，
 以访问Vert.x Core API并启用对Groovy的支持:
 
-* Maven (在 `pom.xml` 文件中):
+* Maven （在 `pom.xml` 文件中）：
 
 [source,xml,subs="+attributes"]
 ----
@@ -19,7 +19,7 @@
 </dependency>
 ----
 
-* Gradle (在 `build.gradle` 文件中):
+* Gradle （在 `build.gradle` 文件中）：
 
 [source,groovy,subs="+attributes"]
 ----
@@ -32,12 +32,12 @@ compile "io.vertx:vertx-lang-groovy:4.0.2"
 [[_writing_verticles]]
 === 编写 Verticles
 
-在Groovy中有两种方式可以用于创建Verticles:
+在Groovy中有两种方式可以用于创建Verticles：
 
 使用一个Groovy脚本，
 脚本包含一个实现了 `link:../../apidocs/io/vertx/core/Verticle.html[Verticle]` 接口或者继承  `link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]` 的类
 
-例如下面的代码片段，是一个有效的Groovy verticle:
+例如下面的代码片段，是一个有效的Groovy verticle：
 
 [source, groovy]
 ----
@@ -186,7 +186,7 @@ NOTE: 在verticle的stop方法中，您并不需要手动卸载子verticle。Ver
 [[_passing_configuration_to_a_verticle]]
 === 往verticle中传递配置信息
 
-在部署时，配置信息可以以Map的形式传入verticle:
+在部署时，配置信息可以以Map的形式传入verticle：
 
 [source,Groovy]
 ----
@@ -406,7 +406,7 @@ def array = new JsonArray()
 array.add("foo").add(123).add(false)
 ----
 
-也可以通过"<<"操作符实现：
+也可以通过“<<”操作符实现：
 
 [source,groovy]
 ----
