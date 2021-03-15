@@ -484,7 +484,7 @@ launch {
 Vert.x 适用于任何协程构建器，如 `launch` ， `async` ， `produce` …… ，只要 `CoroutineScope` 实例是有效的。
 下面是几个注意事项：
 
-- 不要在 Vert.x 事件循环线程中使用`runBlocking`，因为这个方法不需要提供 `CoroutineScope` 。
+- 不要在 Vert.x 事件循环线程中使用 `runBlocking` ，因为这个方法不需要提供 `CoroutineScope` 。
 - 为了避免内存泄漏，请始终使用 `coroutineScope {..}` 来定义一个子作用域。这样，如果作用域中的一个协程失败，所有在该作用域中的协程也都会被取消。
 
 [[_coroutine_interoperability]]
