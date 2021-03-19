@@ -369,15 +369,16 @@ class RedisVerticle extends AbstractVerticle {
 
 需要注意，重新连接将创建一个新的连接对象，因此不会每次都缓存和执行这些对象的引用。
 
-== Protocol Parser
+[[_protocol_parser]]
+== 协议解析器
 
-This client supports both `RESP2` and `RESP3` protocols, at the connection handshake time the client will automatically
-detect which version is supported by the server and use it.
+这个客户端同时支持 `RESP2` 和 `RESP3` 协议，在连接握手阶段，
+客户端会自动检测服务器支持的版本，并使用之。
 
-The parser internally creates an "infinite" readable buffer from all the chunks received from the server, in order to
-avoid creating too much garbage in terms of memory collection, a tunnable watermark value is configurable at JVM startup
-time. The system property `io.vertx.redis.parser.watermark` defines how much data is keept in this readable buffer
-before it gets discarded. By default this value is 512Kb. This means that each connection to the server will use at
-least this amount of memory. As the client works in pipeline mode, keeping the number of connections low provides best
-results, which means `512Kb * nconn` memory will be used. If the application will require a large number of connections,
-then reducing the watermark value to a smaller value or even disable it entirely is advisable.
+解析器隐式地为从服务器接收到的数据块创建"无限"可读缓冲区，
+考虑到内存容量，为了避免产生过多的内存垃圾，在JVM启动的时候，可以配置一个可调优的watermark值。
+系统参数 `io.vertx.redis.parser.watermark` 定义了一个缓冲区被废弃之前，可以存储可读数据的数量。
+默认情况下，这个大小是512Kb。这意味着每个服务器的连接都会消耗至少512Kb的内存。
+客户端以 pipeline 模式运行，他会保持较低的连接数同时提供最佳效果，
+这意味着会消耗 `512Kb * n连接数` 大小的内存。
+如果应用需要大量连接，那么我们建议将watermark值调小或者直接禁用之。

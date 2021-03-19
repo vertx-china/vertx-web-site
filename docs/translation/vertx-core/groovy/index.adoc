@@ -154,11 +154,11 @@ void vertxStop(Promise<Void> future) {
 }
 ----
 
-NOTE: The objects of `link:../../apidocs/io/vertx/core/AsyncResult.html[AsyncResult]` or it's subclasses are
-coerced to `link:../../apidocs/java/lang/Boolean.html[Boolean]` according to (http://groovy-lang.org/semantics.html#Groovy-Truth)[Groovy-Truth],
-so that an instance of `link:../../apidocs/io/vertx/core/AsyncResult.html[AsyncResult]` or `link:../../apidocs/io/vertx/core/Future.html[Future]`
-evaluates to `true` if succeeded, or to `false` otherwise.
-That allowes to write more readable code like `res ? doSuccess() : doFail()`.
+NOTE: 根据 (http://groovy-lang.org/semantics.html#Groovy-Truth)[Groovy-Truth] ，
+`link:../../apidocs/io/vertx/core/AsyncResult.html[AsyncResult]` 对象以及其子类中的结果都强制为 `link:../../apidocs/java/lang/Boolean.html[Boolean]` 类型，
+以便 `link:../../apidocs/io/vertx/core/AsyncResult.html[AsyncResult]`
+或 `link:../../apidocs/io/vertx/core/Future.html[Future]` 在成功时解析结果为 `true` ，失败时为 `false` 。
+这样就可以写出可读性更高的代码，类似 `res ? doSuccess() : doFail()` 。
 
 当您使用类去继承 `link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]` ， 您需要重写
 `link:../../apidocs/io/vertx/core/AbstractVerticle.html#start-io.vertx.core.Promise-[start]` 和

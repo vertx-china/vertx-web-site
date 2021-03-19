@@ -382,8 +382,8 @@ client
 });
 ----
 
-A batch query with a `RETURNING` clause creates a `link:../../apidocs/io/vertx/sqlclient/RowSet.html[RowSet]`
-containing a single for each element of the batch:
+带有 `RETURNING` 语句的批量查询创建了一个 `link:../../apidocs/io/vertx/sqlclient/RowSet.html[RowSet]` ，
+这个RowSet包含了该批量查询中的每一个元素。
 
 [source,java]
 ----
