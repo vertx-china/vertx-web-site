@@ -19,7 +19,7 @@
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-service-proxy</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
@@ -86,10 +86,9 @@ vertx.eventBus()
   // 失败
 });
 ----
+当创建服务的时候足够的样本代码在事件总线接收信息，路由会找到合适的方法并在总线上返回
 
-When creating a service there's a certain amount of boilerplate code to listen on the event bus for incoming messages, route them to the appropriate method and return results on the event bus.
-
-使用Vert.x服务代理时, you can avoid writing all that boilerplate code and concentrate on 编写服务
+使用Vert.x服务代理时,你可以使用代码生成避免编写重复的代码，从而集中精力编写服务
 
 在你编写的Java接口上面打上 `@ProxyGen` 注解, 例如:
 
@@ -124,29 +123,30 @@ void save(String collection, JsonObject document,
 package io.vertx.example;
 ----
 
-Given the interface, Vert.x will generate all the boilerplate code required to access your service over the event bus, and it will also generate a *client side proxy* for your service, so your clients can use a rich idiomatic API for your service instead of having to manually craft event bus messages to send.
-The client side proxy will work irrespective of where your service actually lives on the event bus (potentially on a different machine).
+有了这个接口，Vert.x会生成所有需要的用于在Event Bus上访问你的服务的模板代码，同时也会生成对应的 调用端代理类（client side proxy），
+这样你的服务调用端就可以使用一个相当符合习惯的API（译者注：即相同的服务接口）进行服务调用，而不是去手动地向Event Bus发送消息。
+不管你的服务实际在哪个Event Bus上（可能是在不同的机器上），调用端代理类都能正常工作。
 
-That means you can interact with your service like this:
+也就是说，你可以通过以下方式进行服务调用：
 
 [source,java]
 ----
 SomeDatabaseService service = SomeDatabaseService
   .createProxy(vertx, "database-service-address");
 
-// Save some data in the database - this time using the proxy
+// 保存数据到数据库，这里使用了代理
 service.save(
   "mycollection",
   new JsonObject().put("name", "tim"),
   res2 -> {
     if (res2.succeeded()) {
-      // done
+      // 调用完毕
     }
   });
 ----
 
-You can also combine `@ProxyGen` with language API code generation (`@VertxGen`) in order to create service stubs in any of the languages supported by Vert.x - this means you can write your service once in Java and interact with it through an idiomatic other language API irrespective of whether the service lives locally or is somewhere else on the event bus entirely.
-For this don't forget to add the dependency on your language in your build descriptor:
+你也可以将多语言API生成功能（@VertxGen注解）与 @ProxyGen 注解相结合，用于生成其它Vert.x支持的JVM语言对应的服务代理 —— 这意味着你可以只用Java编写你的服务一次，就可以在其他语言中以一种习惯的API风格进行服务调用，而不必管服务是在本地还是在Event Bus的别处。
+想要利用多语言代码生成功能，不要忘记添加对应支持语言的依赖。
 
 [source,java]
 ----
@@ -160,19 +160,19 @@ public interface SomeDatabaseService {
 [[_async_interface]]
 == 异步接口
 
-To be used by the service-proxy generation, the _service interface_ must comply to a couple of rules.
-First it should follow the async pattern.
-To return a result, the method should declare a `Handler<AsyncResult<ResultType>>` parameter.
-`ResultType` can be another proxy (and so a proxies can be factories for other proxies).
+想要正确地生成服务代理类，_服务接口_ 的设计必须遵循一些规则。
+首先是需要遵循异步模式。
+如果需要返回结果，对应的方法需要包含一个 Handler<AsyncResult<ResultType>> 类型的参数
+其中 `ResultType` 可以是另一种代理类型（所以一个代理类可以作为另一个代理类的工厂）。
 
-Let's see an example:
+例如：
 
 [source,java]
 ----
 @ProxyGen
 public interface SomeDatabaseService {
 
-// A couple of factory methods to create an instance and a proxy
+// 一些用于创建服务实例和服务代理实例的工厂方法
 
 static SomeDatabaseService create(Vertx vertx) {
   return new SomeDatabaseServiceImpl(vertx);
@@ -182,22 +182,22 @@ static SomeDatabaseService createProxy(Vertx vertx, String address) {
   return new SomeDatabaseServiceVertxEBProxy(vertx, address);
 }
 
-// A method notifying the completion without a result (void)
+// 异步方法，仅通知调用是否完成，不返回结果
 void save(String collection, JsonObject document,
   Handler<AsyncResult<Void>> result);
 
-// A method providing a result (a json object)
+// 异步方法，包含JsonObject类型的返回结果
 void findOne(String collection, JsonObject query,
   Handler<AsyncResult<JsonObject>> result);
 
-// Create a connection
+// 创建连接
 void createConnection(String shoeSize,
   Handler<AsyncResult<MyDatabaseConnection>> resultHandler);
 
 }
 ----
 
-with:
+以及:
 
 [source,java]
 ----
@@ -213,12 +213,10 @@ void commit(Handler<AsyncResult<Void>> resultHandler);
 void close();
 }
 ----
+你可以通过声明一个特殊方法，并给其加上 `@ProxyClose` 注解来注销代理。
+当此方法被调用时，代理实例被清除。
 
-You can also declare that a particular method unregisters the proxy by annotating it with the `@ProxyClose`
-annotation.
-The proxy instance is disposed when this method is called.
-
-More constraints on the _service interfaces_ are described below.
+更多 `服务接口` 的限制会在下面详解。
 
 [[_security]]
 == 安全
@@ -255,25 +253,24 @@ new ServiceBinder(vertx)
 
 [[_code_generation]]
 == 代码生成
-
+被 @ProxyGen 注解的服务接口会触发生成对应的服务辅助类：
 Service annotated with `@ProxyGen` annotation trigger the generation of the service helper classes:
 
-- The service proxy: a compile time generated proxy that uses the `EventBus` to interact with the service via messages
-- The service handler: a compile time generated `EventBus` handler that reacts to events sent by the proxy
+- 服务代理类（service proxy）：一个编译时产生的代理类，用 `EventBus` 通过消息与服务交互。
+- 服务处理器类（service handler）： 一个编译时产生的 `EventBus` 处理器类，用于响应由服务代理发送的事件。
 
-Generated proxies and handlers are named after the service class, for example if the service is named `MyService`
-the handler is called `MyServiceProxyHandler` and the proxy is called `MyServiceEBProxy`.
+产生的服务代理和处理器的命名是在类名的后面加相关的字段，例如，如果一个服务接口名为 `MyService`，
+则对应的处理器类命名为 `MyServiceProxyHandler`,对应的服务代理类命名为 MyServiceVertxEBProxy。
 
-In addition Vert.x Core provides a generator creating data object converters to ease data object usage in service proxies.
-Such converter provides a basis for the `JsonObject` constructor and the `toJson()` method that are necessary for using data objects in service proxies.
+此外Vert.x Core提供了一个生成器用于数据转化器，以简化服务代理中数据对象的使用.
+数据转化器要求数据对象提供一个以 `JsonObject` 为基础的构造器和`toJson()` 方法
 
-The _codegen_ annotation processor generates these classes at compilation time.
-It is a feature of the Java compiler so _no extra step_ is required, it is just a matter of configuring correctly your build:
+_codegen_ 注释处理器在编译时生成这些类
+它是Java编译器的功能 所以无需 _额外步骤_, 只需正确配置您的构建参数即可:
 
-Just add the `io.vertx:vertx-codegen:processor` and `io.vertx:vertx-service-proxy`
-dependencies to your build.
+只需要在构建配置中加上 `io.vertx:vertx-service-proxy:processor` 依赖。
 
-Here a configuration example for Maven:
+这是一个针对Maven的配置示例：
 
 [source,xml]
 ----
@@ -290,7 +287,7 @@ Here a configuration example for Maven:
 </dependency>
 ----
 
-This feature can also be used in Gradle:
+此功能也可以在Gradle中使用:
 
 [source]
 ----
@@ -298,11 +295,9 @@ compile "io.vertx:vertx-codegen:4.0.0:processor"
 compile "io.vertx:vertx-service-proxy:4.0.0"
 ----
 
-IDE provides usually support for annotation processors.
-
-The codegen `processor` classifier adds to the jar the automatic configuration of the service proxy annotation processor via the `META-INF/services` plugin mechanism.
-
-If you want you can use it too with the regular jar but you need then to declare the annotation processor explicitly, for instance in Maven:
+IDE通常为注释处理器提供支持.
+代码生成 `处理器` 分类器会把服务代理注释处理器的配置自动添加到jar中 `META-INF/services` 当中
+如果你想和其与常规jar一起使用，但是需要显式声明注释处理器 , 例如在Maven中:
 
 [source,xml]
 ----
@@ -319,49 +314,48 @@ If you want you can use it too with the regular jar but you need then to declare
 [[_exposing_your_service]]
 == 公开服务
 
-Once you have your _service interface_, compile the source to generate the stub and proxies.
-Then, you need some code to "register" your service on the event bus:
+当你写好服务接口以后，执行构建操作以生成代码。
+然后你需要将你的服务“注册”到Event Bus上：
 
 [source,java]
 ----
 SomeDatabaseService service = new SomeDatabaseServiceImpl();
-// Register the handler
+// 注册处理器
 new ServiceBinder(vertx)
   .setAddress("database-service-address")
   .register(SomeDatabaseService.class, service);
 ----
 
-This can be done in a verticle, or anywhere in your code.
+这个过程既可以在 Verticle 中完成，也可以在你的代码的任何其它位置完成。
 
-Once registered, the service becomes accessible.
-If you are running your application on a cluster, the service is available from any host.
+一旦注册了，这个服务就可用了。如果你的应用运行在集群上，则集群中节点都可访问。
 
-To withdraw your service, use the `link:../../apidocs/io/vertx/serviceproxy/ServiceBinder.html#unregister-io.vertx.core.eventbus.MessageConsumer-[unregister]`
-method:
+如果想注销这个服务, 使用 `link:../../apidocs/io/vertx/serviceproxy/ServiceBinder.html#unregister-io.vertx.core.eventbus.MessageConsumer-[unregister]`
+方法注销:
 
 [source,java]
 ----
 ServiceBinder binder = new ServiceBinder(vertx);
 
-// Create an instance of your service implementation
+// 创建服务实例
 SomeDatabaseService service = new SomeDatabaseServiceImpl();
-// Register the handler
+// 注册处理器
 MessageConsumer<JsonObject> consumer = binder
   .setAddress("database-service-address")
   .register(SomeDatabaseService.class, service);
 
 // ....
 
-// Unregister your service.
+// 注销服务.
 binder.unregister(consumer);
 ----
 
 [[_proxy_creation]]
 == 代理创建
 
-Now that the service is exposed, you probably want to consume it.
-For this, you need to create a proxy.
-The proxy can be created using the `link:../../apidocs/io/vertx/serviceproxy/ServiceProxyBuilder.html[ServiceProxyBuilder]` class:
+现在服务已经公开, 现在可以消费使用它.
+为此, 你必须创建一个代理.
+创建代理使用 `link:../../apidocs/io/vertx/serviceproxy/ServiceProxyBuilder.html[ServiceProxyBuilder]` 类:
 
 [source,java]
 ----
@@ -369,26 +363,26 @@ ServiceProxyBuilder builder = new ServiceProxyBuilder(vertx)
   .setAddress("database-service-address");
 
 SomeDatabaseService service = builder.build(SomeDatabaseService.class);
-// or with delivery options:
+// 设置其他属性:
 SomeDatabaseService service2 = builder.setOptions(options)
   .build(SomeDatabaseService.class);
 ----
 
-The second method takes an instance of `link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]` where you can configure the message delivery (such as the timeout).
+第二种构造通过 `link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]` 构造实例，您可以在其中配置属性（例如超时）
 
-Alternatively, you can use the generated proxy class.
-The proxy class name is the _service interface_ class name followed by `VertxEBProxy`.
-For instance, if your _service interface_ is named `SomeDatabaseService`, the proxy class is named `SomeDatabaseServiceVertxEBProxy`.
+或者,你也可以使用代理类.
+这个代理名称为 _服务接口_ 类目后追加 `VertxEBProxy`.
+例如, 如果你的 _服务接口_ 名为 `SomeDatabaseService`, 那么代理类名为 `SomeDatabaseServiceVertxEBProxy`。
 
-Generally, _service interface_ contains a `createProxy` static method to create the proxy.
-But this is not required:
+一般来说, _服务接口_ 包含 `createProxy` 静态方法用于创建代理。
+但这不是必须的:
 
 [source,java]
 ----
 @ProxyGen
 public interface SomeDatabaseService {
 
-// Method to create the proxy.
+// 静态方法创建代理
 static SomeDatabaseService createProxy(Vertx vertx, String address) {
   return new SomeDatabaseServiceVertxEBProxy(vertx, address);
 }
@@ -399,15 +393,14 @@ static SomeDatabaseService createProxy(Vertx vertx, String address) {
 
 [[_error_handling]]
 == 错误处理
-
-Service methods may return errors to the client by passing a failed `Future` containing a `link:../../apidocs/io/vertx/serviceproxy/ServiceException.html[ServiceException]`
-instance to the method's `Handler`.
-A `ServiceException` contains an `int` failure code, a message, and an optional
-`JsonObject` containing any extra information deemed important to return to the caller.
-For convenience, the
-`link:../../apidocs/io/vertx/serviceproxy/ServiceException.html#fail-int-java.lang.String-[ServiceException.fail]` factory method can be used to create an instance of
-`ServiceException` already wrapped in a failed `Future`.
-For example:
+服务方法可能会通过向方法的处理器（Handler）传递一个失败状态的 Future （包含一个 `link:../../apidocs/io/vertx/serviceproxy/ServiceException.html[ServiceException]`
+实例。
+一个 `ServiceException` 包含 `int` 类型的错误码、消息,以及一个可选的
+`JsonObject` 对象用于传递额外信息.
+为了方便,
+`link:../../apidocs/io/vertx/serviceproxy/ServiceException.html#fail-int-java.lang.String-[ServiceException.fail]` 工厂方法来创建一个已经是失败状态并且包装着
+`ServiceException` 实例的失败 `Future`.
+例如:
 
 [source,java]
 ----
@@ -415,7 +408,7 @@ public class SomeDatabaseServiceImpl implements SomeDatabaseService {
 private static final BAD_SHOE_SIZE = 42;
 private static final CONNECTION_FAILED = 43;
 
- // Create a connection
+ // 创建连接
  void createConnection(String shoeSize, Handler<AsyncResult<MyDatabaseConnection>> resultHandler) {
    if (!shoeSize.equals("9")) {
      resultHandler.handle(ServiceException.fail(BAD_SHOE_SIZE, "The shoe size must be 9!",
@@ -433,8 +426,8 @@ private static final CONNECTION_FAILED = 43;
 }
 ----
 
-The client side can then check if the `Throwable` it receives from a failed `AsyncResult` is a `ServiceException`, and if so, check the specific error code inside.
-It can use this information to differentiate business logic errors from system errors (like the service not being registered with the Event Bus), and to determine exactly which business logic error occurred.
+服务调用端（client side）可以检查它接收到的失败状态的AsyncResult包含的Throwable对象是否为ServiceException实例。如果是的话，继续检查内部的特定的错误状态码。
+调用端可以通过这些信息来将业务逻辑错误与系统错误（如服务没有被注册到Event Bus上）区分开，以便确定到底发生了哪一种业务逻辑错误。下面是一个例子：
 
 [source,java]
 ----
@@ -442,7 +435,7 @@ public void foo(String shoeSize, Handler<AsyncResult<JsonObject>> handler) {
  SomeDatabaseService service = SomeDatabaseService.createProxy(vertx, SERVICE_ADDRESS);
  service.createConnection("8", result -> {
    if (result.succeeded()) {
-     // Do success stuff.
+     // 正常调用.
    } else {
      if (result.cause() instanceof ServiceException) {
        ServiceException exc = (ServiceException) result.cause();
@@ -456,7 +449,7 @@ public void foo(String shoeSize, Handler<AsyncResult<JsonObject>> handler) {
            new ConnectionError("Failed to connect to the DB")));
        }
      } else {
-       // Must be a system error (e.g. No service registered for the proxy)
+       //可能是一个系统错误(system error)，如服务代理没有对应的已注册的服务
        handler.handle(Future.failedFuture(
          new SystemError("An unexpected error occurred: + " result.cause().getMessage())
        ));
@@ -466,7 +459,7 @@ public void foo(String shoeSize, Handler<AsyncResult<JsonObject>> handler) {
 }
 ----
 
-If desired, service implementations may also return a sub-class of `ServiceException`, as long as a default `MessageCodec` is registered for it . For example, given the following `ServiceException` sub-class:
+如果需要的话, 服务实现的时候也可以返回 `ServiceException` 子类, 只要向Event Bus注册了对应的默认 `MessageCodec` 就可以了。例如, 比如给定下面的 `ServiceException` 子类:
 
 [source,java]
 ----
@@ -490,7 +483,7 @@ class ShoeSizeException extends ServiceException {
 }
 ----
 
-As long as a default `MessageCodec` is registered, the Service implementation can return the custom exception directly to the caller:
+只要向Event Bus注册了对应的 `MessageCodec` , 服务就可以直接向调用者返回自定义的异常类型:
 
 [source,java]
 ----
@@ -515,18 +508,18 @@ public class SomeDatabaseServiceImpl implements SomeDatabaseService {
 }
 ----
 
-Finally, the client can now check for the custom exception:
+最后调用端可以检查自定义的异常类型了：
 
 [source,java]
 ----
 public void foo(String shoeSize, Handler<AsyncResult<JsonObject>> handler) {
- // If this code is running on a different node in the cluster, the
- // ShoeSizeExceptionMessageCodec will need to be registered with the
- // Vertx instance on this node, too.
+ // 如果运行在集群模式当中，代码在不同的节点运行,
+ // ShoeSizeExceptionMessageCodec 必须注册到
+ // 该节点的Vertx当中
  SomeDatabaseService service = SomeDatabaseService.createProxy(vertx, SERVICE_ADDRESS);
  service.createConnection("8", result -> {
    if (result.succeeded()) {
-     // Do success stuff.
+     // 成功调用.
    } else {
      if (result.cause() instanceof ShoeSizeException) {
        ShoeSizeException exc = (ShoeSizeException) result.cause();
@@ -543,8 +536,8 @@ public void foo(String shoeSize, Handler<AsyncResult<JsonObject>> handler) {
 }
 ----
 
-Note that if you're clustering `Vertx` instances, you'll need to register the custom Exception's `MessageCodec`
-with each `Vertx` instance in the cluster.
+注意在`Vertx` 集群模式下，你需要向集群中每个节点的Event Bus注册对应的自定义异常类型
+的 `MessageCodec` 实例
 
 [[_restrictions_for_service_interface]]
 == 接口类型限制
@@ -565,7 +558,7 @@ They are:
 SomeDatabaseService doSomething();
 ----
 
-This is because methods must not block and it's not possible to return a result immediately without blocking if the service is remote.
+这是因为方法不能被阻塞，远程服务是不可能立即返回结果并不阻塞
 
 === 参数类型
 
@@ -587,9 +580,9 @@ This is because methods must not block and it's not possible to return a result 
 * 任何 _枚举_ 类型
 * 任何被打上 `@DataObject` 注解的实体类
 
-If an asynchronous result is required a last parameter of type `Handler<AsyncResult<R>>` can be provided.
+如果需要返回异步结果，可以提供一个 `Handler<AsyncResult<R>>` 。
 
-`R` can be any of:
+`R` 的类型可以是:
 
 * `JSON`
 * `PRIMITIVE`
@@ -597,30 +590,30 @@ If an asynchronous result is required a last parameter of type `Handler<AsyncRes
 * `List<PRIMITIVE>`
 * `Set<JSON>`
 * `Set<PRIMITIVE>`
-* Any _Enum_ type
-* Any class annotated with `@DataObject`
-* Another proxy
+* 任何 _枚举_ 类型
+* 任何打上 `@DataObject` 注解的类（需符合上文的代码篇章要求）
+* 另一个代理类
 
 === 重载方法
 
-There must be no overloaded service methods. (_i.e._ more than one with the same name, regardless the signature).
+服务接口不支持任何的重载服务方法. (即方法名相同，参数列表不同).
 
 [_convention_for_invoking_services_over_the_event_bus_without_proxies]
 == 通过事件总线调用服务的规则 (不使用服务代理)
 
-Service Proxies assume that event bus messages follow a certain format so they can be used to invoke services.
+服务代理假定Event Bus中的消息遵循一定的格式，因此能被用于服务的调用
 
-Of course, you don't *have to* use client proxies to access remote service if you don't want to.
-It's perfectly acceptable to interact with them by just sending messages over the event bus.
+当然，如果不愿意的话，你也可以 *不用* 服务代理类来访问远程服务。
+被广泛接受的与服务交互的方式就是直接在Event Bus发送消息。
 
-In order for services to be interacted with a consistent way the following message formats *must be used* for any Vert.x services.
+为了使服务访问的方式一致，所有的服务都必须遵循以下的消息格式。
 
-The format is very simple:
+格式非常简单：
 
-* There should be a header called `action` which gives the name of the action to perform.
-* The body of the message should be a `JsonObject`, there should be one field in the object for each argument needed by the action.
+* 需要有一个名为 `action` 的 消息头(header)，作为要执行操作的名称。
+* 消息体（message body）应该是一个 `JsonObject` 对象，里面需要包含操作需要的所有参数。
 
-For example to invoke an action called `save` which expects a String collection and a JsonObject document:
+举个例子，假如我们要去执行一个名为 `save` 的操作，此操作接受一个字符串类型的 collection 和 JsonObject 类型 document:
 
 ----
 Headers:
@@ -634,11 +627,11 @@ Body:
    }
 ----
 
-The above convention should be used whether or not service proxies are used to create services, as it allows services to be interacted with consistently.
+无论有没有用到服务代理来创建服务，都应该用上面这种方式编写服务，因为这样允许服务交互时保持一致性.
 
-In the case where service proxies are used the "action" value should map to the name of an action method in the service interface and each `[key, value]` in the body should map to a `[arg_name, arg_value]` in the action method.
+在上面的例子中，"action"对应的值应该与服务接口的某个方法名称相对应，而消息体中每个 `[key, value]` 都要与服务方法中的某个 `[arg_name, arg_value]` 相对应
 
-For return values the service should use the `message.reply(...)` method to send back a return value - this can be of any type supported by the event bus.
-To signal a failure the method `message.fail(...)` should be used.
+对于返回值，服务需使用 `message.reply(...)` 方法去向调用端发送回一个返回值 -  这个值可以是Event Bus支持的任何类型。
+如果需要表示调用失败，可以调用 `message.fail(...)` 方法。
 
-If you are using service proxies the generated code will handle this for you automatically.
+如果你使用Vert.x 服务代理组件的话，生成的代码会自动帮你处理这些问题。
