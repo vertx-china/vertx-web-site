@@ -1,9 +1,9 @@
-= JWT Auth provider
+= JWT 认证
 
-This component contains an out of the box a JWT implementation. To use this project, add the following
-dependency to the _dependencies_ section of your build descriptor:
+该组件包含了一个现成的JWT实现，要使用这个项目，将下面的依赖添加到构建描述符里的
+_dependencies_ 部分
 
-* Maven (in your `pom.xml`):
+* Maven (在你的 `pom.xml`):
 
 [source,xml,subs="+attributes"]
 ----
@@ -14,37 +14,35 @@ dependency to the _dependencies_ section of your build descriptor:
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle (在你的 `build.gradle` 文件):
 
 [source,groovy,subs="+attributes"]
 ----
 compile 'io.vertx:vertx-auth-jwt:4.0.0'
 ----
 
-JSON Web Token is a simple way to send information in the clear (usually in a URL) whose contents can be
-verified to
-be trusted. JWT are well suited for scenarios as:
+JSON Web 令牌是一种简单的方法来发送明文信息（通常是URL），其内容可以被验证为是可信的。
+像下面的这些场景JWT是非常适用的：
 
-* In a Single Sign-On scenario where you want a separate authentication server that can then send user
-information in a trusted way.
-* Stateless API servers, very well suited for single page applications.
-* etc...
+* 在单点登录方案中，需要一个单独的身份验证服务器，然后该服务器可以以受信任的方式发送用户信息.
+* 无状态的API 服务, 非常适合单页应用.
+* 等等...
 
-Before deciding on using JWT, it's important to note that JWT does not encrypt the payload, it only signs it. You
-should not send any secret information using JWT, rather you should send information that is not secret but needs to
-be verified. For instance, sending a signed user id to indicate the user that should be logged in would work great!
-Sending a user's password would be very, very bad.
+在决定使用JWT之前, 需要重点注意的是JWT并不加密payload, 沓子对它签名. 你
+你不应该使用JWT发送任何私密信息, 相反你应该发送是不是私密的
+但要被验证的信息。举个例子, 使用JWT发送一个签名过的用户id来表明这个用户已经登录了的做法非常对的!
+相反发送一个用户的密码的做法是非常非常错误的.
 
-Its main advantages are:
+JWT主要的优点有:
 
-* It allows you to verify token authenticity.
-* It has a json body to contain any variable amount of data you want.
-* It's completely stateless.
+* 它可以让你验证令牌的真实性。
+* 它有一个JSON结构，可以包含任何你想要的变量和大量的数据。
+* 它是无状态的.
 
-To create an instance of the provider you use `link:../../apidocs/io/vertx/ext/auth/jwt/JWTAuth.html[JWTAuth]`. You specify the configuration
-in a JSON object.
+你可以使用 `link:../../apidocs/io/vertx/ext/auth/jwt/JWTAuth.html[JWTAuth]` 来创建一个提供者的实例。
+并指定一个JSON对象的配置。
 
-Here's an example of creating a JWT auth provider:
+这是创建一个JWT auth提供者的示例代码：
 
 [source,java]
 ----
@@ -56,9 +54,9 @@ JWTAuthOptions config = new JWTAuthOptions()
 AuthenticationProvider provider = JWTAuth.create(vertx, config);
 ----
 
-A typical flow of JWT usage is that in your application you have one end point that issues tokens, this end point
-should be running in SSL mode, there after you verify the request user, say by its username and password you would
-do:
+JWT用法的典型流程是，在您的应用程序有一个端点颁发令牌, 这个端点应在
+SSL模式下运行, 端点这通过用户名和密码验证完请求用户之后，表示你将这样做生成
+令牌:
 
 [source,java]
 ----
@@ -69,32 +67,33 @@ JWTAuthOptions config = new JWTAuthOptions()
 
 JWTAuth provider = JWTAuth.create(vertx, config);
 
-// on the verify endpoint once you verify the identity
-// of the user by its username/password
+// 验用户的用户名和密码之后，
+// 通过端点生成签名令牌
 if ("paulo".equals(username) && "super_secret".equals(password)) {
   String token = provider.generateToken(
     new JsonObject().put("sub", "paulo"), new JWTOptions());
 
-  // now for any request to protected resources you should
-  // pass this string in the HTTP header Authorization as:
+  // 现在，对于任何对受保护资源的请求，你应该
+  // 检查他们的HTTP头中Authorization字符串:
   // Authorization: Bearer <token>
 }
 ----
 
-=== Loading Keys
+[_Loading_keys_]
+=== 加载秘钥
 
-Loading keys can be performed in 3 different ways:
+秘钥可以通过三种不同的方式载入:
 
-* Using secrets (symmetric keys)
-* Using OpenSSL `pem` formatted files (pub/sec keys)
-* Using Java Keystore files (both symmetric and pub/sec keys)
+* 使用 secrets (对称秘钥)
+* 使用 OpenSSL 生成的 `pem` 格式文件 (公钥)
+* 使用 Java Keystore 文件 (对称加密公钥)
 
-==== Using Symmetric Keys
+==== 使用对称秘钥
 
-The default signature method for JWT's is known as `HS256`. `HS` stands in this case for `HMAC Signature using SHA256`.
+JWT的默认签名方法称为 `HS256`。 `HS` 默认表示为 `HMAC 加密 使用 SHA256`.
 
-This is the simplest key to load. All you need is a secret that is shared between you and the 3rd party, for example
-assume that the secret is: `keyboard cat` then you can configure your Auth as:
+这是最简单的加载秘钥方式了. 你只需要将secret与第三方共享, 举个例子
+假设 secret 是: `keyboard cat` 那么你可以将Auth配置为:
 
 [source,java]
 ----
@@ -106,21 +105,21 @@ JWTAuth provider = JWTAuth.create(vertx, new JWTAuthOptions()
 String token = provider.generateToken(new JsonObject());
 ----
 
-In this case the secret is configured as a public key, as it is a token that is known to both parties and you configure
-your PubSec key as being symmetric.
+在这种情况下secret将被设置为公钥, 因为这是双方都知道的令牌，你可以配置
+你的PubSec配置为对称。
 
-==== Using RSA keys
+==== 使用 RSA 秘钥
 
-This section is by no means a manual on OpenSSL and a read on OpenSSL command line usage is advised. We will cover
-how to generate the most common keys and how to use them with JWT auth.
+这部分不是 OpenSSL 文档，建议阅读OpenSSL文档了解命令的使用。 我们将
+介绍如何生成最通用的密钥以及如何和JWT auth一起使用。
 
-Imagine that you would like to protect your application using the very common `RS256` JWT algorithm. Contrary to some
-belief, 256 is not the key length but the hashing algorithm signature length. Any RSA key can be used with this JWT
-algorithm. Here is an information table:
+想象一下，你想使用非常常见的 `RS256` 加密算法来保护您的资源。 与你想象
+相反, 256 不是秘钥长度而是哈希算法的签名长度. 任何RSA秘钥都和JWT
+加密算法一期使用. 这里是信息表:
 
 [width="80%",cols="e,>s",options="header"]
 |=========================================================
-|"alg" Param Value |Digital Signature Algorithm
+|"alg" 参数值 |数字签名算法
 
 |RS256 |RSASSA-PKCS1-v1_5 using SHA-256
 
@@ -130,14 +129,14 @@ algorithm. Here is an information table:
 
 |=========================================================
 
-If you would like to generate a 2048bit RSA key pair, then you would do (please remember **not** to add a passphrase
-otherwise you will not be able to read the private key in the JWT auth):
+如果您想生成一个2048位RSA密钥对, 那么你应该(请记住 **不要** 添加密码，
+JWT auth将无法载入秘钥文件):
 
 ----
 openssl genrsa -out private.pem 2048
 ----
 
-You can observe that the key is correct as the file content is similar to this:
+如果你看到类似的文件内容，那么恭喜你秘钥文件正确的生成了；
 
 ----
 -----BEGIN RSA PRIVATE KEY-----
@@ -147,13 +146,13 @@ e4k0yN3F1J1DVlqYWJxaIMzxavQsi9Hz4p2JgyaZMDGB6kGixkMo
 -----END RSA PRIVATE KEY-----
 ----
 
-The standard JDK cannot read this file as is, so we **must** convert it to PKCS8 format first:
+标准的JDK是无法读取的该文件的，所以我们 **必须** 将它转换成 PKCS8 标准的格式的:
 
 ----
 openssl pkcs8 -topk8 -inform PEM -in private.pem -out private_key.pem -nocrypt
 ----
 
-Now the new file `private_key.pem` which resembles the original one contains:
+现在是一个包含类似内容，全新的 `private_key.pem` 秘钥文件了；
 
 ----
 -----BEGIN PRIVATE KEY-----
@@ -163,14 +162,14 @@ MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDE9JsJBjmYEoUM
 -----END PRIVATE KEY-----
 ----
 
-If we are verifying tokens only (you will only need the private_key.pem file) however at some point you will need to
-issue tokens too, so you will a public key. In this case you need to extract the public key from the private key file:
+如果你只验证令牌 (你只需要 private_key.pem 文件) 但是某些时候你需要
+签发令牌, 所以你需要一个公钥。在这种情况下你需要从私钥文件中提取公钥文件:
 
 ----
 openssl rsa -in private.pem -outform PEM -pubout -out public.pem
 ----
 
-And you should see that the content of the file is similar to this:
+你会看到类似内容的文件:
 
 ----
 -----BEGIN PUBLIC KEY-----
@@ -180,7 +179,7 @@ qwIDAQAB
 -----END PUBLIC KEY-----
 ----
 
-Now you can use this to issue or validate tokens:
+现在可以校验令牌有效性了:
 
 [source,java]
 ----
@@ -235,17 +234,17 @@ String token = provider.generateToken(
   new JWTOptions().setAlgorithm("RS256"));
 ----
 
-==== Using EC keys
+==== 使用 EC 秘钥
 
-Elliptic Curve keys are also supported, however the default JDK has some limitations on the features that can be used.
+我们还支持椭圆曲线加密算法，但是在默认JDK上面使用有一定限制
 
-The usage is very similar to RSA, first you create a private key:
+用法和RSA加密算法极其相似, 首先你需要创建一个公钥：
 
 ----
 openssl ecparam -name secp256r1 -genkey -out private.pem
 ----
 
-So you will get something similar to this:
+然后你会看到类似内容的文件了:
 
 ----
 -----BEGIN EC PARAMETERS-----
@@ -258,13 +257,13 @@ AwEHoUQDQgAEG1O9LCrP6hg3Y9q68+LF0q48UcOkwVKE1ax0b56wjVusf3qnuFO2
 -----END EC PRIVATE KEY-----
 ----
 
-However the JDK prefers PKCS8 format so we must convert:
+但是JDK支持此PKCS8格式的，我们必须将它装换；
 
 ----
 openssl pkcs8 -topk8 -nocrypt -in private.pem -out private_key.pem
 ----
 
-Which will give you a key similar to this:
+然后会看到类似的内容的文件:
 
 ----
 -----BEGIN PRIVATE KEY-----
@@ -274,7 +273,7 @@ UoTVrHRvnrCNW6x/eqe4U7b/5ccoqG3MRq+8Ux5dFD5lUSozTIY1vTir
 -----END PRIVATE KEY-----
 ----
 
-Using the private key you can already generate tokens:
+使用私钥你可以生成令牌了:
 
 [source,java]
 -----
@@ -294,13 +293,13 @@ String token = provider.generateToken(
   new JWTOptions().setAlgorithm("ES256"));
 -----
 
-So in order to validate the tokens you will need a public key:
+为了验证令牌你还需要一个公钥：
 
 ----
 openssl ec -in private.pem -pubout -out public.pem
 ----
 
-So you can do all operations with it:
+现在你可以用它进行全部操作了:
 
 [source,java]
 ----
@@ -326,14 +325,14 @@ String token = provider.generateToken(
   new JWTOptions().setAlgorithm("ES256"));
 ----
 
-==== The JWT keystore file
+==== JWT keystore 文件
 
-If you prefer to use Java Keystores, then you can do it either.
+如果你喜欢用Java Keystores格式的秘钥文件, 那么下文可以做到这一点.
 
-This auth provider requires a keystore in the classpath or in the filesystem with either a
+身份认证器需要classpath上或文件路径上加载一个秘钥库，以供
 `https://docs.oracle.com/javase/8/docs/api/javax/crypto/Mac.html[javax.crypto.Mac]`
-or a `https://docs.oracle.com/javase/8/docs/api/java/security/Signature.html[java.security.Signature]` in order to
-sign and verify the generated tokens.
+或 `https://docs.oracle.com/javase/8/docs/api/java/security/Signature.html[java.security.Signature]`
+生成或认证令牌。
 
 The implementation will, by default, look for the following aliases, however not all are required to be present. As
 a good practice `HS256` should be present:
@@ -358,10 +357,10 @@ will not be loaded if either expired or not yet valid to be use.
 All keys algorithms will be checked if can be matched to the given alias. For example an `RS256` key will not be loaded
 if issued with a `EC` algorithm, or if issued with `RSA` but signature `SHA1WithRSA` instead of `SHA256WithRSA`.
 
-===== Generate a new Keystore file
+===== 生成新的Keystore格式秘钥
 
-The only required tool to generate a keystore file is `keytool`, you can now specify which algorithms you need by
-running:
+生成秘钥文件需要唯一的工具是 `keytool`, 您现在可以运行命令行并指定特定的
+算法:
 
 ----
 keytool -genseckey -keystore keystore.jceks -storetype jceks -storepass secret -keyalg HMacSHA256 -keysize 2048 -alias HS256 -keypass secret
@@ -375,10 +374,10 @@ keytool -genkeypair -keystore keystore.jceks -storetype jceks -storepass secret 
 keytool -genkeypair -keystore keystore.jceks -storetype jceks -storepass secret -keyalg EC -keysize 521 -alias ES512 -keypass secret -sigalg SHA512withECDSA -dname "CN=,OU=,O=,L=,ST=,C=" -validity 360
 ----
 
-For more information on keystores and how to use the `PKCS12` format (Default from Java >=9) please see the documentation
-of the common module.
+有关更多keystores的信息以及如何使用 `PKCS12` 格式秘钥 (默认：Java版本 >=9)
+请参阅通用模块的文档。
 
-=== Read only tokens
+=== 读取令牌
 
 If you need to consume JWT tokens issues by third parties you probably won't have the private key with you, in that
 case all you need to have is a public key im PEM format.
@@ -517,7 +516,7 @@ AuthenticationProvider provider =
 So in this example we configure the JWT to work with Keycloak token format. In this case the claims will be checked
 under the path `realm_access/roles` rather than `permissions`.
 
-=== Validating Tokens
+=== 校验令牌
 
 When the method `authenticate` is invoked, the token is validated against the `JWTOptions` provided during the
 initialization. The validation performs the following steps:
@@ -533,7 +532,7 @@ Once these validations complete a JWTUser object is then returned, the object is
 permission claims key provided in the configuration. This value is used later when doing authorization. The value
 corresponds to the json path where authorities should be checked.
 
-=== Customizing Token Generation
+=== 自定义 Token 生成
 
 In the same way tokens are validated, the generation is initially configured during the initialization.
 
