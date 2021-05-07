@@ -12,17 +12,17 @@ const Hero = ({ gitHubStarsFallbackValue }) => (
     <div className="hero-main container">
       <div className="hero-left">
         <div className="hero-slogan">
-          <span className="hero-product-name">Eclipse Vert.x<span className="hero-product-name-trademark">&trade;</span></span> Reactive <span className="hero-slogan-second-line">applications on the JVM</span>
+          <span className="hero-product-name">Eclipse Vert.x<span className="hero-product-name-separator"> |</span></span> JVM上的响应式应用
         </div>
         <div className="hero-buttons">
           <Link href="/get-started/">
-            <a><Button primary><FastForward className="feather" /> Get started with v{versions[0]}</Button></a>
+            <a><Button primary><FastForward className="feather" /> 从 v{versions[0]} 开始</Button></a>
           </Link>
           <GitHubStars org="eclipse-vertx" repo="vert.x" button fallbackValue={gitHubStarsFallbackValue} />
         </div>
         <div className="hero-buttons hero-buttons-second">
           <Link href="/blog/from-vert-x-3-to-vert-x-4/">
-            <a><Button primary><ArrowUpCircle className="feather" /> Migrate from Vert.x 3</Button></a>
+            <a><Button primary><ArrowUpCircle className="feather" /> 从 Vert.x 3迁移</Button></a>
           </Link>
         </div>
       </div>

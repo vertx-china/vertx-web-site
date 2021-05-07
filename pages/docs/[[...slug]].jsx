@@ -32,7 +32,6 @@ async function readDirRecursive(dir, fs, path, result = []) {
 export async function getStaticPaths() {
   const fs = require("fs").promises
   const path = require("path")
-  const { slash } = require("../../components/lib/path-utils")
 
   let paths = []
 
@@ -62,9 +61,15 @@ export async function getStaticPaths() {
 
   let files = await readDirRecursive(extractedDocsPath, fs, path)
   for (let f of files) {
-    let m = slash(f).match(new RegExp(`${extractedDocsPath}/(.+)index.adoc`))
+    let pattern
+    if (path.sep === "\\") {
+      pattern = `${extractedDocsPath.replace("/", "\\\\")}\\\\(.+)index.adoc`
+    } else {
+      pattern = `${extractedDocsPath}/(.+)index.adoc`
+    }
+    let m = f.match(new RegExp(pattern))
     if (m) {
-      let slug = m[1].split("/").slice(0, -1)
+      let slug = m[1].split(path.sep).slice(0, -1)
       if (slug.length > 1) { // don't include index.adoc in parent directory
         paths.push({ params: { slug } })
       }

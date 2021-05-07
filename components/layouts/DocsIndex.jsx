@@ -5,9 +5,8 @@ import ReadMoreLink from "../ReadMoreLink"
 import ScrollLink from "../ScrollLink"
 import Label from "../Label"
 import { versions as docsVersions } from "../../docs/metadata/all"
-import { filterLatestBugfixVersions } from "../../docs/metadata/helpers"
 import Link from "next/link"
-import { Book, ExternalLink } from "react-feather"
+import { Book } from "react-feather"
 import "./DocsIndex.scss"
 
 const Section = ({ icon, children, id, name }) => {
@@ -16,32 +15,14 @@ const Section = ({ icon, children, id, name }) => {
     numChildren = Math.min(2, children.length)
   }
 
-  let book = undefined
-  if (id === "core") {
-    let url = "https://www.manning.com/books/vertx-in-action"
-    book = (
-      <div className="docs-index-section-book">
-        <a href={url} target="_blank" rel="noopener noreferrer">
-          <img src={require("../../assets/book-cover-medium.jpg")} width="230" />
-        </a><br />
-        <a href={url} target="_blank" rel="noopener noreferrer">
-          Get the book ... <ExternalLink className="external-link-icon" size="1em" />
-        </a>
-      </div>
-    )
-  }
-
   return (
     <section className="docs-index-section" id={id}>
-      <div className="docs-index-section-wrapper">
-        <div className="docs-index-section-header">
-          <h3>{icon} {name}</h3>
-        </div>
-        <div className={`docs-index-section-content docs-index-section-content-${numChildren}`}>
-          {children}
-        </div>
+      <div className="docs-index-section-header">
+        <h3>{icon} {name}</h3>
       </div>
-      {book}
+      <div className={`docs-index-section-content docs-index-section-content-${numChildren}`}>
+        {children}
+      </div>
     </section>
   )
 }
@@ -99,18 +80,18 @@ const Docs = ({ metadata, version }) => {
 
             <div className="docs-index-content-heading-right">
               <span className="docs-index-api">
-                <a href={`/docs/${version ? `${version}/` : ""}apidocs`}>
-                  <Book className="feather" />API
-                </a>
+                <Link href={`https://vertx.io/docs/${version ? `${version}/` : ""}apidocs`}>
+                  <a><Book className="feather" />API</a>
+                </Link>
               </span>
 
               <span className="docs-index-content-version">
-                <DropDown title={`v${version || docsVersions[0]}`} align="right">
+                <DropDown title={`v${version || docsVersions[0]}`}>
                   <DropDownItem active={version === undefined ||
                         version === docsVersions[0]} href="/docs/">
                     Latest (v{docsVersions[0]})
                   </DropDownItem>
-                  {filterLatestBugfixVersions(docsVersions).slice(1).map(v => (
+                  {docsVersions.slice(1).map(v => (
                     <DropDownItem key={v} active={version === v}
                         href={`/docs/${v}/`}>
                       v{v}
@@ -125,7 +106,7 @@ const Docs = ({ metadata, version }) => {
             <Section key={category.id} icon={category.icon} id={category.id} name={category.name}>
               {metadata.metadata.entries.filter(e => e.category === category.id).map(entry => (
                 <SectionPart key={entry.id} title={entry.name} label={entry.label}
-                    href={(entry.href.startsWith("/") ? `/docs${versionPath}` : "") + entry.href}>
+                    href={`/docs${versionPath}${entry.href}`}>
                   {entry.description}
                 </SectionPart>
               ))}

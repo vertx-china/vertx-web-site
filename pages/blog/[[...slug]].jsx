@@ -34,23 +34,30 @@ let compileAllPostsCachedResult
 
 async function compileAllPosts() {
   if (compileAllPostsCachedResult !== undefined) {
-    return [compileAllPostsCachedResult, false]
+    return compileAllPostsCachedResult
   }
 
   const cacache = require("cacache")
   const crypto = require("crypto")
   const fs = require("fs").promises
+  const path = require("path")
   const readdir = require("recursive-readdir")
   const readingTime = require("reading-time")
   const mdxOptions = require("../../components/lib/mdx-options")
   const AutoBasePath = require("../../components/lib/remark-auto-basepath")
   const TermFrequency = require("../../components/lib/remark-term-frequency")
-  const { slash } = require("../../components/lib/path-utils")
 
   const cachePath = "./.cache/blog"
 
+  let pattern
+  if (path.sep === "\\") {
+    pattern = /.\\([0-9]+-[0-9]+-[0-9]+)-(.*)\.mdx/
+  } else {
+    pattern = /.\/([0-9]+-[0-9]+-[0-9]+)-(.*)\.mdx/
+  }
+
   let files = (await readdir("blog")).filter(f => {
-    let e = slash(f).match(/.\/([0-9]+-[0-9]+-[0-9]+)-(.*)\.mdx/)
+    let e = f.match(pattern)
     if (e === null) {
       return false
     }
@@ -62,7 +69,6 @@ async function compileAllPosts() {
 
   // read front matter
   let posts = []
-  let changed = false
   for (let f of files) {
     let source = await fs.readFile(f, "utf-8")
     let cacheKey = JSON.stringify({
@@ -79,7 +85,7 @@ async function compileAllPosts() {
     } else {
       let { content, data } = matter(source)
 
-      let e = slash(f).match(/.\/([0-9]+-[0-9]+-[0-9]+)-(.*)\.mdx/)
+      let e = f.match(pattern)
       let stats = readingTime(content)
 
       post = {
@@ -107,8 +113,6 @@ async function compileAllPosts() {
       post.tfIdfTerms = tf.result
 
       await cacache.put(cachePath, cacheKey, JSON.stringify(post))
-
-      changed = true
     }
 
     posts.push(post)
@@ -129,72 +133,7 @@ async function compileAllPosts() {
     compileAllPostsCachedResult = posts
   }
 
-  return [posts, changed]
-}
-
-async function writeFeed(allPosts, anyPostChanged) {
-  const Feed = require("feed").Feed
-  const fs = require("fs").promises
-
-  // check if destination files already exist
-  let exists = true
-  try {
-    await fs.access("public/feed/rss.xml")
-    await fs.access("public/feed/atom.xml")
-    await fs.access("public/feed/feed.json")
-  } catch (e) {
-    exists = false
-  }
-
-  if (anyPostChanged || !exists) {
-    const feed = new Feed({
-      title: "Vert.x",
-      description: "Vert.x is a tool-kit for building reactive applications on the JVM",
-      id: process.env.baseUrl,
-      link: process.env.baseUrl,
-      language: "en",
-      favicon: `${process.env.baseUrl}/favicons/favicon.ico`,
-      generator: "Vert.x",
-      feedLinks: {
-        rss2: `${process.env.baseUrl}/feed/rss.xml`,
-        atom: `${process.env.baseUrl}/feed/atom.xml`,
-        json: `${process.env.baseUrl}/feed/feed.json`
-      }
-    })
-
-    for (let p of allPosts) {
-      let url = `${process.env.baseUrl}/blog/${p.slug}`
-
-      let authors = []
-      for (let a of p.meta.authors) {
-        let link = `https://github.com/${a.github_id}`
-        authors.push({
-          name: a.name,
-          link
-        })
-      }
-
-      feed.addItem({
-        title: p.meta.title,
-        id: url,
-        link: url,
-        description: p.meta.summary,
-        date: new Date(p.date),
-        category: [{ name: p.meta.category }],
-        author: authors
-      })
-    }
-
-    let allCategories = getAllCategories(allPosts)
-    for (let c of allCategories) {
-      feed.addCategory(c)
-    }
-
-    await fs.mkdir("public/feed", { recursive: true })
-    await fs.writeFile("public/feed/rss.xml", feed.rss2(), "utf-8")
-    await fs.writeFile("public/feed/atom.xml", feed.atom1(), "utf-8")
-    await fs.writeFile("public/feed/feed.json", feed.json1(), "utf-8")
-  }
+  return posts
 }
 
 function getAllCategories(allPosts) {
@@ -208,7 +147,7 @@ function getAllCategories(allPosts) {
 }
 
 export async function getStaticPaths() {
-  let [allPosts] = await compileAllPosts()
+  let allPosts = await compileAllPosts()
   let allCategories = getAllCategories(allPosts)
   let paths = allPosts.map(p => ({ params: { slug: [p.slug] } }))
 
@@ -291,15 +230,12 @@ function getTrimmedPostsForPage(allPosts, page, category = undefined) {
 export async function getStaticProps({ params }) {
   const TfIdf = require("natural").TfIdf
 
-  let [allPosts, anyPostChanged] = await compileAllPosts()
+  let allPosts = await compileAllPosts()
   let allCategories = getAllCategories(allPosts)
 
   const result = {
     categories: allCategories
   }
-
-  // write RSS feed
-  await writeFeed(allPosts, anyPostChanged)
 
   // handle blog index
   if (!params.slug) {
