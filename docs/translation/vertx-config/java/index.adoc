@@ -1,66 +1,67 @@
 = Vert.x Config
 
-Vert.x Config provides a way to configure your Vert.x application.
-It:
+您可以使用 Vert.x Config 配置 Vert.x 应用。
+它：
 
-* offers multiple configuration syntaxes (JSON, properties, Yaml (extension), Hocon
-(extension)...
-* offers multiple configuration stores such as files, directories, HTTP, git (extension), Redis
-(extension), system properties and environment properties.
-* lets you define the processing order and overloading
-* supports runtime reconfiguration
+* 提供多种配置语法（JSON，properties，Yaml（extension），Hocon（extension）……）
+* 提供多种配置中心，例如文件、目录、HTTP、git（extension）、Redis（extension）、系统参数和环境变量。
+* 让您定义执行顺序以及覆盖规则
+* 支持运行时重新定义
 
-== Concepts
+[[_concepts]]
+== 概念
 
-The library is structured around:
+该库主要围绕：
 
-**Config Retriever** instantiated and used by the Vert.x application. It
-configures a set of configuration store
-**Configuration store** defines a location from where the configuration data is read and also a format (JSON by default)
+**Config Retriever** 的实例化，并用于 Vert.x 应用。
+它配置了一系列配置中心（Configuration store）
+**Configuration store** 定义了配置信息读取路径以及格式（默认JSON）
 
-The configuration is retrieved as a JSON Object.
+配置以 JSON 对象格式被接收。
 
-== Using the Config Retriever
+[[_using_the_config_retriever]]
+== 使用 Config Retriever
 
-To use the Config Retriever, add the following dependency to the
-_dependencies_ section of your build descriptor:
+要使用 Config Retriever，
+则需要添加如下依赖：
 
-* Maven (in your `pom.xml`):
+* Maven (在您的 `pom.xml` 文件):
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-config</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle (在您的 `build.gradle` 文件):
 
 [source,groovy,subs="+attributes"]
-compile 'io.vertx:vertx-config:4.0.0'
+----
+compile 'io.vertx:vertx-config:4.0.3'
 ----
 
-Once done, you first need to instantiate the `link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]`:
+以上工作完成之后，您第一件要做的事情就是实例化 `link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` ：
 
-[source]
+[source,java]
 ----
 ConfigRetriever retriever = ConfigRetriever.create(vertx);
 ----
 
-By default, the Config Retriever is configured with the following stores (in
-this order):
+默认情况下，Config Retriever 可以使用下列配置中心进行配置
+（按下列顺序）：
 
-* The Vert.x verticle `config()`
-* The system properties
-* The environment variables
-* A `conf/config.json` file. This path can be overridden using the `vertx-config-path` system property or
-`VERTX_CONFIG_PATH` environment variable.
+* Vert.x verticle `config()`
+* 系统参数
+* 环境变量
+* `conf/config.json` 文件。这个路径可以用 `vertx-config-path` 系统参数或者
+`VERTX_CONFIG_PATH` 环境变量所覆盖。
 
-You can configure your own stores:
+您可以指定您自己的配置中心：
 
-[source]
+[source,java]
 ----
 ConfigStoreOptions httpStore = new ConfigStoreOptions()
   .setType("http")
@@ -80,12 +81,12 @@ ConfigRetrieverOptions options = new ConfigRetrieverOptions()
 ConfigRetriever retriever = ConfigRetriever.create(vertx, options);
 ----
 
-More details about the overloading rules and available stores are available below. Each store can be marked as
-`optional`. If a failure is caught while retrieving (or processing) the configuration from an optional store, the failure
-is logged, but the processing does not fail. Instead, an empty JSON object is returned (`{}`). To mark a store as
-optional, use the `optional` attribute:
+如下可见更多关于覆盖规则和可用配置中心的细节信息。每一种配置中心都可以标记为 `可选的（optional）` 。
+如果正在从一个可选的配置中心中获取（或处理）配置的时候，捕获到一个失败事件，那么这个失败事件会被日志所记录，但是执行过程并没有失败。
+相反会返回一个空的 Json 对象（即：`{}`）。
+想要将一个配置中心标记为可选的，那么就使用 `optional` 属性：
 
-[source]
+[source,java]
 ----
 ConfigStoreOptions fileStore = new ConfigStoreOptions()
   .setType("file")
@@ -98,51 +99,54 @@ ConfigRetrieverOptions options = new ConfigRetrieverOptions().addStore(fileStore
 ConfigRetriever retriever = ConfigRetriever.create(vertx, options);
 ----
 
-Once you have the instance of the Config Retriever, _retrieve_ the configuration
-as follows:
+获取 Config Retriever 示例后，可按如下所示
+_获取_ 配置：
 
-[source]
+[source,java]
 ----
 retriever.getConfig(ar -> {
   if (ar.failed()) {
-    // Failed to retrieve the configuration
+    // 获取配置失败
   } else {
     JsonObject config = ar.result();
   }
 });
 ----
 
-== Overloading rules
+[[_overloading_rules]]
+== 覆盖规则
 
-The declaration order of the configuration store is important as it defines the
-overloading. For conflicting key, configuration stores arriving _last_ overloads the
-value provided by the previous configuration stores. Let's take an example. We have 2
-configuration stores:
+配置中心的声明顺序非常重要，
+因为它定义了覆盖顺序。对于冲突的key， _后_
+声明的配置中心会覆盖之前的。我们举个例子。
+我们有两个配置中心：
 
-* `A` provides `{a:value, b:1}`
-* `B` provides `{a:value2, c:2}`
+* `A` 提供 `{a:value, b:1}` 配置
+* `B` 提供 `{a:value2, c:2}` 配置
 
-Declared in this order (A, B), the resulting configuration would be:
-`{a:value2, b:1, c:2}`.
+以 A，B 的顺序声明配置，最终配置应该为：
+`{a:value2, b:1, c:2}` 。
 
-If you declare them in the reverse order (B, A), you will get: `{a:value, b:1, c:2}`.
+如果您将声明的顺序反过来（B，A），那么您会得到 `{a:value, b:1, c:2}` 。
 
-== Using the retrieve configuration
+[[_using_the_retrieve_configuration]]
+== 使用配置
 
-The retrieve configuration allows:
+获取到的配置可用于：
 
-* configuring verticles,
-* configure ports, clients, locations and so on,
-* configuring Vert.x itself
+* 配置verticles，
+* 配置端口，客户端，location等等，
+* 配置Vert.x自身
 
-This section gives a few examples of usage.
+本节给出几个使用示例。
 
-=== Configuring a single verticle
+[[_configuring_a_single_verticle]]
+=== 配置一个单独的Verticle
 
-The following example can be placed in the `start` method of a verticle. It retrieves the configuration (using the
-default stores), and configure an HTTP server with the content of the configuration.
+以下示例代码可以放到 verticle 的 `start` 方法中。它获取了配置
+（用默认配置中心），并且利用该配置创建了一个HTTP服务。
 
-[source]
+[source,java]
 ----
 ConfigRetriever retriever = ConfigRetriever.create(vertx);
 retriever.getConfig(json -> {
@@ -154,11 +158,13 @@ retriever.getConfig(json -> {
 });
 ----
 
-=== Configuring a set of verticles
+[[_configuring_a_set_of_verticles]]
+=== 配置一组Verticles
 
 The following example configures 2 verticles using the configurations contained in the `verticles.json` file:
+以下示例用 `verticles.json` 文件中的配置创建了2个verticle
 
-[source]
+[source,java]
 ----
 ConfigRetriever retriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions()
   .addStore(new ConfigStoreOptions().setType("file").setConfig(new JsonObject().put("path", "verticles.json"))));
@@ -171,41 +177,43 @@ retriever.getConfig(json -> {
 });
 ----
 
-=== Configuring Vert.x itself
+[[_configuring_vert_x_itself]]
+=== 配置Vert.x自身
 
-You can also configure Vert.x directly. For this, you need a temporary Vert.x instance used to retrieve the
-configuration. Then the actual instance is created:
+您也可以直接配置Vert.x自身。您需要一个临时Vert.x对象用来获取配置。
+然后创建实际Vert.x实例：
 
-[source]
+[source,java]
 ----
 Vertx vertx = Vertx.vertx();
-// Create the config retriever
+// 创建 config retriever
 ConfigRetriever retriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions()
   .addStore(new ConfigStoreOptions().setType("file").setConfig(new JsonObject().put("path", "vertx.json"))));
 
-// Retrieve the configuration
+// 获取配置
 retriever.getConfig(json -> {
   JsonObject result = json.result();
-  // Close the vert.x instance, we don't need it anymore.
+  // 关闭vertx对象，我们再也用不到它了
   vertx.close();
 
-  // Create a new Vert.x instance using the retrieve configuration
+  // 用获取到的配置创建一个新的Vert.x实例
   VertxOptions options = new VertxOptions(result);
   Vertx newVertx = Vertx.vertx(options);
 
-  // Deploy your verticle
+  // 部署您的Verticle
   newVertx.deployVerticle(GreetingVerticle.class.getName(), new DeploymentOptions().setConfig(result.getJsonObject("a")));
 });
 ----
 
-=== Propagating configuration changes to the event bus
+[[_propagating_configuration_changes_to_the_event_bus]]
+=== 向事件总线传播配置变更
 
-Vert.x Config notifies you when the configuration changes. If you want to react to this event, you need to implement
-the reaction yourself. For instance, you can un-deploy and redeploy verticle or send the new configuration on the event bus.
-The following example shows this latter case. It sends the new configuration on the event bus. Interested verticles can
-listen for this address and update themselves:
+当配置变化时，Vert.x Config 会通知您。如果您需要对这个事件做出响应，您需要自己实现这个逻辑。
+例如，您可以下线/重新部署verticle或者向事件总线发送新的配置。
+下列实例展示了后者的场景。它向事件总线发送新的配置。
+与事件关联的 verticle可以监听这个address并更新自身：
 
-[source]
+[source,java]
 ----
 ConfigRetriever retriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions()
   .addStore(new ConfigStoreOptions().setType("file").setConfig(new JsonObject().put("path", "verticles.json"))));
@@ -220,23 +228,25 @@ retriever.listen(change -> {
 });
 ----
 
-== Available configuration stores
+[[_available_configuration_stores]]
+== 可用的配置中心
 
-The Config Retriever provides a set of configuration stores and formats.
-More are available as extensions, and you can also implement your own.
+Config Retriever 提供一系列的配置中心和配置格式。
+更多可用的配置中心请参考本文后续介绍的扩展，您可以也自己实现.
 
-=== Structure of the configuration
+[[_structure_of_the_configuration]]
+=== 配置的结构
 
-Each declared data store must specify the `type`. It can also define the `format`. If
-not set JSON is used.
+每一个声明的数据配置中心必须要指定 `类型（type）` ，它也定义了 `格式（format）` 。
+如果没有设置，默认用JSON。
 
-Some configurations tore requires additional configuration (such a path...). This
-configuration is passed as a Json Object using `link:../../apidocs/io/vertx/config/ConfigStoreOptions.html#setConfig-io.vertx.core.json.JsonObject-[setConfig]`
+一些配置中心要求额外的配置（比如路径……）。这项配置需要用 `link:../../apidocs/io/vertx/config/ConfigStoreOptions.html#setConfig-io.vertx.core.json.JsonObject-[setConfig]` 方法传入一个JSON 对象来指定。
 
-=== File
+[[_file]]
+=== 文件
 
-This configuration store just read the configuration from a file. It supports all
-supported formats.
+此配置中心仅从文件中获得配置。
+他支持所有的格式。
 
 [source, java]
 ----
@@ -246,11 +256,11 @@ ConfigStoreOptions file = new ConfigStoreOptions()
   .setConfig(new JsonObject().put("path", "path-to-file.properties"));
 ----
 
-The `path` configuration is required.
+`path` 配置项是必填项。
 
 === JSON
 
-The JSON configuration store serves the given JSON config as it is.
+JSON配置中心按原样提供给定的JSON配置
 
 [source, java]
 ----
@@ -259,12 +269,13 @@ ConfigStoreOptions json = new ConfigStoreOptions()
   .setConfig(new JsonObject().put("key", "value"));
 ----
 
-The only supported format for this configuration store is JSON.
+这个配置中心仅仅支持JSON格式。
 
-=== Environment Variables
+[[_environment_variables]]
+=== 环境变量
 
-This configuration store transforms environment variables to a JSON Object contributed to
-the global configuration.
+这个配置中心将环境变量转换为用于全局配置的
+JSON obejct
 
 [source, java]
 ----
@@ -272,9 +283,9 @@ ConfigStoreOptions json = new ConfigStoreOptions()
   .setType("env");
 ----
 
-This configuration store does not support the `format` configuration. By default, the retrieved value is
-transformed into JSON compatible structures (number, string, boolean, JSON object and JSON array). To avoid this
-conversion, configure the `raw-data` attribute:
+这个配置中心不支持 `format` 配置项。
+获取到的值默认会被传输到JSON兼容的结构当中（数字，字符串，布尔，JSON 对象和JSON 数组）。
+如果要避免这种转换，则需要配置 `raw-data` 属性：
 
 [source, java]
 ----
@@ -283,12 +294,12 @@ ConfigStoreOptions json = new ConfigStoreOptions()
   .setConfig(new JsonObject().put("raw-data", true));
 ----
 
-You can configure the `raw-data` attribute (`false` by default). If `raw-data` is `true` no attempts to convert
-values are made, and you'll be able to get raw values using `config.getString(key)`. It is useful when manipulating
-large integers.
+您可以配置 `raw-data` 属性（默认为 `false` ）。如果 `raw-data` 为 `true` ，
+则不会对值进行转换。用 `config.getString(key)` 方法，您会得到原始值。
+当操作大整型数时，这很有用。
 
-If you want to select the set of keys to import, use the `keys` attributes. It filters out all not selected keys. Keys
-must be listed individually:
+如果您想选择一系列key值来导入，那么用 `keys` 属性。他将未选择的key值都过滤掉了。
+key必须独立列出：
 
 [source, java]
 ----
@@ -297,31 +308,32 @@ ConfigStoreOptions json = new ConfigStoreOptions()
   .setConfig(new JsonObject().put("keys", new JsonArray().add("SERVICE1_HOST").add("SERVICE2_HOST")));
 ----
 
-=== System Properties
+[[_system_properties]]
+=== 系统参数
 
-This configuration store transforms system properties to a JSON Object contributed to the
-global configuration.
+这个配置中心将系统参数转换为用于全局配置的
+JSON 对象
 
 [source, java]
 ----
 ConfigStoreOptions json = new ConfigStoreOptions()
   .setType("sys")
-  .setConfig(new JsonObject().put("cache", "false"));
+  .setConfig(new JsonObject().put("cache", false));
 ----
 
-This configuration store does not support the `format` configuration.
+这个配置中心不支持 `format` 配置项。
 
-You can configure the `cache` attribute (`true` by default) let you decide whether or
-not it caches the system properties on the first access and does not reload them.
+您可以配置 `cache` 属性（默认为 `true`）
+来决定是否在第一次访问时缓存系统参数而后不再重新加载他们。
 
-You can also configure the `raw-data` attribute (`false` by default). If `raw-data` is `true` no attempts to convert
-values are made, and you'll be able to get raw values using `config.getString(key)`. It is useful when manipulating
-large integers.
+您也可以配置 `raw-data` 属性（默认为 `false` ）。如果 `raw-data` 为 `true` ，
+则不会对值进行转换。用 `config.getString(key)` 方法，您会得到原始值。
+当操作大整型数时，这很有用。
 
 === HTTP
 
-This configuration store retrieves the configuration from an HTTP location. It can use
-any supported format.
+这个配置中心从HTTP地址获取配置。
+可以用任何支持的格式。
 
 [source, java]
 ----
@@ -333,12 +345,13 @@ ConfigStoreOptions http = new ConfigStoreOptions()
     .put("path", "/A"));
 ----
 
-It creates a Vert.x HTTP Client with the store configuration (see next snippet). To
-ease the configuration; you can also configure the `host`, `port` and `path` with the
-`host`, `port` and `path`
-properties. You can also configure optional HTTP request headers with `headers` property,
-the timeout (in milliseconds, 3000 by default) to retrieve the configuration with `timeout` property,
-if following redirects (false by default) with `followRedirects` property.
+他创建了一个带有 `配置中心的配置` 的Vert.x HTTP客户端（见下一小段）。
+为了简化配置，您也可以用
+`host`, `port` 和 `path` 属性来分别配置他们。
+您也可以用 `headers` 属性来配置可选的HTTP请求头，
+`timeout` 属性配置超时时间（默认3000毫秒），
+`followRedirects` 属性来指定是否重定向（默认情况下为false）。
+
 
 [source, java]
 ----
@@ -352,10 +365,11 @@ ConfigStoreOptions http = new ConfigStoreOptions()
     .put("headers", new JsonObject().put("Accept", "application/json")));
 ----
 
-=== Event Bus
+[[_event_bus]]
+=== 事件总线
 
-This event bus configuration store receives the configuration from the event bus. This
-stores let you distribute your configuration among your local and distributed components.
+这个配置中心从事件总线获取配置。
+此种配置中心可以让您在本地和分布式组件之间传输配置。
 
 [source, java]
 ----
@@ -366,25 +380,26 @@ ConfigStoreOptions eb = new ConfigStoreOptions()
   );
 ----
 
-This configuration store supports any format.
+这个配置中心支持任何格式。
 
-=== Directory
+[[_directory]]
+=== 目录
 
-This configuration store is similar to the `file` configuration store, but instead of
-reading a single file, read several files from a directory.
+这个配置中心和 `文件` 配置中心很相似，
+但是它并不是去读单个文件，而是从一个目录中读取多个文件
 
-This configuration store configuration requires:
+这个配置中心必须要配置如下项：
 
-* a `path` - the root directory in which files are located
-* at least one `fileset` - an object to select the files
-* for properties file, you can indicate if you want to disable the type conversion using the `raw-data` attribute
+* 一个 `path` - 读取文件的根目录
+* 至少一个 `fileset` - 一个用于选择文件的对象
+* 对于properties文件，您可以用 `raw-data` 属性来禁止类型转换。
 
-Each `fileset` contains:
+每一个 `fileset` 都包含：
 
-* a `pattern` : an Ant-style pattern to select files. The pattern is applied to the
-relative path of the files from the current working directory.
-* an optional `format` indicating the format of the files (each fileset can use a
-different format, BUT files in a fileset must share the same format).
+* 一个 `pattern` ：一个Ant风格的pattern用于选择文件。
+这个pattern应用于相对当前工作目录的相对路径。
+* 一个可选的 `format` ，它制定了文件的格式（每一个fileset可以用一个不同的format，
+但是同一个fileset共用一个format）
 
 [source, java]
 ----
@@ -407,11 +422,11 @@ ConfigStoreOptions dirWithRawData = new ConfigStoreOptions()
     ));
 ----
 
-=== Properties file and raw data
+=== Properties 文件和原始数据
 
-Vert.x Config can read a properties file. When reading such a file, you can pass the `raw-data` attribute to
-indicate to Vert.x to not attempt to convert values. It is useful when manipulating large integers. Values can be
-retrieved using `config.getString(key)`.
+Vert.x Config可以读一个properties文件。当读取一个这样的文件，您可以传入 `raw-data`
+参数来提醒Vert.x不要转换它的值。这在操作大整型数字时很有用。
+这些值可以用 `config.getString(key)` 方法来获取。
 
 [source, java]
 ----
@@ -422,12 +437,12 @@ ConfigStoreOptions propertyWithRawData = new ConfigStoreOptions()
   );
 ----
 
-Some properties configuration maybe is hierarchical in nature.
-When reading such a file, you can pass the `hierarchical` attribute to
-indicate to Vert.x to convert the configuration to a json object while maintaining this hierarchy,
-in contrast to the previous method with a flat structure.
+一些properties配置可能本来就是多级的。
+当读取到这样的文件，您可以设置 `hierarchical`
+参数来提醒Vert.x，当操作这个多级属性时，则将配置转换到 Json 对象当中，
+这与前述方法设置扁平结构形成了对比。
 
-Example:
+例如：
 
 ....
 server.host=localhost
@@ -435,7 +450,7 @@ server.port=8080
 multiple.values=1,2,3
 ....
 
-Get values:
+获取值：
 
 [source, java]
 ----
@@ -459,11 +474,12 @@ configRetriever.configStream().handler(config -> {
 });
 ----
 
-== Listening for configuration changes
+[[_listening_for_configuration_changes]]
+监听配置的变更
 
-The Configuration Retriever periodically retrieves the configuration, and if the outcome
-is different from the current one, your application can be reconfigured. By default, the
-configuration is reloaded every 5 seconds.
+Configuration Retriever 定期获取配置信息，
+如果获取到的结果与当前不同，那么您可以重新配置应用。
+默认情况下配置每5秒重新加载一次。
 
 [source, java]
 ----
@@ -474,37 +490,39 @@ ConfigRetrieverOptions options = new ConfigRetrieverOptions()
 
 ConfigRetriever retriever = ConfigRetriever.create(Vertx.vertx(), options);
 retriever.getConfig(json -> {
-  // Initial retrieval of the configuration
+  // 初始化获取配置
 });
 
 retriever.listen(change -> {
-  // Previous configuration
+  // 之前的配置
   JsonObject previous = change.getPreviousConfiguration();
-  // New configuration
+  // 新配置
   JsonObject conf = change.getNewConfiguration();
 });
 ----
 
-== Retrieving the last retrieved configuration
+== 获取上一次的配置
 
-You can retrieve the last retrieved configuration without "waiting" to be retrieved
-using:
+您可以获取上一次获取到的配置而不用 "等到" 被获取的时候。
+这需要用如下方式实现：
 
 [source, java]
 ----
 JsonObject last = retriever.getCachedConfig();
 ----
 
-== Reading configuration as a stream
+[[_reading_configuration_as_a_stream]]
+== 以流的方式读取配置
 
-The `link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` provide a way to access the stream of configuration.
-It's a `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` of `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]`. By registering the right
-set of handlers you are notified:
+`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` 提供了一个访问配置流的方法。
+这是一个 `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` 的 `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 。通过注册正确的处理器集合，您
+会收到通知：
 
-* when a new configuration is retrieved
-* when an error occur while retrieving a configuration
-* when the configuration retriever is closed (the
-`link:../../apidocs/io/vertx/core/streams/ReadStream.html#endHandler-io.vertx.core.Handler-[endHandler]` is called).
+
+* 当获取到一个新的配置
+* 当获取配置时发生错误
+* 当 configuration retriever 关闭（即
+`link:../../apidocs/io/vertx/core/streams/ReadStream.html#endHandler-io.vertx.core.Handler-[endHandler]` 被调用）
 
 [source, java]
 ----
@@ -516,64 +534,66 @@ ConfigRetrieverOptions options = new ConfigRetrieverOptions()
 ConfigRetriever retriever = ConfigRetriever.create(Vertx.vertx(), options);
 retriever.configStream()
   .endHandler(v -> {
-    // retriever closed
+    // retriever 关闭
   })
   .exceptionHandler(t -> {
-    // an error has been caught while retrieving the configuration
+    // 当获取配置时捕获到错误
   })
   .handler(conf -> {
-    // the configuration
+    // 配置
   });
 ----
 
-== Processing the configuration
+[[_processing_the_configuration]]
+== 处理配置
 
-You can configure a _processor_ that can validate and update the configuration. This is done using the
-`link:../../apidocs/io/vertx/config/ConfigRetriever.html#setConfigurationProcessor-java.util.function.Function-[setConfigurationProcessor]` method.
+您可以配置一个 _processor_ ，它可以校验并更新配置。
+可以通过调用 `link:../../apidocs/io/vertx/config/ConfigRetriever.html#setConfigurationProcessor-java.util.function.Function-[setConfigurationProcessor]` 方法来实现。
 
-The processing must not return `null`. It takes the retrieved configuration and returns the processed one. If the processor
-does not update the configuration, it must return the input configuration. If the processor can throw an exception (for
-example for validation purpose).
+处理过程绝对不能返回 `null` 。处理器获取到配置然后返回处理过的配置。
+如果处理器不更新配置，它必须将输入的配置返回。
+处理器可以抛出异常（例如，校验失败）。
 
-== Retrieving the configuration as a Future
+== 以Future形式获取配置
 
-The `link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` provide a way to retrieve the configuration as a
-`link:../../apidocs/io/vertx/core/Future.html[Future]`:
+`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` 提供了一个
+以 `link:../../apidocs/io/vertx/core/Future.html[Future]` 形式接收配置的方式：
 
 [source, java]
 ----
 Future<JsonObject> future = retriever.getConfig();
 future.onComplete(ar -> {
   if (ar.failed()) {
-    // Failed to retrieve the configuration
+    // 获取配置失败
   } else {
     JsonObject config = ar.result();
   }
 });
 ----
 
-== Extending the Config Retriever
+[[_extending_the_config_retriever]]
+== 扩展 Config Retriever
 
-You can extend the configuration by implementing:
+通过实现如下方式，您可以扩展配置：
 
-* the `link:../../apidocs/io/vertx/config/spi/ConfigProcessor.html[ConfigProcessor]` SPI to add support for a
-format
-* the `link:../../apidocs/io/vertx/config/spi/ConfigStoreFactory.html[ConfigStoreFactory]` SPI to add support for
-configuration store (place from where the configuration data is retrieved)
+* `link:../../apidocs/io/vertx/config/spi/ConfigProcessor.html[ConfigProcessor]`
+SPI 来增加对新格式的支持
+* `link:../../apidocs/io/vertx/config/spi/ConfigStoreFactory.html[ConfigStoreFactory]`
+SPI来增加配置中心的支持（获取配置数据的位置）
 
-== Additional formats
+== 其他格式
 
-Besides the out of the box format supported by this library, Vert.x Config provides additional
-formats you can use in your application.
+尽管Vert.x对于开箱即用的格式都提供了支持，但是 Vert.x Config
+还是提供了额外的格式以供您的应用使用。
 
 include::hocon-format.adoc[]
 
 include::yaml-format.adoc[]
 
-== Additional stores
+== 其他配置中心
 
-Besides the out of the box stores supported by this library, Vert.x Config provides additional
-stores you can use in your application.
+尽管Vert.x对于开箱即用的配置中心都提供了支持，但是 Vert.x Config
+还是提供了额外的格式以供您的应用使用。
 
 include::git-store.adoc[]
 

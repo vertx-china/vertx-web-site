@@ -1,0 +1,163 @@
+= Mongo Auth Provider
+
+Vert.X中提供了一个 `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` 的实现，
+它可以让您使用 MongoClient 针对 MongoDb 数据库执行认证和授权。
+
+若要在自己的项目中使用它，
+需要在构建描述信息的 _dependencies_ 节点中添加以下信息：
+
+* Maven （在 `pom.xml` 文件中）：
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-auth-mongo</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+* Gradle （在 `build.gradle` 文件中）：
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-auth-mongo:4.0.0'
+----
+
+如果要创建一个客户端实例，您首先需要一个 `link:../../apidocs/io/vertx/ext/mongo/MongoClient.html[MongoClient]` 的实例，
+要知道如何创建这个实例可按照文档中的内容实施。
+
+一旦您创建了一个 `link:../../apidocs/io/vertx/ext/mongo/MongoClient.html[MongoClient]` 实例后，就可以按照下边的代码创建 `link:../../apidocs/io/vertx/ext/auth/mongo/MongoAuth.html[MongoAuth]` 实例：
+
+[source,java]
+----
+MongoClient client = MongoClient.createShared(vertx, mongoClientConfig);
+MongoAuthenticationOptions options = new MongoAuthenticationOptions();
+MongoAuthentication authenticationProvider =
+  MongoAuthentication.create(client, options);
+----
+
+创建好上边的实例过后，您就可以使用任何 `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` 针对MongoDB执行认证和授权功能了。
+
+Vert.X的默认标准配置（Out Of the Box）中包含了"user"集合（Collection），
+用户名字段使用"username"进行存储和读取。
+
+为了避免在"user"集合中出现重复的用户名，应该在"user"集合中给"username"添加唯一索引（Unique Index），
+您可以在MongoDB服务器中运行下边的片段来完成此操作：
+
+----
+db.user.createIndex( { username: 1 }, { unique: true } )
+----
+
+MongoDB的特性是先查询username字段中的值是否已经存在，然后会插入一个Document，并不能作为一个原子性操作，
+基于这个原因您需要添加上边的唯一索引，
+使用了这个索引过后您的代码会尝试先插入一行数据，如果出现了重复记录则会失败。
+
+根据您自身需要，您同样可以使用下边的方法改变 MongoDB 中使用的默认集合（Collection）和列（Column）名称等信息：
+
+`link:../../apidocs/io/vertx/ext/auth/mongo/MongoAuthenticationOptions.html#setCollectionName-java.lang.String-[setCollectionName]`
+`link:../../apidocs/io/vertx/ext/auth/mongo/MongoAuthenticationOptions.html#setUsernameField-java.lang.String-[setUsernameField]`
+`link:../../apidocs/io/vertx/ext/auth/mongo/MongoAuthenticationOptions.html#setPasswordField-java.lang.String-[setPasswordField]`
+
+Vert.X默认实现中的密码通过 `link:../../apidocs/io/vertx/ext/auth/HashingStrategy.html[HashingStrategy]` 在数据库中加密后进行存储。(salt值存储在该Hash结果中)
+
+如您想要重写上述行为，则可以调用 `link:../../apidocs/io/vertx/ext/auth/mongo/MongoAuth.html#setHashStrategy-io.vertx.ext.auth.mongo.HashStrategy-[setHashStrategy]`
+方法设置新的Hash策略，并且提供变更过的Hash策略及配置信息。
+
+[[_vertx_auth_jdbc_and_gdpr]]
+== Vertx Auth JDBC 和 GDPR
+
+GDPR（译者注：一般数据保护条例）是欧盟普通法中的一项法规。它重新定义或凌驾于本国的数据保护法之上，
+并且扩展了先前已存在的法令。本节内容绝不是一个法规的概览，
+而是对组件如何遵循要求做的小总结。
+不遵守法规的公司可以按营业额的4％或2000万欧元处以罚款。
+因此我们想要确保的是，您，作为 Vert.x Auth JDBC 的用户，很好地遵守了该法规。
+
+该法规定义如下术语：
+
+* Data Subject（数据主体） - 被处理私人数据的人（例如：用户）
+* Personal Data（个人数据） - 任何指向一个已识别或可识别的自然人（即数据主体）相关的的数据
+* Data Processing（数据处理） - 对于个人信息（即个人数据）的任何操作（手动或自动）
+* Controller（控制者） - 请求和使用数据的实体（例如：公司）
+* Processors（处理者） - 代表控制者处理数据的任何实体（例如：云服务供应商）。
+
+GDPR 定义如下的功能：
+
+* "Forget me" - 清除数据的权利
+* 将 `概览（profile）` 标记为受限资源 - 限制数据处理的权利
+* 导出数据 - 数据的可移植权利
+* 允许编辑 `概览` - 重新授权的权利
+* 查看自己的所有信息 - 访问权利
+* 选中复选框
+* 年龄检查
+* 资料销毁 - 数据最小化原则
+
+本模块遵循GDPR法律，它不存储任何数据对象的可识别信息。
+唯一的标识就是不关联任何私人信息的用户名（username）。
+
+为了在您的应用中加入个人信息，您应该创建您自己的数据表，并关联用户名字段。
+这里提示一下，您应该有一个布尔类型的字段来标识个人信息是否访问受限，
+以此来遵循处理数据时的法律限制：例如，向邮件列表中的邮箱批量发送邮件，
+当某个邮箱用户的限制标识为true时，便不允许向他发送邮件。
+
+删除数据的权利并不代表您必须清除您应用中所有的数据，例如：在银行当中，这个权利不能用来清除贷款和债务信息。
+您可以保留应用中的数据，但是必须清除个人数据。
+对于 Vert.x Auth JDBC 场景，您应该删除您的表，
+但只要不将用户名和个人信息关联起来，那么您依旧可以保留对用户名的引用。
+
+重要说明：这必须在备份中保留下来！作为提示，您应该备份数据，并保证数据备份在不同的数据库当中，
+所以他们才能够独立地回滚。
+
+[[_authentication]]
+== 认证
+
+如果认证使用了默认的MongoDB实现，
+认证信息中用了 `username` 和 `password` 字段：
+
+[source,java]
+----
+JsonObject authInfo = new JsonObject()
+  .put("username", "tim")
+  .put("password", "sausages");
+
+authProvider.authenticate(authInfo)
+  .onSuccess(user -> System.out.println("User: " + user.principal()))
+  .onFailure(err -> {
+    // Failed!
+  });
+----
+如果想要替换上边的 `username` 和 `password` 两个默认字段名，您可使用以下两种方法：
+`link:../../apidocs/io/vertx/ext/auth/mongo/MongoAuthenticationOptions.html#getUsernameCredentialField--[getUsernameCredentialField]` 和
+`link:../../apidocs/io/vertx/ext/auth/mongo/MongoAuthenticationOptions.html#getPasswordCredentialField--[getPasswordCredentialField]`
+
+[[_authorisation_permission_role_model]]
+== 授权：Permission/Role模型
+
+尽管 Vert.X 自身并不要求使用特定的许可模型（它本身只是使用了不透明的字符串），
+但 MongoDB 认证中的实现使用了比较熟悉的：用户/角色/许可模型，这样在应用里您可以使用一个或者多个角色，
+而一个角色也可以拥有一个或者多个许可。
+
+如果要验证一个用户是否拥有特定的许可，则要将许可信息传递到
+`link:../../apidocs/io/vertx/ext/auth/User.html#isAuthorized-io.vertx.ext.auth.authorization.Authorization-io.vertx.core.Handler-[isAuthorized]` 中：
+
+[source,java]
+----
+mongoAuthZ.getAuthorizations(user)
+  .onSuccess(v -> {
+    if (PermissionBasedAuthorization.create("commit_code").match(user)) {
+      // Has permission!
+    }
+  });
+----
+
+如果要验证一个用户是否属于特定角色，则可以使用 `link:../../apidocs/io/vertx/ext/auth/authorization/RoleBasedAuthorization.html[RoleBasedAuthorization]` 。
+
+[source,java]
+----
+mongoAuthZ.getAuthorizations(user)
+  .onSuccess(v -> {
+    if (RoleBasedAuthorization.create("manager").match(user)) {
+      // Has role!
+    }
+  });
+----

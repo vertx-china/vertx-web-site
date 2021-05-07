@@ -1,0 +1,110 @@
+[[_typed_options_and_arguments]]
+=== 类型化的选项和参数
+
+上述的 `link:../../apidocs/io/vertx/core/cli/Option.html[Option]` 和 `link:../../apidocs/io/vertx/core/cli/Argument.html[Argument]` 类是 _无类型_ 的，
+意味着只能从中获取到字符串类型的值。
+`link:../../apidocs/io/vertx/core/cli/TypedOption.html[TypedOption]` 和 `link:../../apidocs/io/vertx/core/cli/TypedArgument.html[TypedArgument]` 能让您对其赋予一个 _类型_ ，
+这样（字符串类型的）原始值将被转换成对应的类型。
+
+在
+`link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` 对象的定义中使用 `link:../../apidocs/io/vertx/core/cli/TypedOption.html[TypedOption]` 和 `link:../../apidocs/io/vertx/core/cli/TypedArgument.html[TypedArgument]` 来取代
+ `link:../../apidocs/io/vertx/core/cli/Option.html[Option]` 和 `link:../../apidocs/io/vertx/core/cli/Argument.html[Argument]` ：
+
+[source,java]
+----
+CLI cli = CLI.create("copy")
+    .setSummary("A command line interface to copy files.")
+    .addOption(new TypedOption<Boolean>()
+        .setType(Boolean.class)
+        .setLongName("directory")
+        .setShortName("R")
+        .setDescription("enables directory support")
+        .setFlag(true))
+    .addArgument(new TypedArgument<File>()
+        .setType(File.class)
+        .setIndex(0)
+        .setDescription("The source")
+        .setArgName("source"))
+    .addArgument(new TypedArgument<File>()
+        .setType(File.class)
+        .setIndex(0)
+        .setDescription("The destination")
+        .setArgName("target"));
+----
+
+这时您就可以通过如下方式获取转换后的值：
+
+[source,java]
+----
+CommandLine commandLine = cli.parse(userCommandLineArguments);
+boolean flag = commandLine.getOptionValue("R");
+File source = commandLine.getArgumentValue("source");
+File target = commandLine.getArgumentValue("target");
+----
+
+Vert.x CLI 可以转换具有如下特征的类：
+
+* 拥有参数签名为一个 `link:../../apidocs/java/lang/String.html[String]` 类型的构造函数，
+例如 `link:../../apidocs/java/io/File.html[File]` 或者 `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]`
+* 拥有一个名为 `from` 或者 `fromString` 的静态方法
+* 拥有一个静态的 `valueOf` 方法，例如原始类型和枚举类型
+
+此外您也可以实现自定义的 `link:../../apidocs/io/vertx/core/cli/converters/Converter.html[Converter]`
+并在 `CLI` 对象使用它：
+
+[source,java]
+----
+CLI cli = CLI.create("some-name")
+    .addOption(new TypedOption<Person>()
+        .setType(Person.class)
+        .setConverter(new PersonConverter())
+        .setLongName("person"));
+----
+
+对于布尔类型而言，这些值将被视为 `true` ：`on`， `yes`， `1`， `true` 。
+
+如果您的命令行选项存在 `enum` 类型，则会自动计算出一组可选值。
+
+[[_using_annotations]]
+=== 注解的使用
+
+您也可以使用注解来定义CLI对象。可以通过在类和 _setter_
+方法上使用注解来完成定义：
+
+[source, java]
+----
+@Name("some-name")
+@Summary("some short summary.")
+@Description("some long description")
+public class AnnotatedCli {
+
+ private boolean flag;
+ private String name;
+ private String arg;
+
+@Option(shortName = "f", flag = true)
+public void setFlag(boolean flag) {
+  this.flag = flag;
+}
+
+@Option(longName = "name")
+public void setName(String name) {
+  this.name = name;
+}
+
+@Argument(index = 0)
+public void setArg(String arg) {
+ this.arg = arg;
+}
+}
+----
+
+加上注解之后，您就可以使用以下方法来定义 `link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` 对象并将对应的值注入进去：
+
+[source,java]
+----
+CLI cli = CLI.create(AnnotatedCli.class);
+CommandLine commandLine = cli.parse(userCommandLineArguments);
+AnnotatedCli instance = new AnnotatedCli();
+CLIConfigurator.inject(commandLine, instance);
+----

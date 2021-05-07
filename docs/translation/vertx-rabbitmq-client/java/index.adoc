@@ -15,7 +15,7 @@ Add the following dependency to your maven project
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-rabbitmq-client</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
@@ -26,7 +26,7 @@ Add the following dependency to your gradle project
 [source,groovy,subs="+attributes"]
 ----
 dependencies {
- compile 'io.vertx:vertx-rabbitmq-client:4.0.0'
+ compile 'io.vertx:vertx-rabbitmq-client:4.0.3'
 }
 ----
 
@@ -105,23 +105,43 @@ client.start(asyncResult -> {
 });
 ----
 
-Reconnections
+=== Recovery and Reconnections
 
-The RabbitMQClient will, by default, retry connecting to the RabbitMQ server if it cannot connect.
-It will also attempt to reconnect whenever the connection to the RabbitMQ server becomes broken.
+There are two, separate and incompatible, mechanisms for handling reconnections in the RabbitMQClient:
+
+* Java RabbitMQ client library auto recovery;
+* RabbitMQClient restarts.
+
+Neither mechanism is enabled by default.
+
+The reconnections provided by the Java RabbitMQ client library do not work in all situations (if the connection to the server disconnects nicely the client will shut down and not recover).
+----
+[source, java]
+In order to use the Java RabbitMQ client library auto recovery it is necessary to both enable it and disable the RabbitMQClient library reconnect attempts:
+RabbitMQOptions options = new RabbitMQOptions();
+options.setAutomaticRecoveryEnabled(true);
+options.setReconnectAttempts(0);
+----
+The client library will also attempt topology recovery as detailed in its documentation (this is enabled by default in the library and is not exposed in the RabbitMQClientOptions).
+
+
+
+Alternatively the RabbitMQClient may be configured to retry connecting to the RabbitMQ server whenever there is a connection problem.
 The failure of a connection could be caused by a transient network failure (where the client would probably connect back to the same RabbitMQ server) or it could be caused by a failover scenario.
+This approach is more brutal than that followed by the client library - the RabbitMQClient restarts work by closing the connections when the client library reports a problem and then repeatedly trying to reconnect from scratch.
 
 The reconnection policy can be configured by setting the `link:../../apidocs/io/vertx/core/net/NetClientOptions.html#setReconnectInterval-long-[setReconnectInterval]` and
 `link:../../apidocs/io/vertx/core/net/NetClientOptions.html#setReconnectAttempts-int-[setReconnectAttempts]` properties in the configuration:
 [source, java]
 ----
-RabbitMQOptions config = new RabbitMQOptions();
+RabbitMQOptions options = new RabbitMQOptions();
+options.setAutomaticRecoveryEnabled(false);
 options.setReconnectAttempts(Integer.MAX_VALUE);
 options.setReconnectInterval(500);
 ----
 
-As soon as the connection has been re-established users of the client may attempt to publish (or consume) messages.
-However, if the connection is to a new RabbitMQ server it is possible that objects created through this RabbitMQClient won't exist,. i.e. when exchanges and queues are created through the RabbitMQClient on startup.
+The RabbitMQClient reconnections do not feature any form of _automatic_ topology recovery.
+This can lead to a race condition where messages are sent before the topology on the server is ready (i.e. before exchanges and queues have been created/bound).
 To provide an opportunity to create these objects before the connection is considered ready the RabbitMQClient provides the ConnectionEstablishedCallback.
 The ConnectionEstablishedCallback can be used to carry out any operations on the RabbitMQClient before other users (including the RabbitMQConsumer and RabbitMQPublisher) are able to access it.
 

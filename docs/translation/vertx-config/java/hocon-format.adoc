@@ -1,43 +1,46 @@
-=== Hocon Configuration Format
+[[_hocon_configuration_format]]
+=== Hocon 配置格式
 
-The Hocon Configuration Format extends the Vert.x Configuration Retriever and provides the
-support for the HOCON(https://github.com/typesafehub/config/blob/master/HOCON.md) format.
+Hocon 配置格式扩展了 Vert.x Configuration Retriever 并提供了对 HOCON 格式
+（https://github.com/typesafehub/config/blob/master/HOCON.md）的支持
 
-It supports includes, json, properties, macros...
+它支持 json、properties、macros 等格式
 
-==== Using the Hocon Configuration Format
+[[_using_the_hocon_configuration_format]]
+==== 使用 Hocon 配置格式
 
-To use the Hocon Configuration Format, add the following dependency to the
-_dependencies_ section of your build descriptor:
+要使用Hocon配置格式，
+添加如下依赖：
 
-* Maven (in your `pom.xml`):
+* Maven (在您的 `pom.xml` 文件):
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-config-hocon</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-config</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle (在您的 `build.gradle` 文件):
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-config:4.0.0'
-compile 'io.vertx:vertx-config-hocon:4.0.0'
+compile 'io.vertx:vertx-config:4.0.3'
+compile 'io.vertx:vertx-config-hocon:4.0.3'
 ----
 
-==== Configuring the store to use HOCON
+[[_configuring_the_store_to_use_hocon]]
+==== 指定配置中心以使用hocon
 
-Once added to your classpath or dependencies, you need to configure the
-`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` to use this format:
+将该库加入classpath或者项目依赖后，您需要配置
+`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` 来使用这个格式：
 
 [source, java]
 ----
@@ -52,4 +55,4 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
     new ConfigRetrieverOptions().addStore(store));
 ----
 
-You just need to set `format` to `hocon`.
+您必须将 `format` 设置为 `hocon` 。

@@ -1,4 +1,4 @@
-= Reactive DB2 Client
+= Reactive DB2 客户端
 :PREPARED_PARAMS: `?`​
 
 The Reactive DB2 Client is a client for DB2 with a straightforward API focusing on
@@ -38,7 +38,7 @@ To use the Reactive DB2 Client add the following dependency to the _dependencies
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-db2-client</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 * Gradle (in your `build.gradle` file):
@@ -46,7 +46,7 @@ To use the Reactive DB2 Client add the following dependency to the _dependencies
 [source,groovy]
 ----
 dependencies {
- compile 'io.vertx:vertx-db2-client:4.0.0'
+ compile 'io.vertx:vertx-db2-client:4.0.3'
 }
 ----
 

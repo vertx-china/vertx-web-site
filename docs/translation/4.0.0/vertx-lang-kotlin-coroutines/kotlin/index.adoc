@@ -1,0 +1,503 @@
+= vertx-lang-kotlin-coroutines
+
+`vertx-lang-kotlin-coroutines` 集成了 Kotlin _协程_ 以执行异步操作和处理事件。
+以便在不阻塞内核线程的情况下使用类似顺序代码的编程模型。
+
+[[_introduction]]
+== 介绍
+
+Vert.x 不同于许多经典应用平台的一个关键优势是它几乎是完全非阻塞的
+(指内核线程)。
+这允许基于 Vert.x 的应用程序使用极小数量的内核线程处理极高的并发（比如许多连接和消息），
+这为强大的扩容能力扫除了障碍。
+
+非阻塞的性质促生了异步的API，异步API存在很多种变种形式，比如 callbacks, promises, fibers 和 reactive 扩展。Vert.x对核心 API
+使用了回调风格，但它也支持其他模型比如
+RxJava 1 和 2。
+
+在一些情况下，使用异步 API 编程要比使用经典的/顺序风格更加富有挑战性，
+特别是当几个操作需要以顺序的形式完成时。
+同理，当使用异步 API 时，错误传递通常也更加复杂。
+
+`vertx-lang-kotlin-coroutines` 使用 _协程_ 。协程是一种非常轻量级的、不对应到内核线程的线程，
+因此当一个 _协程_ 需要“阻塞”时，它会 _挂起_ 并释放当前的内核线程，
+使另一个协程可以处理事件。
+
+`vertx-lang-kotlin-coroutines` 使用 https://github.com/Kotlin/kotlinx.coroutines[kotlinx.coroutines] 来实现协程。
+
+NOTE: `vertx-lang-kotlin-coroutines` 目前仅在 Kotlin 下工作，并且将在 Kotlin 1.3
+脱离 https://kotlinlang.org/docs/reference/coroutines.html#experimental-status-of-coroutines[实验] 状态
+
+[[_running_a_coroutine_from_a_vert_x_context]]
+== 在 Vert.x 上下文中运行协程
+
+导入 `io.vertx.kotlin.coroutines.VertxCoroutine` ，通过 `GlobalScope.launch` 方法可以在 "Global" 作用域中运行一个协程代码块，
+（生命周期与应用一致）：
+
+[source,kotlin,indent=0]
+----
+val vertx = Vertx.vertx()
+
+GlobalScope.launch(vertx.dispatcher()) {
+  val timerId = awaitEvent<Long> { handler ->
+    vertx.setTimer(1000, handler)
+  }
+  println("Event fired from timer with id $timerId")
+}
+----
+
+`vertx.dispatcher()` 返回了一个协程分发器，以便让协程运行在 Vert.x 的事件循环上。
+
+`awaitEvent` 函数挂起了协程，当定时器超时时协程会通过被提供的 handler
+恢复执行。
+
+下一章节会提供更多有关 handler, 事件和流事件的信息。
+
+[[_extending_coroutineverticle]]
+== 继承 CoroutineVerticle
+
+你可以将代码部署为 `io.vertx.kotlin.coroutines.CoroutineVerticle` 的一个实例，它是专为 Kotlin 协程准备的一个特殊类型的 Verticle。
+`CoroutineVerticle` 类实现了 `kotlinx.coroutines.experimental.CoroutineScope` 接口，所有协程构建器都默认绑定到 Verticle 的上下文。
+应当重写 Verticle 中挂起的 `start()` 方法，可选重写挂起的
+`stop()` 方法：
+
+[source,kotlin,indent=0]
+----
+class MyVerticle : CoroutineVerticle() {
+  override suspend fun start() {
+    // ...
+  }
+
+  override suspend fun stop() {
+    // ...
+  }
+}
+----
+
+以上所有的代码都被假设运行在一个 `CoroutineVerticle` 实现中，但是也可以通过替换所有的 `<builder> { .. }` 为
+`GlobalScope.<builder> { .. }` 来使用应用的作用域。
+
+[[_getting_one_shot_asynchronous_results]]
+== 单次获取异步执行的结果
+
+Vert.x 中的许多异步操作的最后一个参数是一个 `Handler<AsyncResult<T>>` 。
+比如在通过 Vert.x Mongo 客户端获取一个对象，或者在事件总线上发送一条消息并等待回复的时候。
+
+可以通过 `awaitResult` 方法来返回值或者抛出一个异常。
+
+协程将被挂起直到事件被处理，内核线程不会被阻塞。
+
+该方法通过指定一个会在运行时被传入 handler 的异步操作代码块来运行。
+
+示例如下：
+
+[source,kotlin,indent=0]
+----
+suspend fun awaitResultExample() {
+  val consumer = vertx.eventBus().localConsumer<String>("a.b.c")
+  consumer.handler { message ->
+    println("Consumer received: ${message.body()}")
+    message.reply("pong")
+  }
+
+  // Send a message and wait for a reply
+  val reply = awaitResult<Message<String>> { h ->
+    vertx.eventBus().request("a.b.c", "ping", h)
+  }
+  println("Reply received: ${reply.body()}")
+}
+----
+
+当块中的代码产生了一个失败时，调用者可以通过
+`try`/`catch` 结构像处理一个普通的异常一样进行处理。
+
+[source,kotlin,indent=0]
+----
+suspend fun awaitResultFailureExample() {
+  val consumer = vertx.eventBus().localConsumer<String>("a.b.c")
+  consumer.handler { message ->
+    // The consumer will get a failure
+    message.fail(0, "it failed!!!")
+  }
+
+  // Send a message and wait for a reply
+  try {
+    awaitResult<Message<String>> { h ->
+      vertx.eventBus().request("a.b.c", "ping", h)
+    }
+  } catch (e: ReplyException) {
+    // Handle specific reply exception here
+    println("Reply failure: ${e.message}")
+  }
+}
+----
+
+[[_getting_one_shot_events]]
+== 获取获取事件
+
+单次处理事件（如果该事件再次产生，不会再进行处理）可以使用函数 `awaitEvent` ：
+
+[source,kotlin,indent=0]
+----
+suspend fun awaitEventExample() {
+  val id = awaitEvent<Long> { h -> vertx.setTimer(2000L, h) }
+  println("This should be fired in 2s by some time with id=$id")
+}
+----
+
+[[_getting_one_shot_worker_results]]
+== 单次获取 worker 结果
+
+处理阻塞计算的结果可以使用函数 `awaitBlocking` ：
+
+[source,kotlin,indent=0]
+----
+suspend fun awaitBlockingExample() {
+  awaitBlocking {
+    Thread.sleep(1000)
+    "some-string"
+  }
+}
+----
+
+[[_streams_of_events]]
+== 事件流
+
+Vert.x API 有许多地方使用处理器（handlers）处理事件流。
+以下示例包含了处理事件总线消息和 HTTP 服务请求。
+
+`ReceiveChannelHandler` 类允许通过（可挂起的） `receive` 方法接收事件：
+
+[source,kotlin,indent=0]
+----
+suspend fun streamExample() {
+  val adapter = vertx.receiveChannelHandler<Message<Int>>()
+  vertx.eventBus().localConsumer<Int>("a.b.c").handler(adapter)
+
+  // Send 15 messages
+  for (i in 0..15) vertx.eventBus().send("a.b.c", i)
+
+  // Receive the first 10 messages
+  for (i in 0..10) {
+    val message = adapter.receive()
+    println("Received: ${message.body()}")
+  }
+}
+----
+
+[[_awaiting_the_completion_of_vert_x_asynchronous_results]]
+== 获取 Vert.x 异步操作的完成结果
+
+Vert.x 4 提供了 future 模型并且 `Future` 有个 `await()` 可挂起方法用于异步获取结果。
+
+Vert.x 异步结果实例上的 `await` 扩展方法挂起协程直到异步操作完成，并返回一个关联的 `AsyncResult<T>` 对象。
+
+[source,kotlin,indent=0]
+----
+suspend fun awaitingFuture(anotherFuture: Future<String>) {
+  // Getting a future
+  val httpServerFuture = vertx.createHttpServer()
+    .requestHandler { req -> req.response().end("Hello!") }
+    .listen(8000)
+
+  val httpServer = httpServerFuture.await()
+  println("HTTP server port: ${httpServer.actualPort()}")
+
+  // It also works for composite futures
+  val result = CompositeFuture.all(httpServerFuture, anotherFuture).await()
+  if (result.succeeded()) {
+    println("The server is now running!")
+  } else {
+    result.cause().printStackTrace()
+  }
+}
+----
+
+[[_suspending_extension_methods]]
+== 挂起方法扩展
+
+为了简化使用 Vert.x 异步 API 的协程编写，Vert.x 3 生成了扩展方法。
+它让用户不必使用 `awaitResult` ，这使得代码更加简洁和可读。
+
+由于 Vert.x 4 提供了基于 future 的 API，那些扩展方法仍会存在，
+但将被 _弃用_ 。
+
+[source,kotlin,indent=0]
+----
+suspend fun generatedSuspendingExtensionMethod() {
+  // Use the extension instead of wrapping with awaitResult
+  val client = vertx.createNetClient()
+  val socket = client.connect(1234, "localhost").await()
+}
+----
+
+[[_channels]]
+== 通道
+
+通道类似于 Java 的 `BlockingQueue` ，不同之处在于它不是阻塞的，而是在如下情况中挂起协程：
+
+- 向一个满了的通道中写入值
+- 从一个空的通道中读取值
+
+可以通过使用 `toChannel` 扩展方法使 Vert.x 的 `ReadStream` 和 `WriteStream` 适配到通道
+
+这些适配器将会管理背压和流终止
+
+* `ReadStream<T>` 适配到 `ReceiveChannel<T>`
+* `WriteStream<T>` 适配到 `SendChannel<T>`
+
+[[_receiving_data]]
+=== 接收数据
+
+当需要处理流中互相关联的值时，通道真的很有用：
+
+[source,kotlin,indent=0]
+----
+suspend fun handleTemperatureStream() {
+  val stream = vertx.eventBus().consumer<Double>("temperature")
+  val channel = stream.toChannel(vertx)
+
+  var min = Double.MAX_VALUE
+  var max = Double.MIN_VALUE
+
+  // Iterate until the stream is closed
+  // Non-blocking
+  for (msg in channel) {
+    val temperature = msg.body()
+    min = Math.min(min, temperature)
+    max = Math.max(max, temperature)
+  }
+
+  // The stream is now closed
+}
+----
+
+还有一个很有用的场景是解析协议时，我们将构建一个非阻塞的 HTTP 请求解析器来展示通道的强大。
+
+我们将依靠 http://vertx.io/docs/apidocs/io/vertx/core/parsetools/RecordParser.html[`RecordParser`] 来根据 `\r\n` 切分缓冲流。
+
+如下是一个初始版本的解析器，仅处理 HTTP 的请求行
+
+[source,kotlin,indent=0]
+----
+vertx.createNetServer().connectHandler { socket ->
+
+  // The record parser provides a stream of buffers delimited by \r\n
+  val stream = RecordParser.newDelimited("\r\n", socket)
+
+  // Convert the stream to a Kotlin channel
+  val channel = stream.toChannel(vertx)
+
+  // Run the coroutine
+  launch {
+
+    // Receive the request-line
+    // Non-blocking
+    val line = channel.receive().toString().split(" ")
+    val method = line[0]
+    val uri = line[1]
+
+    println("Received HTTP request ($method, $uri)")
+
+    // Still need to parse headers and body...
+  }
+}
+----
+
+解析请求行只需简单地在通道上调用 `receive` 。
+
+接下来接收分片并解析 HTTP 头，直到遇到一个空白行。
+
+[source,kotlin,indent=0]
+----
+// Receive HTTP headers
+val headers = HashMap<String, String>()
+while (true) {
+
+  // Non-blocking
+  val header = channel.receive().toString()
+
+  // Done with parsing headers
+  if (header.isEmpty()) {
+    break
+  }
+
+  val pos = header.indexOf(':')
+  headers[header.substring(0, pos).toLowerCase()] = header.substring(pos + 1).trim()
+}
+
+println("Received HTTP request ($method, $uri) with headers ${headers.keys}")
+----
+
+最终我们用处理一个可选的请求体来终止解析器
+
+[source,kotlin,indent=0]
+----
+// Receive the request body
+val transferEncoding = headers["transfer-encoding"]
+val contentLength = headers["content-length"]
+
+val body: Buffer?
+if (transferEncoding == "chunked") {
+
+  // Handle chunked encoding, e.g
+  // 5\r\n
+  // HELLO\r\n
+  // 0\r\n
+  // \r\n
+
+  body = Buffer.buffer()
+  while (true) {
+
+    // Parse length chunk
+    // Non-blocking
+    val len = channel.receive().toString().toInt(16)
+    if (len == 0) {
+      break
+    }
+
+    // The stream is flipped to parse a chunk of the exact size
+    stream.fixedSizeMode(len + 2)
+
+    // Receive the chunk and append it
+    // Non-blocking
+    val chunk = channel.receive()
+    body.appendBuffer(chunk, 0, chunk.length() - 2)
+
+    // The stream is flipped back to the \r\n delimiter to parse the next chunk
+    stream.delimitedMode("\r\n")
+  }
+} else if (contentLength != null) {
+
+  // The stream is flipped to parse a body of the exact size
+  stream.fixedSizeMode(contentLength.toInt())
+
+  // Non-blocking
+  body = channel.receive()
+} else {
+  body = null
+}
+
+val bodySize = body?.length() ?: 0
+println("Received HTTP request ($method, $uri) with headers ${headers.keys} and body with size $bodySize")
+----
+
+[[_sending_data]]
+=== 发送数据
+
+使用通道发送数据非常简单清晰：
+
+[source,kotlin,indent=0]
+----
+suspend fun sendChannel(httpResponse: HttpServerResponse) {
+  val channel = httpResponse.toChannel(vertx)
+
+  while (true) {
+    val buffer = readBuffer()
+
+    // Broadcast the temperature
+    // Non-blocking but could be suspended
+    channel.send(buffer)
+
+    // Wait for one second
+    awaitEvent<Long> { vertx.setTimer(1000, it) }
+  }
+}
+----
+
+`SendChannel#send` 和 `WriteStream#write` 都是非阻塞操作，然而不同于
+`SendChannel#send` 可以在通道满时暂停执行，不使用通道的情况看起来像
+
+[source,kotlin,indent=0]
+----
+fun broadcastTemperature(httpResponse: HttpServerResponse) {
+// Check we can write in the stream
+  if (httpResponse.writeQueueFull()) {
+
+    // We can't write so we set a drain handler to be called when we can write again
+    httpResponse.drainHandler { broadcastTemperature(httpResponse) }
+  } else {
+
+    // Read temperature
+    val temperature = readBuffer()
+
+    // Write it to the stream
+    httpResponse.write(temperature)
+
+    // Wait for one second
+    vertx.setTimer(1000) {
+      broadcastTemperature()
+    }
+  }
+}
+----
+
+[[_delay_cancellation_and_timeouts]]
+== 延迟，取消和超时
+
+Vertx 分发器通过定时器为协程的 `delay` 函数提供完整的支持：
+
+[source,kotlin,indent=0]
+----
+launch {
+  // Set a one second Vertx timer
+  delay(1000)
+}
+----
+
+定时器支持取消
+
+[source,kotlin,indent=0]
+----
+val job = launch {
+  // Set a one second Vertx timer
+  while (true) {
+    delay(1000)
+    // Do something periodically
+  }
+}
+
+// Sometimes later
+job.cancel()
+----
+
+取消操作是 https://github.com/Kotlin/kotlinx.coroutines/blob/master/coroutines-guide.md#cancellation-is-cooperative[协作的]
+
+也可以使用 `withTimeout` 安排一个超时值
+
+[source,kotlin,indent=0]
+----
+launch {
+  try {
+    val id = withTimeout<String>(1000) {
+      awaitEvent { anAsyncMethod(it) }
+    }
+  } catch (e: TimeoutCancellationException) {
+    // Cancelled
+  }
+}
+----
+
+[[_coroutine_builders]]
+== 协程构建器
+
+Vert.x 适用于任何协程构建器，只要 `CoroutineScope` 实例是有效的：`launch` ， `async` ， `produce` …… 。
+以下重要事项必须被注意：
+
+- `runBlocking` 没有 `CoroutineScope` 因此禁止在 Vert.x 事件循环线程上只用。
+- 为避免内存泄漏，总是使用 `coroutineScope {..}` 定义一个子作用域。在这种情况下，如果一个作用域中的协程失败，所有在该作用域中的协程都会被取消
+
+[[_coroutine_interoperability]]
+== 协程互操作性
+
+Vert.x 集成被设计成可与 Kotlin 协程全面互通
+
+* 当使用 vertx 分发器时，`kotlinx.coroutines.experimental.sync.Mutex` 在事件循环线程上执行
+
+[[_rxjava_interoperability]]
+== RxJava 互操作性
+
+模块 `vertx-lang-kotlin-coroutines` 没有与 RxJava 的特定集成，然而 Kotlin 协程提供了 RxJava 的集成，
+它与 `vertx-lang-kotlin-coroutines` 一同工作良好。
+
+可以在这里了解更多： https://github.com/Kotlin/kotlinx.coroutines/blob/master/reactive/coroutines-guide-reactive.md[Guide to reactive streams with coroutines]

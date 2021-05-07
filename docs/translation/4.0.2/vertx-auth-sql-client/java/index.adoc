@@ -1,0 +1,200 @@
+= SQL 客户端权限管理器
+
+我们提供了 `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]`
+和 `link:../../apidocs/io/vertx/ext/auth/authorization/AuthorizationProvider.html[AuthorizationProvider]` 的实现类，
+他们使用 `link:../../apidocs/io/vertx/sqlclient/SqlClient.html[SqlClient]` 来对SQL规范的数据库实现鉴权与授权。
+要使用这个项目，请加入如下依赖：
+
+* Maven （在您的 `pom.xml` 文件）：
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-auth-sql-client</artifactId>
+ <version>4.0.2</version>
+</dependency>
+----
+
+* Gradle （在您的 `build.gradle` 文件）：
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-auth-sql-client:4.0.2'
+----
+
+要创建一个权限管理器对象，您首先需要一个 `link:../../apidocs/io/vertx/sqlclient/SqlClient.html[SqlClient]` 对象。
+要学习如何创建一个 SqlClient ，请查阅 SQL Client 的文档。
+
+当您已拥有一个SqlClient，那么您可以按如下所示来创建 `link:../../apidocs/io/vertx/ext/auth/sqlclient/SqlAuthentication.html[SqlAuthentication]` ：
+
+[source,java]
+----
+SqlAuthenticationOptions options = new SqlAuthenticationOptions();
+// SQL Client可以是已知的任何SQL数据库的实现
+// *. Postgres
+// *. MySQL
+// *. etc...
+AuthenticationProvider authenticationProvider =
+  SqlAuthentication.create(sqlClient, options);
+----
+
+一旦您获取到了自己的 SqlAuthentication 对象，您就可以用它来做鉴权和授权（犹如任意一个 `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` 一样）。
+
+我们假设开箱即用的配置对于鉴权与授权做出了某种查询，
+如果您想在不同的数据库schema之下来查询，那么您可以用 `link:../../apidocs/io/vertx/ext/auth/sqlclient/SqlAuthenticationOptions.html#setAuthenticationQuery-java.lang.String-[setAuthenticationQuery]`,
+`link:../../apidocs/io/vertx/ext/auth/sqlclient/SqlAuthorizationOptions.html#setPermissionsQuery-java.lang.String-[setPermissionsQuery]` 和
+`link:../../apidocs/io/vertx/ext/auth/sqlclient/SqlAuthorizationOptions.html#setRolesQuery-java.lang.String-[setRolesQuery]` 操作做出变化。
+
+基本的数据存储的定义看上去应该类似：
+
+[source,sql]
+----
+--
+-- Take this script with a grain of salt and adapt it to your RDBMS
+--
+CREATE TABLE users (
+ username VARCHAR(255) NOT NULL,
+ password VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE users_roles (
+ username VARCHAR(255) NOT NULL,
+ role VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE roles_perms (
+ role VARCHAR(255) NOT NULL,
+ perm VARCHAR(255) NOT NULL
+);
+
+ALTER TABLE users ADD CONSTRAINT pk_username PRIMARY KEY (username);
+ALTER TABLE users_roles ADD CONSTRAINT pk_users_roles PRIMARY KEY (username, role);
+ALTER TABLE roles_perms ADD CONSTRAINT pk_roles_perms PRIMARY KEY (role, perm);
+
+ALTER TABLE users_roles ADD CONSTRAINT fk_username FOREIGN KEY (username) REFERENCES users(username);
+----
+
+[[_hashing_strategy]]
+== 散列策略
+
+权限管理器用 https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md[phc sf spec]
+来计算密码的散列值。
+
+WARNING: 如果您已经有了一个正在运行中的旧应用，更换散列策略会影响到您原有的密码。
+新密码的格式并不会与其兼容。为了达到升级的目的，
+那么您需要请用户来重置密码并适当的更新其数据记录。
+
+WARNING: 我们也推荐您将密码作为散列值存入数据库表当中，在该表中的数据同时也拥有 `salt` 作为字段存储。
+您应该使用安全性强的哈希算法。
+强烈不推荐密码明文存入数据库。
+
+[[_vertx_auth_jdbc_and_gdpr]]
+== Vertx Auth JDBC 和 GDPR
+
+GDPR是欧盟普通法中的一项法规。它重新定义或凌驾于本国的数据保护法，
+并且扩展了先前已存在的法令。本节内容绝不是一个法规的概览，
+而是对组件如何遵循要求做的小总结。
+不遵守的公司可以按营业额的4％或2000万欧元处以罚款
+因此，我们想要确定的是，您作为 Vert.x Auth JDBC 的用户，是否良好地遵守了规定。
+
+该法规定义如下术语：
+
+* Data Subject - 个人数据被使用并处理的人（例如：用户）
+* Personal Data - 一个人的任何信息（可识别的人或已确认的人）
+* Data Processing - 对于个人信息（即 Personal Data）的任何操作（手动或自动）
+* Controller - 请求和使用数据的实体（公司）
+* Processors - 代表Controller处理数据的任何实体（例如：云服务供应商）。
+
+GDPR 定义如下的功能：
+
+* "Forget me" - 清除数据的权利
+* 将 `概览（profile）` 标记为受限资源 - 限制数据处理的权利
+* 导出数据 - 数据的可移植权利
+* 允许编辑 `概览` - 重新授权的权利
+* 查看自己的所有信息 - 访问权利
+* 选中复选框
+* 年龄检查
+* 资料销毁 - 数据最小化原则
+
+本模块遵循GDPR法律，它不存储任何数据对象的可识别信息。
+唯一的标识就是不关联任何私人信息的username。
+
+为了在您的应用中加入个人信息，您应该创建您自己的数据表，并关联username字段，
+这里提示一下，您应该有一个布尔类型的字段来标识个人信息是否访问受限，以此来遵循处理数据时的法律限制：例如，向邮件列表中的邮箱批量发送邮件，
+当某个邮箱用户的限制标识为true时，便不允许向他发送邮件。
+
+删除数据的权利并不代表您必须清除您应用中所有的数据，
+例如：在银行当中，这个权利不能用来清除贷款和债务信息。您可以保留应用中的数据，但是必须清除个人数据。
+对于 Vert.x Auth SQL 场景，您应该删除您的表，
+只要无法将username和个人信息关联起来，那么您依旧可以保留对username的外键引用，
+
+
+重要说明：这必须在备份中保留下来！作为提示，您应该备份数据，并保证数据备份在不同的数据库当中，
+所以他们才能够独立地回滚。
+
+[[_hashing_passwords]]
+== 将密码做哈希处理
+
+类似于其他任何应用，您总有一天要将新用户的信息存到数据库当中。
+正如您之前学到的那样，密码不是明文存到数据库中，而是按哈希策略做了哈希处理之后才存入数据库。
+在新密码被存入数据库之前，必须要经过相同的哈希策略处理。这只需要3个步骤：
+
+1. 生成 `salt` 字符串
+2. 密码中加入salt并计算散列值
+3. 将计算结果存入数据库
+
+[source,java]
+----
+String hash = jdbcAuth.hash(
+  "pbkdf2", // hashing algorithm (OWASP recommended)
+  VertxContextPRNG.current().nextString(32), // secure random salt
+  "sausages" // password
+);
+
+// save to the database
+sqlClient
+  .preparedQuery("INSERT INTO user (username, password) VALUES (?, ?)")
+  .execute(Tuple.of("tim", hash))
+  .onSuccess(rowset -> {
+    // password updated
+  });
+----
+
+[[_authentication]]
+== 鉴权
+
+鉴权时，使用如下的实现，
+我们假设在鉴权信息当中存在 `username` 和 `password` 字段：
+
+[source,java]
+----
+JsonObject authInfo = new JsonObject()
+  .put("username", "tim")
+  .put("password", "sausages");
+
+authProvider.authenticate(authInfo)
+  .onSuccess(user -> System.out.println("User: " + user.principal()))
+  .onFailure(err -> {
+    // Failed!
+  });
+----
+
+[[_authorisation_permission_role_model]]
+== 授权：权限-角色 模型
+
+Vert.x auth 自身不对任何权限（一些晦涩的字符串）的模型进行授权，
+这个实现假设了一个常见的 用户/角色/权限 的模型，一个用户可以没有角色，也可以有多个角色，
+一个角色可以没有权限，也可以有多个权限。
+
+如果要鉴别一个用户是否有某权限，那么就按如下将用户权限和所给权限做对比：
+
+[source,java]
+----
+sqlAuthZ.getAuthorizations(user)
+  .onSuccess(v -> {
+    if (PermissionBasedAuthorization.create("commit_code").match(user)) {
+      // Has permission!
+    }
+  });
+----

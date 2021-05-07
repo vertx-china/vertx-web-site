@@ -1,66 +1,71 @@
 = Vert.x Json Schema
 :toc: left
 
-Vert.x Json Schema provides an extendable and asynchronous implementation for https://json-schema.org/[Json Schema] specification.
-You can use Json Schemas to validate every json structure. This module provides:
+Vert.x Json Schema组件提供了一个异步可扩展的 https://json-schema.org/[Json Schema] 规范实现。
+你可以使用 Json Schema 去校验每一个json结构的数据。这个组件提供以下特性：
 
-* Implementation of https://tools.ietf.org/html/draft-handrews-json-schema-validation-02[Json Schema draft2019-09]
-* Implementation of https://tools.ietf.org/html/draft-handrews-json-schema-validation-01[Json Schema draft-7]
-* Implementation of https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#schemaObject[OpenAPI 3 dialect].
-* Non blocking `$ref` resolution and caching
-* Lookup into the schema cache using `link:../../apidocs/io/vertx/core/json/pointer/JsonPointer.html[JsonPointer]`
-* Synchronous and asynchronous validation
-* Ability to extend the validation tree adding new keywords and new format predicates
-* DSL to build schemas programmatically
+* 实现了 https://tools.ietf.org/html/draft-handrews-json-schema-validation-02[Json Schema draft2019-09]
+* 实现了 https://tools.ietf.org/html/draft-handrews-json-schema-validation-01[Json Schema draft-7]
+* 实现了 https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#schemaObject[OpenAPI 3 dialect].
+* 非阻塞的 `$ref` 引用和缓存
+* 使用 `link:../../apidocs/io/vertx/core/json/pointer/JsonPointer.html[JsonPointer]` 检索缓存
+* 支持同步和异步校验
+* 支持校验树的扩展，允许添加自定义关键词和自定义格式条件
+* 通过DSL来构建schemas
 
-== Using Vert.x Json Schema
+[[_using_vert_x_json_schema]]
+== 使用 Vert.x Json Schema
 
-To use Vert.x Json Schema, add the following dependency to the _dependencies_ section of your build descriptor:
+为了使用 Vert.x Json Schema ，需要在构建配置文件中添加如下 _依赖_：
 
-* Maven (in your `pom.xml`):
+* Maven （在 `pom.xml` 文件中）：
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-json-schema</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle （在 `build.gradle` 文件中）：
 
 [source,groovy,subs="+attributes"]
 ----
 dependencies {
- compile 'io.vertx:vertx-json-schema:4.0.0'
+ compile 'io.vertx:vertx-json-schema:4.0.3'
 }
 ----
 
-== Concepts
+[[_concepts]]
+== 相关概念
 
+[[_schema]]
 === Schema
 
-Each parsed schema is represented by a `link:../../apidocs/io/vertx/json/schema/Schema.html[Schema]` instance. A schema is a tree of `link:../../apidocs/io/vertx/json/schema/common/Validator.html[Validator]` objects,
-where each one contains the necessary logic to perform the validation. The performed validation is _fail-fast_: as soon as a validation error is encountered, the validation fails without going further
+每一个schema都可以解析成 `link:../../apidocs/io/vertx/json/schema/Schema.html[Schema]` 实例，而schema是一个由 `link:../../apidocs/io/vertx/json/schema/common/Validator.html[Validator]` 对象组成的树，树中的每一个元素都包含了必要的校验逻辑。
+这种校验具有 _快速失败_ 的特性：一旦遇到校验错误，校验就会直接失败而不再继续。
 
-=== SchemaParser & SchemaRouter
+[[_schemaparser_schemarouter]]
+=== SchemaParser 和 SchemaRouter
 
-The `link:../../apidocs/io/vertx/json/schema/SchemaParser.html[SchemaParser]` is the component that parses the schemas from Json data structures to `link:../../apidocs/io/vertx/json/schema/Schema.html[Schema]` instances.
-The `link:../../apidocs/io/vertx/json/schema/SchemaRouter.html[SchemaRouter]` is the component able to cache parsed schemas and resolve `$ref`.
-Every time a new `$ref` is solved or a `link:../../apidocs/io/vertx/json/schema/SchemaParser.html[SchemaParser]` parses a new schema, the new schema will be cached inside the corresponding `link:../../apidocs/io/vertx/json/schema/SchemaRouter.html[SchemaRouter]`.
-The `link:../../apidocs/io/vertx/json/schema/SchemaParser.html[SchemaParser]` can be extended to support custom keywords and formats.
+`link:../../apidocs/io/vertx/json/schema/SchemaParser.html[SchemaParser]` 组件负责将json数据结构的schema解析成 `link:../../apidocs/io/vertx/json/schema/Schema.html[Schema]` 实例。
+`link:../../apidocs/io/vertx/json/schema/SchemaRouter.html[SchemaRouter]` 组件负责处理schema解析后的缓存以及相关的 `$ref` 引用。
+当处理 `$ref` 的引用或者使用 `link:../../apidocs/io/vertx/json/schema/SchemaParser.html[SchemaParser]` 解析新的schema时，这个schema就会被缓存到相应的 `link:../../apidocs/io/vertx/json/schema/SchemaRouter.html[SchemaRouter]` 中去。
+`link:../../apidocs/io/vertx/json/schema/SchemaParser.html[SchemaParser]` 可以进行扩展并且支持自定义关键词和自定义格式。
 
-The available `link:../../apidocs/io/vertx/json/schema/SchemaParser.html[SchemaParser]` are:
+当前可用的 `link:../../apidocs/io/vertx/json/schema/SchemaParser.html[SchemaParser]` 有：
 
 * `link:../../apidocs/io/vertx/json/schema/draft201909/Draft201909SchemaParser.html[Draft201909SchemaParser]` for Json Schema Draft 2019-09
 * `link:../../apidocs/io/vertx/json/schema/draft7/Draft7SchemaParser.html[Draft7SchemaParser]` for Json Schema Draft 7
 * `link:../../apidocs/io/vertx/json/schema/openapi3/OpenAPI3SchemaParser.html[OpenAPI3SchemaParser]` for OpenAPI 3 dialect
 
-== Parse a schema
+[[_parse_a_schema]]
+== 解析schema
 
-To parse a schema you first need a schema router and a schema parser matching your schema _dialect_.
-For example to instantiate a _draft 2019-09_ schema parser:
+要开始解析schema，首先你需要一个能匹配你的schema _方言_ 的 schema router 和 schema parser。
+以实例化一个 _draft 2019-09_ 的 schema parser 为例：
 
 [source,java]
 ----
@@ -68,92 +73,81 @@ SchemaRouter schemaRouter = SchemaRouter.create(vertx, new SchemaRouterOptions()
 SchemaParser schemaParser = SchemaParser.createDraft201909SchemaParser(schemaRouter);
 ----
 
-You can reuse `SchemaRouter` instance for different `SchemaParser` and you can parse different `Schema` with same `SchemaParser`.
+对于不同的 `SchemaParser` ， 你可以复用同一个 `SchemaRouter` 实例；而且还可以使用同一个 `SchemaParser` 来解析不同的 `Schema` 。
 
-Now you can parse the schema:
+现在你可以解析schema了：
 
 [source,java]
 ----
 Schema schema = parser.parse(object, schemaPointer);
 ----
 
-When you parse a schema you must provide the **schema pointer**, a pointer that identifies the location of the schema.
-If you don't have any schema pointer `SchemaParser` will generate one for you:
+解析schema时，必须要指定一个 **schema pointer** ，这个 pointer 是定位 schema 的唯一标识。
+如果你没有指定 schema pointer，那么 `SchemaParser` 默认会生成一个。
 
 [source,java]
 ----
 Schema schema = parser.parse(object);
-schema.getScope(); // Get generated scope of schema (schema pointer)
+schema.getScope(); // 获取schema的生成作用域 (schema pointer)
 ----
 
 [IMPORTANT]
 ====
-Remember that the schema pointer is required to reference this schema later using Json Schema `$ref`
-and to resolve relative references. If you load a schema from filesystem and you use relative references, **provide the correct pointer** or the
-`SchemaRouter` won't be able to resolve the local filesystem `$ref`.
+需要注意的是，当使用 `$ref` 引用schema或者处理相关的引用时，schema pointer 是必须的，
+如果你从文件系统中加载schema并且使用其引用时， **必须提供正确的pointer** ，
+否则 `SchemaRouter` 将不能处理本地文件系统的 `$ref`。
 ====
 
-== Validate
+[[_validate]]
+== 校验
 
-A schema could have two states:
+一个schema可以有两种状态：
 
-* Synchronous: The validators tree can provide a synchronous validation. You can validate your json both using `link:../../apidocs/io/vertx/json/schema/Schema.html#validateSync-java.lang.Object-[validateSync]` and `link:../../apidocs/io/vertx/json/schema/Schema.html#validateAsync-java.lang.Object-[validateAsync]`</li>
-* Asynchronous: One or more branches of the validator tree requires an asynchronous validation. You must use `link:../../apidocs/io/vertx/json/schema/Schema.html#validateAsync-java.lang.Object-[validateAsync]` to validate your json. If you use `link:../../apidocs/io/vertx/json/schema/Schema.html#validateSync-java.lang.Object-[validateSync]` it will throw a `link:../../apidocs/io/vertx/json/schema/NoSyncValidationException.html[NoSyncValidationException]`</li>
+* 同步状态: 校验树支持同步校验，你可以分别使用 `link:../../apidocs/io/vertx/json/schema/Schema.html#validateSync-java.lang.Object-[validateSync]` 和 `link:../../apidocs/io/vertx/json/schema/Schema.html#validateAsync-java.lang.Object-[validateAsync]` 来校验你的json。
+* 异步状态：校验树存在一个或多个分支时需要使用异步校验，你必须使用 `link:../../apidocs/io/vertx/json/schema/Schema.html#validateAsync-java.lang.Object-[validateAsync]` 方法来校验json，如果你使用 `link:../../apidocs/io/vertx/json/schema/Schema.html#validateSync-java.lang.Object-[validateSync]` 来校验则会抛出 `link:../../apidocs/io/vertx/json/schema/NoSyncValidationException.html[NoSyncValidationException]` 异常。
 
-To validate a schema in an asynchronous state:
+在异步状态下校验 schema：
 
 [source,java]
 ----
 schema.validateAsync(json).onComplete(ar -> {
   if (ar.succeeded()) {
-    // Validation succeeded
+    // 校验成功
   } else {
-    // Validation failed
-    ar.cause(); // Contains ValidationException
+    // 校验失败
+    ar.cause(); // 包含校验的异常情况
   }
 });
 ----
 
-To validate a schema in a synchronous state:
+在同步状态下校验schema：
 
 [source,java]
 ----
 try {
   schema.validateSync(json);
-  // Successful validation
+  // 校验成功
 } catch (ValidationException e) {
-  // Failed validation
+  // 校验失败
 } catch (NoSyncValidationException e) {
-  // Cannot validate synchronously. You must validate using validateAsync
+  // 必须使用异步校验，不能使用同步校验
 }
 ----
 
-To check the schema state you can use method `link:../../apidocs/io/vertx/json/schema/Schema.html#isSync--[isSync]`.
-The schema can mutate the state in time, e.g. if you have a schema that is asynchronous because of a `$ref`,
-after the first validation the external schema is cached and the schema will switch to synchronous state.
+你可以使用 `link:../../apidocs/io/vertx/json/schema/Schema.html#isSync--[isSync]` 方法来获取schema的当前状态。
+schema可以实时切换状态，比如，如果你有一个schema使用 `$ref` 引用了外部的schema，
+此时它处于异步状态，在第一次校验之后，外部schema被缓存了，这时schema将会切换到同步状态。
 
 [NOTE]
 ====
-If you use `link:../../apidocs/io/vertx/json/schema/Schema.html#validateAsync-java.lang.Object-[validateAsync]` while the schema is in a synchronous state,
-the schema will validate synchronously wrapping the result in the returned `Future`, avoiding unnecessary async computations and memory usage
+如果schema在同步状态下使用 `link:../../apidocs/io/vertx/json/schema/Schema.html#validateAsync-java.lang.Object-[validateAsync]` 方法来校验，
+这个schema将会在返回的 `Future` 中同步包含校验的结果，从而避免了不必要的异步计算和内存占用。
 ====
 
-== Apply default values
+[[_adding_custom_formats]]
+== 自定义格式
 
-You can deeply apply default values to `JsonObject` and `JsonArray`:
-
-[source,java]
-----
-schema.applyDefaultValues(jsonObject);
-// Or
-schema.applyDefaultValues(jsonArray);
-----
-
-These methods will mutate the internal state of the provided Json structures.
-
-== Adding custom formats
-
-You can add custom formats to use with validation keyword `format` before parsing the schemas:
+你可以在解析schemas之前使用校验关键字 `format` 来自定义数据格式。
 
 [source,java]
 ----
@@ -163,39 +157,41 @@ JsonObject mySchema = new JsonObject().put("format", "firstUppercase");
 Schema schema = parser.parse(mySchema);
 ----
 
-== Adding custom keywords
+[[_adding_custom_keywords]]
+== 自定义关键词
 
-For every new keyword type you want to provide, you must implement `link:../../apidocs/io/vertx/json/schema/common/ValidatorFactory.html[ValidatorFactory]`
-and provide an instance to `SchemaParser` using `link:../../apidocs/io/vertx/json/schema/SchemaParser.html#withValidatorFactory-io.vertx.json.schema.common.ValidatorFactory-[withValidatorFactory]`.
-When parsing happens, the `SchemaParser` calls `link:../../apidocs/io/vertx/json/schema/common/ValidatorFactory.html#canConsumeSchema-io.vertx.core.json.JsonObject-[canConsumeSchema]` for each registered factory.
-If the factory can consume the schema, then the method `link:../../apidocs/io/vertx/json/schema/common/ValidatorFactory.html#createValidator-io.vertx.core.json.JsonObject-io.vertx.core.json.pointer.JsonPointer-io.vertx.json.schema.common.SchemaParserInternal-io.vertx.json.schema.common.MutableStateValidator-[createValidator]`
-is called. This method returns an instance of `link:../../apidocs/io/vertx/json/schema/common/Validator.html[Validator]`, that represents the object that will perform the validation.
-If something goes wrong during `Validator` creation, a `link:../../apidocs/io/vertx/json/schema/SchemaException.html[SchemaException]` should be thrown
+每当你想要添加一个新的关键词类型时，你必须要实现 `link:../../apidocs/io/vertx/json/schema/common/ValidatorFactory.html[ValidatorFactory]` ，
+然后使用 `link:../../apidocs/io/vertx/json/schema/SchemaParser.html#withValidatorFactory-io.vertx.json.schema.common.ValidatorFactory-[withValidatorFactory]` 提供一个实例给 `SchemaParser`。
+当解析开始时，`SchemaParser` 将会调用每一个注册的工厂的 `link:../../apidocs/io/vertx/json/schema/common/ValidatorFactory.html#canConsumeSchema-io.vertx.core.json.JsonObject-[canConsumeSchema]` 方法。
+如果工厂可以使用这个schema，那么就会调用 `link:../../apidocs/io/vertx/json/schema/common/ValidatorFactory.html#createValidator-io.vertx.core.json.JsonObject-io.vertx.core.json.pointer.JsonPointer-io.vertx.json.schema.common.SchemaParserInternal-io.vertx.json.schema.common.MutableStateValidator-[createValidator]` 方法。
+这个方法返回一个执行校验的 `link:../../apidocs/io/vertx/json/schema/common/Validator.html[Validator]` 对象实例，
+如果在 `Validator` 初始化过程中发生错误，将会抛出 `link:../../apidocs/io/vertx/json/schema/SchemaException.html[SchemaException]` 异常。
 
-You can add custom keywords of three types:
+你可以自定义以下三种类型的关键词：
 
-* Keywords that always validate the input synchronously
-* Keywords that always validate the input asynchronously
-* Keywords with mutable state
+* 总是同步校验输入的关键词
+* 总是异步校验输入的关键词
+* 可变状态的关键词
 
-=== Synchronous keywords
+[[_synchronous_keywords]]
+=== 同步关键词
 
-Synchronous validators must implement the interface `link:../../apidocs/io/vertx/json/schema/common/SyncValidator.html[SyncValidator]`.
-In the example below I add a keyword that checks if the number of properties in a json object is a multiple of a provided number:
+同步校验器必须要实现 `link:../../apidocs/io/vertx/json/schema/common/SyncValidator.html[SyncValidator]` 接口。
+在下面的例子中，我们自定义一个关键词，这个关键词需要校验json对象中的属性数值是否符合给定的多个预设值。
 
 [source,java]
 ----
 `link:../../apidocs/examples/PropertiesMultipleOfValidator.html[PropertiesMultipleOfValidator]`
 ----
 
-After we defined the keyword validator we can define the factory:
+在定义了关键词校验器之后，我们就可以定义工厂了：
 
 [source,java]
 ----
 `link:../../apidocs/examples/PropertiesMultipleOfValidatorFactory.html[PropertiesMultipleOfValidatorFactory]`
 ----
 
-Now we can mount the new validator factory:
+现在我们可以挂载这个新的校验工厂：
 
 [source,java]
 ----
@@ -205,24 +201,25 @@ JsonObject mySchema = new JsonObject().put("propertiesMultipleOf", 2);
 Schema schema = parser.parse(mySchema);
 ----
 
-=== Asynchronous keywords
+[[_asynchronous_keywords]]
+=== 异步关键词
 
-Synchronous validators must implement the interface `link:../../apidocs/io/vertx/json/schema/common/AsyncValidator.html[AsyncValidator]`.
-In this example I add a keyword that retrieves from the Vert.x Event bus an enum of values:
+同步校验器必须要实现 `link:../../apidocs/io/vertx/json/schema/common/AsyncValidator.html[AsyncValidator]` 接口。
+在这个例子中，我添加了一个关键词，这个关键词从Vert.x Event bus中检索一个枚举值
 
 [source,java]
 ----
 `link:../../apidocs/examples/AsyncEnumValidator.html[AsyncEnumValidator]`
 ----
 
-After we defined the keyword validator we can define the factory:
+在定义了关键字校验器之后，我们就可以定义工厂了：
 
 [source,java]
 ----
 `link:../../apidocs/examples/AsyncEnumValidatorFactory.html[AsyncEnumValidatorFactory]`
 ----
 
-Now we can mount the new validator factory:
+现在我们可以挂载这个新的校验工厂：
 
 [source,java]
 ----
@@ -232,15 +229,17 @@ JsonObject mySchema = new JsonObject().put("asyncEnum", "enums.myapplication");
 Schema schema = parser.parse(mySchema);
 ----
 
-== Building your schemas from code
+[[_building_your_schemas_from_code]]
+== 用代码来构建schema
 
-If you want to build schemas from code, you can use the included DSL. Only Draft-7 is supported for this feature.
+如果你想要使用代码来构建schema，你可以使用附带的DSL。目前只有Draft-7支持这个特性。
 
-To start, add static imports for `link:../../apidocs/io/vertx/json/schema/draft7/dsl/Schemas.html[Schemas]` and `link:../../apidocs/io/vertx/json/schema/draft7/dsl/Keywords.html[Keywords]`
+首先，通过静态导入（import static） `link:../../apidocs/io/vertx/json/schema/draft7/dsl/Schemas.html[Schemas]` 和 `link:../../apidocs/io/vertx/json/schema/draft7/dsl/Keywords.html[Keywords]` 。
 
-=== Creating the schema
+[[_creating_the_schema]]
+=== 创建schema
 
-Inside `link:../../apidocs/io/vertx/json/schema/draft7/dsl/Schemas.html[Schemas]` there are static methods to create the schema:
+在 `link:../../apidocs/io/vertx/json/schema/draft7/dsl/Schemas.html[Schemas]` 内部提供了schema创建的静态方法：
 
 [source,java]
 ----
@@ -248,10 +247,11 @@ SchemaBuilder intSchemaBuilder = intSchema();
 SchemaBuilder objectSchemaBuilder = objectSchema();
 ----
 
-=== Using the keywords
+[[_using_the_keywords]]
+=== 使用关键词
 
-For every schema you can add keywords built with `link:../../apidocs/io/vertx/json/schema/draft7/dsl/Keywords.html[Keywords]` methods,
-depending on the type of the schema:
+对于每一个schema，你是否可以使用 `link:../../apidocs/io/vertx/json/schema/draft7/dsl/Keywords.html[Keywords]` 方法来构建关键词，
+这取决于schema的类型：
 
 [source,java]
 ----
@@ -259,15 +259,16 @@ stringSchema()
   .with(format(StringFormat.DATETIME));
 arraySchema()
   .with(maxItems(10));
-schema() // Generic schema that accepts both arrays and integers
+schema() // 生成同时接收数组和整数的schema
   .with(type(SchemaType.ARRAY, SchemaType.INT));
 ----
 
-=== Defining the schema structure
+[[_defining_the_schema_structure]]
+=== 定义schema的结构
 
-Depending on the schema you create, you can define a structure.
+根据你创建的schema，你可以定义结构。
 
-To create an object schema with some properties schemas and additional properties schema:
+使用属性schema和其他属性schema来创建一个对象类型的schema：
 
 [source,java]
 ----
@@ -277,7 +278,7 @@ objectSchema()
   .additionalProperties(stringSchema());
 ----
 
-To create an array schema:
+创建一个数组类型的schema：
 
 [source,java]
 ----
@@ -285,23 +286,24 @@ arraySchema()
   .items(stringSchema());
 ----
 
-To create a tuple schema:
+创建元组类型的schema：
 
 [source,java]
 ----
 tupleSchema()
-  .item(stringSchema()) // First item
-  .item(intSchema()) // Second item
-  .item(booleanSchema()); // Third item
+  .item(stringSchema()) // 第一个元素
+  .item(intSchema()) // 第二个元素
+  .item(booleanSchema()); // 第三个元素
 ----
 
-=== `$ref` and aliases
+[[_ref_and_aliases]]
+=== `$ref` 和 别名
 
-To add a `$ref` schema you can use the `link:../../apidocs/io/vertx/json/schema/common/dsl/Schemas.html#ref-io.vertx.core.json.pointer.JsonPointer-[Schemas.ref]` method.
-To assign an `$id` keyword to a schema, use `link:../../apidocs/io/vertx/json/schema/common/dsl/SchemaBuilder.html#id-io.vertx.core.json.pointer.JsonPointer-[id]`
+你可以使用 `link:../../apidocs/io/vertx/json/schema/common/dsl/Schemas.html#ref-io.vertx.core.json.pointer.JsonPointer-[Schemas.ref]` 方法来添加一个 `$ref` schema。
+通过 `link:../../apidocs/io/vertx/json/schema/common/dsl/SchemaBuilder.html#id-io.vertx.core.json.pointer.JsonPointer-[id]` 来指定对应schema的 `$id` 关键词。
 
-You can also refer to schemas defined with this dsl using aliases. You can use `link:../../apidocs/io/vertx/json/schema/common/dsl/SchemaBuilder.html#alias-java.lang.String-[alias]` to assign an alias to
-a schema. Then you can refer to a schema with an alias using `link:../../apidocs/io/vertx/json/schema/common/dsl/Schemas.html#refToAlias-java.lang.String-[Schemas.refToAlias]`:
+你也可以使用别名来引用通过dsl定义的schema。你可以使用 `link:../../apidocs/io/vertx/json/schema/common/dsl/SchemaBuilder.html#alias-java.lang.String-[alias]` 来为一个schema设置别名。
+这样你就可以使用 `link:../../apidocs/io/vertx/json/schema/common/dsl/Schemas.html#refToAlias-java.lang.String-[Schemas.refToAlias]` 来根据别名引用schema。
 
 [source,java]
 ----
@@ -312,9 +314,10 @@ objectSchema()
   .requiredProperty("anInteger", refToAlias("myInt"));
 ----
 
-=== Using the schema
+[[_using_the_schema]]
+=== 使用schema
 
-After you defined the schema, you can call `link:../../apidocs/io/vertx/json/schema/common/dsl/SchemaBuilder.html#build-io.vertx.json.schema.SchemaParser-[build]` to parse and use the schema:
+在定义好schama后，你可以调用 `link:../../apidocs/io/vertx/json/schema/common/dsl/SchemaBuilder.html#build-io.vertx.json.schema.SchemaParser-[build]` 方法来解析和使用这个schema：
 
 [source,java]
 ----

@@ -1,37 +1,37 @@
-= SQL Client Auth Provider
+= SQL 客户端权限管理器
 
-We provide an implementation of `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` as well as
-`link:../../apidocs/io/vertx/ext/auth/authorization/AuthorizationProvider.html[AuthorizationProvider]` which uses the Vert.x `link:../../apidocs/io/vertx/sqlclient/SqlClient.html[SqlClient]`
-to perform authentication and authorization against any SQL compliant database. To use this project,
-add the following dependency to the _dependencies_ section of your build descriptor:
+我们提供了 `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]`
+和 `link:../../apidocs/io/vertx/ext/auth/authorization/AuthorizationProvider.html[AuthorizationProvider]` 的实现类，
+他们使用 `link:../../apidocs/io/vertx/sqlclient/SqlClient.html[SqlClient]` 来对SQL规范的数据库实现鉴权与授权。
+要使用这个项目，请加入如下依赖：
 
-* Maven (in your `pom.xml`):
+* Maven （在您的 `pom.xml` 文件）：
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-auth-sql-client</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle （在您的 `build.gradle` 文件）：
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-auth-sql-client:4.0.0'
+compile 'io.vertx:vertx-auth-sql-client:4.0.3'
 ----
 
-To create an instance you first need an instance of `link:../../apidocs/io/vertx/sqlclient/SqlClient.html[SqlClient]`. To learn how to create one
-of those please consult the documentation for the SQL client.
+要创建一个权限管理器对象，您首先需要一个 `link:../../apidocs/io/vertx/sqlclient/SqlClient.html[SqlClient]` 对象。
+要学习如何创建一个 SqlClient ，请查阅 SQL Client 的文档。
 
-Once you've got one of those you can create a `link:../../apidocs/io/vertx/ext/auth/sqlclient/SqlAuthentication.html[SqlAuthentication]` instance as follows:
+当您已拥有一个SqlClient，那么您可以按如下所示来创建 `link:../../apidocs/io/vertx/ext/auth/sqlclient/SqlAuthentication.html[SqlAuthentication]` ：
 
 [source,java]
 ----
 SqlAuthenticationOptions options = new SqlAuthenticationOptions();
-// SQL client can be any of the known implementations
+// SQL Client可以是已知的任何SQL数据库的实现
 // *. Postgres
 // *. MySQL
 // *. etc...
@@ -39,14 +39,14 @@ AuthenticationProvider authenticationProvider =
   SqlAuthentication.create(sqlClient, options);
 ----
 
-Once you've got your instance you can authenticate and authorize with it just like any `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]`.
+一旦您获取到了自己的 SqlAuthentication 对象，您就可以用它来做鉴权和授权（犹如任意一个 `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` 一样）。
 
-The out of the box config assumes certain queries for authentication and authorization, these can easily be changed with the operations
-`link:../../apidocs/io/vertx/ext/auth/sqlclient/SqlAuthenticationOptions.html#setAuthenticationQuery-java.lang.String-[setAuthenticationQuery]`,
-`link:../../apidocs/io/vertx/ext/auth/sqlclient/SqlAuthorizationOptions.html#setPermissionsQuery-java.lang.String-[setPermissionsQuery]` and
-`link:../../apidocs/io/vertx/ext/auth/sqlclient/SqlAuthorizationOptions.html#setRolesQuery-java.lang.String-[setRolesQuery]`, if you want to use them with a different database schema.
+我们假设开箱即用的配置对于鉴权与授权做出了某种查询，
+如果您想在不同的数据库schema之下来查询，那么您可以用 `link:../../apidocs/io/vertx/ext/auth/sqlclient/SqlAuthenticationOptions.html#setAuthenticationQuery-java.lang.String-[setAuthenticationQuery]`,
+`link:../../apidocs/io/vertx/ext/auth/sqlclient/SqlAuthorizationOptions.html#setPermissionsQuery-java.lang.String-[setPermissionsQuery]` 和
+`link:../../apidocs/io/vertx/ext/auth/sqlclient/SqlAuthorizationOptions.html#setRolesQuery-java.lang.String-[setRolesQuery]` 操作做出变化。
 
-The basic data definition for the storage should look like this:
+基本的数据存储的定义看上去应该类似：
 
 [source,sql]
 ----
@@ -75,71 +75,74 @@ ALTER TABLE roles_perms ADD CONSTRAINT pk_roles_perms PRIMARY KEY (role, perm);
 ALTER TABLE users_roles ADD CONSTRAINT fk_username FOREIGN KEY (username) REFERENCES users(username);
 ----
 
-== Hashing Strategy
+[[_hashing_strategy]]
+== 散列策略
 
-The provider uses the <a href="https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md">phc sf spec</a> to
-hash password.
+权限管理器用 https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md[phc sf spec]
+来计算密码的散列值。
 
-WARNING: If you already have a running legacy application switching the strategies will break your existing
-passwords. The new format will not for suffer from this. In order to upgrade request users to reset their password and
-update the record appropriately.
+WARNING: 如果您已经有了一个正在运行中的旧应用，更换散列策略会影响到您原有的密码。
+新密码的格式并不会与其兼容。为了达到升级的目的，
+那么您需要请用户来重置密码并适当的更新其数据记录。
 
-WARNING: It is advised to always store your passwords as hashes in your database tables which have been created
-with a salt which should be stored in the row too. A strong hashing algorithm should be used. It is strongly advised
-never to store your passwords as plain text.
+WARNING: 我们也推荐您将密码作为散列值存入数据库表当中，在该表中的数据同时也拥有 `salt` 作为字段存储。
+您应该使用安全性强的哈希算法。
+强烈不推荐密码明文存入数据库。
 
-== Vertx Auth JDBC and GDPR
+[[_vertx_auth_jdbc_and_gdpr]]
+== Vertx Auth JDBC 和 GDPR
 
-GDPR is a regulation from the common European Union law. It overrides/supercedes national data protection laws and
-extents the previously existing directives. This section of the manual is by no means a thorough walkthrough of the
-regulation, it is just a small summary how this component adheres to the requirements. Companies not adhering to the
-requirements can be fined on 4% of the turnover or 20 million euro. Therefore we want to make sure that as a user of
-Vert.x Auth JDBC you're are on the good track to comply.
+GDPR是欧盟普通法中的一项法规。它重新定义了成员国的数据保护法或凌驾该法之上，
+并扩展了先前已存在的法令。本节内容绝不是一个法规的概览，
+而是对组件如何遵循要求做的小总结。
+不遵守法规的公司可以按营业额的4％或2000万欧元处以罚款。
+因此我们想要确保的是，您，作为 Vert.x Auth JDBC 的用户，很好地遵守了该法规。
 
-The law defines certain terminology:
+该法规定义如下术语：
 
-* Data Subject - Person whose personal data is processed (e.g.: User)
-* Personal Data - Any data about an identifiable or identified person
-* Data Processing - Any operation (manual or automated) on personal data
-* Controller - The entity (company) that requests and uses the data
-* Processors - Any entity that processes data on behalf of a controller (e.g.: cloud service provider)
+* Data Subject - 个人数据被使用并处理的人（例如：用户）
+* Personal Data - 一个人的任何信息（可识别的人或已确认的人）
+* Data Processing - 对于个人信息（即 Personal Data）的任何操作（手动或自动）
+* Controller - 请求和使用数据的实体（公司）
+* Processors - 代表Controller处理数据的任何实体（例如：云服务供应商）
 
-GDPR defines the following functionality:
+GDPR 定义如下的功能：
 
-* "Forget me" - Right to erasure
-* Mark profile as restricted - Right to restriction of processing
-* Export data - Right to portability
-* Allow profile editing - Right to rectification
-* See all my data - Right to access
-* Consent checkboxes
-* Age checks
-* Data destruction - Data minimization principle
+* "Forget me" - 清除数据的权利
+* 将 `概览（profile）` 标记为受限资源 - 限制数据处理的权利
+* 导出数据 - 数据的可移植权利
+* 允许编辑 `概览` - 重新授权的权利
+* 查看自己的所有信息 - 访问权利
+* 选中复选框
+* 年龄检查
+* 资料销毁 - 数据最小化原则
 
-This module complies to the GDPR law by not storing any identifiable information about a data subject. The only
-reference is the username which is not linked to any personal data.
+本模块遵循GDPR法律，它不存储任何数据对象的可识别信息。
+唯一的标识就是不关联任何私人信息的用户名（username）。
 
-In order to add personal data to your application you should create your own data schema and use the username column
-as a foreign key to your data. As a tip you should have a boolean flag to mark the personal data as restricted to
-comply to the right to restriction of processing which means that if you need to handle the data, e.g.: send a bulk
-email from a mailing list you are not allowed to do so if the flag is true.
+为了在您的应用中加入个人信息，您应该创建您自己的数据表，并关联用户名字段，
+这里提示一下，您应该有一个布尔类型的字段来标识个人信息是否访问受限，以此来遵循处理数据时的法律限制：例如，向邮件列表中的邮箱批量发送邮件，
+当某个邮箱用户的限制标识为true时，便不允许向他发送邮件。
 
-The right to erasure does not mean that you must wipe all records from your application, e.g.: in a bank this right
-cannot be used to erase a running loan or debt. You are allowed to keep your application data but must erase the
-personal data. In case of Vert.x Auth SQL you should delete your table but can still use a foreign key to the
-username as long as is not possible to link the username to the personal data.
+删除数据的权利并不代表您必须清除您应用中所有的数据，
+例如：在银行当中，这个权利不能用来清除贷款和债务信息。您可以保留应用中的数据，但是必须清除个人数据。
+对于 Vert.x Auth SQL 场景，您应该删除您的表，
+只要不将用户名和个人信息关联起来，那么您依旧可以保留对用户名的外键引用，
 
-Important note is that this must survive backups! As a tip backup the data, and data erasure on different archives so
-they can be replayed individually.
 
-== Hashing passwords
+重要说明：这必须在备份中保留下来！作为提示，您应该备份数据，并保证数据备份在不同的数据库当中，
+所以他们才能够独立地回滚。
 
-Like any application there will be a time where you need to store new users into the database. Has you have learn
-passwords are not stored in plain text but hashed according to the hashing strategy. The same strategy is required
-to hash new password before storing it to the database. Doing it is a 3 step task.
+[[_hashing_passwords]]
+== 将密码做哈希处理
 
-1. Generate a salt string
-2. Hash the password given the salt string
-3. Store it to the database
+类似于其他任何应用，您总有一天要将新用户的信息存到数据库当中。
+正如您之前学到的那样，密码不是明文存到数据库中，而是按哈希策略做了哈希处理之后才存入数据库。
+在新密码被存入数据库之前，必须要经过相同的哈希策略处理。这只需要3个步骤：
+
+1. 生成 `salt` 字符串
+2. 密码中加入salt并计算散列值
+3. 将计算结果存入数据库
 
 [source,java]
 ----
@@ -158,10 +161,11 @@ sqlClient
   });
 ----
 
-== Authentication
+[[_authentication]]
+== 鉴权/身份验证
 
-When authenticating using this implementation, it assumes `username` and `password` fields are present in the
-authentication info:
+使用此实现进行身份验证时，
+假定身份验证信息中存在 `用户名（username）` 和 `密码（password）` 字段：
 
 [source,java]
 ----
@@ -176,13 +180,14 @@ authProvider.authenticate(authInfo)
   });
 ----
 
-== Authorisation - Permission-Role Model
+[[_authorisation_permission_role_model]]
+== 授权：权限-角色 模型
 
-Although Vert.x auth itself does not mandate any specific model of permissions (they are just opaque strings), this
-implementation assumes a familiar user/role/permission model, where a user can have zero or more roles and a role
-can have zero or more permissions.
+Vert.x auth 自身不对任何权限（一些晦涩的字符串）的模型进行授权，
+这个实现假设了一个常见的 用户/角色/权限 的模型，一个用户可以没有角色，也可以有多个角色，
+一个角色可以没有权限，也可以有多个权限。
 
-If validating if a user has a particular permission simply match the user against a given permission as follows:
+如果要鉴别一个用户是否有某权限，那么就按如下将用户权限和所给权限做对比：
 
 [source,java]
 ----

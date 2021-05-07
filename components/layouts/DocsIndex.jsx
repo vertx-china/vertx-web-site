@@ -5,8 +5,9 @@ import ReadMoreLink from "../ReadMoreLink"
 import ScrollLink from "../ScrollLink"
 import Label from "../Label"
 import { versions as docsVersions } from "../../docs/metadata/all"
+import { filterLatestBugfixVersions } from "../../docs/metadata/helpers"
 import Link from "next/link"
-import { Book } from "react-feather"
+import { Book, ExternalLink } from "react-feather"
 import "./DocsIndex.scss"
 
 const Section = ({ icon, children, id, name }) => {
@@ -15,14 +16,32 @@ const Section = ({ icon, children, id, name }) => {
     numChildren = Math.min(2, children.length)
   }
 
+  let book = undefined
+  if (id === "core") {
+    let url = "https://www.manning.com/books/vertx-in-action"
+    book = (
+      <div className="docs-index-section-book">
+        <a href={url} target="_blank" rel="noopener noreferrer">
+          <img src={require("../../assets/book-cover-medium.jpg")} width="230" />
+        </a><br />
+        <a href={url} target="_blank" rel="noopener noreferrer">
+          Get the book ... <ExternalLink className="external-link-icon" size="1em" />
+        </a>
+      </div>
+    )
+  }
+
   return (
     <section className="docs-index-section" id={id}>
-      <div className="docs-index-section-header">
-        <h3>{icon} {name}</h3>
+      <div className="docs-index-section-wrapper">
+        <div className="docs-index-section-header">
+          <h3>{icon} {name}</h3>
+        </div>
+        <div className={`docs-index-section-content docs-index-section-content-${numChildren}`}>
+          {children}
+        </div>
       </div>
-      <div className={`docs-index-section-content docs-index-section-content-${numChildren}`}>
-        {children}
-      </div>
+      {book}
     </section>
   )
 }
@@ -42,7 +61,7 @@ const SectionPart = ({ title, label, href, children }) => {
       <p className="docs-index-section-content-summary">{children}</p>
 
       <ReadMoreLink href={href}>
-        <a>Read</a>
+        <a>详情</a>
       </ReadMoreLink>
     </div>
   )
@@ -55,11 +74,11 @@ const Docs = ({ metadata, version }) => {
   }
 
   return (
-    <Layout meta={{ title: "Documentation" }}>
+    <Layout meta={{ title: "文档" }}>
       <div className="docs-index-main">
         <aside>
           <div className="docs-index-aside-main">
-            <h2>Documentation</h2>
+            <h2>文档资料</h2>
             <div className="docs-index-aside-content">
               <div className="docs-index-toc">
                 <ul>
@@ -80,18 +99,18 @@ const Docs = ({ metadata, version }) => {
 
             <div className="docs-index-content-heading-right">
               <span className="docs-index-api">
-                <Link href={`https://vertx.io/docs/${version ? `${version}/` : ""}apidocs`}>
-                  <a><Book className="feather" />API</a>
-                </Link>
+                <a href={`https://vertx.io/docs/${version ? `${version}/` : ""}apidocs`}>
+                  <Book className="feather" />API
+                </a>
               </span>
 
               <span className="docs-index-content-version">
-                <DropDown title={`v${version || docsVersions[0]}`}>
+                <DropDown title={`v${version || docsVersions[0]}`} align="right">
                   <DropDownItem active={version === undefined ||
                         version === docsVersions[0]} href="/docs/">
                     Latest (v{docsVersions[0]})
                   </DropDownItem>
-                  {docsVersions.slice(1).map(v => (
+                  {filterLatestBugfixVersions(docsVersions).slice(1).map(v => (
                     <DropDownItem key={v} active={version === v}
                         href={`/docs/${v}/`}>
                       v{v}

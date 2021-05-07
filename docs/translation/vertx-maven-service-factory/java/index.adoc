@@ -17,7 +17,7 @@ classpath. If you are using a fat jar, you can use the following dependencies:
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-maven-service-factory</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
@@ -25,7 +25,7 @@ classpath. If you are using a fat jar, you can use the following dependencies:
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-maven-service-factory:4.0.0'
+compile 'io.vertx:vertx-maven-service-factory:4.0.3'
 ----
 
 This `VerticleFactory` uses the prefix `maven:` to select it when deploying services.

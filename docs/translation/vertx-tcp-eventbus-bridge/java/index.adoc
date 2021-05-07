@@ -1,39 +1,39 @@
 = Vert.x-tcp-eventbus-bridge
 :toc: left
 
-Vert.x-tcp-eventbus-bridge is a TCP bridge to Vert.x EventBus. To use this project, add the following
-dependency to the _dependencies_ section of your build descriptor:
+Vert.x-tcp-eventbus-bridge是连接Vert.x EventBus的TCP bridge。要使用此项目，请先加入以下依赖：
 
-Maven (in your `pom.xml`):
+
+Maven（在您的 `pom.xml`）：
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-tcp-eventbus-bridge</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-Gradle (in your `build.gradle` file):
+Gradle（在您的 `build.gradle` 文件中）：
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-tcp-eventbus-bridge:4.0.0'
+compile 'io.vertx:vertx-tcp-eventbus-bridge:4.0.3'
 ----
 
-The TCP EventBus bridge is built on top of TCP, meaning that any application that can
-create TCP sockets can interact with a remote Vert.x instance via its event bus.
+TCP EventBus bridge建立在TCP之上，任何能够创建TCP套接字的应用程序都可以通过它的EventBus与远端的Vert.x程序沟通。
 
-The main use case for the TCP bridge _versus_ the SockJS bridge is for applications that are more
-resource-constrained and that need to be lightweight since the whole HTTP WebSockets is replaced with plain TCP sockets.
 
-It remains of course useful even for applications that don't have tight resource constraints:
-the protocol is simple enough to efficiently provide an integration interface with non-JVM
-applications.
+因为整个HTTP WebSockets已经替换为纯TCP套接字，所以相比于SockJS bridge来说TCP bridge的主要使用场景是有限资源的轻量化应用程序。
 
-The protocol has been kept as simple as possible and communications use Frames both ways.
-The structure of a Frame looks like this:
+
+即使是对于没有严格资源限制的应用程序，协议仍然有用: 该协议足够简单，便于与非JVM程序高效集成。
+
+
+
+该协议已尽可能的保持简单，通信使用双向帧。
+帧结构如下:
 
 ----
 <Length: uInt32><{
@@ -45,33 +45,33 @@ The structure of a Frame looks like this:
 }: JsonObject>
 ----
 
-The message consists of a JSON document that may or may not have been minified.
-The message must be prefixed by a _big endian_ 32 bits positive integer (4 bytes) that indicates
-the full length of the JSON document, in bytes.
+该消息内包含一个可能未被压缩过的JSON文档。
+该消息必须以大端序32位整数(4 bytes)作为前缀来指示JSON文档的完整长度(以字节为单位)。
 
-The message `type` can be the following for messages sent by the TCP client:
 
-1. `send` to send a message to an `address`,
-2. `publish` to publish a message to an `address`,
-3. `register` to subscribe to the messages sent or published to an `address`,
-4. `unregister` to unsubscribe to the messages sent or published to an `address`,
-5. `ping` to send a `ping` request to the bridge.
+TCP客户端可以发送如下 `类型 type` 的消息：
 
-Note that the `replyAddress` field is optional and may only be used for a `send` message.
-A message with that field is expected to _eventually_ receive a message back from the server
-whose `address` field will be that of the original `replyAddress` value.
+1. `send` 发送消息到 `address` ，
+2. `publish` 发布消息到 `address` ，
+3. `register` 订阅发送或发布到 `address` 的消息，
+4. `unregister` 退订已经发送或发布到 `address` 的消息，
+5. `ping` 发送 `ping` 请求到bridge。
 
-The server posts messages back to the client, and they can be of the following `type`:
+请注意 `replyAddress` 字段是可选的，并且只能用于 `send` 消息。
+带有该字段的消息希望 _最终_ 从服务端收到一条对应的返回消息，返回消息中 `address` 的值便是原先消息中的 `replyAddress` 的值。
 
-1. `message` for messages sent or published to an `address`, or
-2. `err` to indicate an error (the `body` shall contain details), or
-3. `pong` to respond the `ping` request sent from client.
 
-An example NodeJS client is available in the source of the project.
-This client uses the same API as the SockJS
-counter part so it should make it easier to switch between the TCP and SockJS implementations.
+服务端返回到客户端的消息可以是如下的 `类型 type` ：
 
-An example on how to get started with this bridge could be:
+1. `message` 发送或者发布到 `address` ，
+2. `err` 报告错误( `body` 应该包含详细信息)，
+3. `pong` 响应客户端发送的 `ping` 请求。
+
+项目源代码中提供了一个可用的NodeJS客户端示例。
+
+该客户端使用了与SockJS对应部分相同的API这将会便于在TCP与SockJS之间切换。
+
+关于如何开始使用此birdge的示例如下：
 
 [source,java]
 ----
@@ -83,9 +83,9 @@ TcpEventBusBridge bridge = TcpEventBusBridge.create(
 
 bridge.listen(7000, res -> {
   if (res.succeeded()) {
-    // succeed...
+    // 成功……
   } else {
-    // fail...
+    // 失败……
   }
 });
 ----

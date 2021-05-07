@@ -1,0 +1,643 @@
+= SQL 客户端模版
+:toc:
+
+SQL 客户端模版是一个用来方便执行SQL查询的库。
+
+[[_usage]]
+== 用法
+
+要使用 SQL 客户端模版，需添加如下依赖：
+
+* Maven（在您的 `pom.xml` 文件中）：
+
+[source,xml]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-sql-client-templates</artifactId>
+ <version>4.0.2</version>
+</dependency>
+----
+* Gradle（在您的 `build.gradle` 文件中）：
+
+[source,groovy]
+----
+dependencies {
+ implementation 'io.vertx:vertx-sql-client-templates:4.0.2'
+}
+----
+
+[[_getting_started]]
+== 开始
+
+以下是 SQL 模版最简易的使用方式。
+
+一个 SQL 模版接收 _已命名的_ 参数，因此，默认情况下，它会接收一个map作为参数载体，而非接收元组（tuple）作为参数。
+
+一个SQL 模版默认情况下生成一个类似 `PreparedQuery` 的 `RowSet<Row>` 。
+实际上这个模版是 `PreparedQuery` 的轻量级封装。
+
+[source,java]
+----
+Map<String, Object> parameters = Collections.singletonMap("id", 1);
+
+SqlTemplate
+  .forQuery(client, "SELECT * FROM users WHERE id=#{id}")
+  .execute(parameters)
+  .onSuccess(users -> {
+    users.forEach(row -> {
+      System.out.println(row.getString("first_name") + " " + row.getString("last_name"));
+    });
+  });
+----
+
+当您需要执行一个插入或更新操作，而您并不关心执行结果，您可以用 `link:../../apidocs/io/vertx/sqlclient/templates/SqlTemplate.html#forUpdate-io.vertx.sqlclient.SqlClient-java.lang.String-[SqlTemplate.forUpdate]` ：
+
+[source,java]
+----
+Map<String, Object> parameters = new HashMap<>();
+parameters.put("id", 1);
+parameters.put("firstName", "Dale");
+parameters.put("lastName", "Cooper");
+
+SqlTemplate
+  .forUpdate(client, "INSERT INTO users VALUES (#{id},#{firstName},#{lastName})")
+  .execute(parameters)
+  .onSuccess(v -> {
+    System.out.println("Successful update");
+  });
+----
+
+[[_template_syntax]]
+== 模板语法
+
+模板语法使用 `#{XXX}` 的语法，其中 `{XXX}` 是一个有效的 https://docs.oracle.com/javase/specs/jls/se8/html/jls-3.html#jls-3.8[java identifier] 字符串
+（不受关键字约束）
+
+您可以用反斜杠（`\`）来转义 `#` 字符，例如 `\#{foo}` 会被解析成 `#{foo}` 字符串，而不是名为 `foo` 的参数。
+
+[[_row_mapping]]
+== 行映射
+
+默认情况下模版以 `link:../../apidocs/io/vertx/sqlclient/Row.html[Row]` 作为结果值类型。
+
+您可以提供一个自定义的 `link:../../apidocs/io/vertx/sqlclient/templates/RowMapper.html[RowMapper]` 来实现底层的映射操作：
+
+[source,java]
+----
+RowMapper<User> ROW_USER_MAPPER = row -> {
+  User user = new User();
+  user.id = row.getInteger("id");
+  user.firstName = row.getString("firstName");
+  user.lastName = row.getString("lastName");
+  return user;
+};
+----
+
+[[row_mapping_with_custom_mapper]]
+实现底层映射操作：
+
+[source,java]
+----
+SqlTemplate
+  .forQuery(client, "SELECT * FROM users WHERE id=#{id}")
+  .mapTo(ROW_USER_MAPPER)
+  .execute(Collections.singletonMap("id", 1))
+  .onSuccess(users -> {
+    users.forEach(user -> {
+      System.out.println(user.firstName + " " + user.lastName);
+    });
+  });
+----
+
+[[_anemic_json_row_mapping]]
+== JSON行映射
+（译者注：原文为 anemic json row mapping，即anemic mapping，指单纯的属性映射，无行为）
+
+JSON 行映射是一个简单的模板映射，它用 `link:../../apidocs/io/vertx/sqlclient/Row.html#toJson--[toJson]` 将数据行映射成JSON对象。
+
+[source,java]
+----
+SqlTemplate
+  .forQuery(client, "SELECT * FROM users WHERE id=#{id}")
+  .mapTo(Row::toJson)
+  .execute(Collections.singletonMap("id", 1))
+  .onSuccess(users -> {
+    users.forEach(user -> {
+      System.out.println(user.encode());
+    });
+  });
+----
+
+[[_parameters_mapping]]
+== 参数映射
+
+模板默认接收一个 `Map<String, Object>` 作为输入参数。
+
+您可以提供一个自定义的映射（Mapper）：
+
+[source,java]
+----
+TupleMapper<User> PARAMETERS_USER_MAPPER = TupleMapper.mapper(user -> {
+  Map<String, Object> parameters = new HashMap<>();
+  parameters.put("id", user.id);
+  parameters.put("firstName", user.firstName);
+  parameters.put("lastName", user.lastName);
+  return parameters;
+});
+----
+
+[[params_mapping_with_custom_mapper]]
+实现参数映射：
+
+[source,java]
+----
+User user = new User();
+user.id = 1;
+user.firstName = "Dale";
+user.firstName = "Cooper";
+
+SqlTemplate
+  .forUpdate(client, "INSERT INTO users VALUES (#{id},#{firstName},#{lastName})")
+  .mapFrom(PARAMETERS_USER_MAPPER)
+  .execute(user)
+  .onSuccess(res -> {
+    System.out.println("User inserted");
+  });
+----
+
+您也可以轻松搞定批处理：
+
+[source,java]
+----
+SqlTemplate
+  .forUpdate(client, "INSERT INTO users VALUES (#{id},#{firstName},#{lastName})")
+  .mapFrom(PARAMETERS_USER_MAPPER)
+  .executeBatch(users)
+  .onSuccess(res -> {
+    System.out.println("Users inserted");
+  });
+----
+
+[[_anemic_json_parameters_mapping]]
+== JSON 参数映射
+（译者注：原文为 anemic json parameters mapping，即anemic mapping，指单纯的属性映射，无行为）
+
+JSON 参数映射是一个在模板参数和JSON对象之间的简单映射：
+
+[source,java]
+----
+JsonObject user = new JsonObject();
+user.put("id", 1);
+user.put("firstName", "Dale");
+user.put("lastName", "Cooper");
+
+SqlTemplate
+  .forUpdate(client, "INSERT INTO users VALUES (#{id},#{firstName},#{lastName})")
+  .mapFrom(TupleMapper.jsonObject())
+  .execute(user)
+  .onSuccess(res -> {
+    System.out.println("User inserted");
+  });
+----
+
+[[_mapping_with_jackson_databind]]
+== 用Jackson的数据绑定功能做映射
+
+您可以用Jackson的数据绑定功能来实现映射。
+
+您需要添加 jackson-databind 依赖：
+
+* Maven (在您的 `pom.xml` 文件):
+
+[source,xml]
+----
+<dependency>
+ <groupId>com.fasterxml.jackson.core</groupId>
+ <artifactId>jackson-databind</artifactId>
+ <version>${jackson.version}</version>
+</dependency>
+----
+* Gradle (在您的 `build.gradle` 文件):
+
+[source,groovy]
+----
+dependencies {
+ compile 'com.fasterxml.jackson.core:jackson-databind:${jackson.version}'
+}
+----
+
+行映射是通过用键值对（key/value pair）来创建 `JsonObject` 实现的，然后
+调用 `link:../../apidocs/io/vertx/core/json/JsonObject.html#mapTo-java.lang.Class-[mapTo]` 来将它映射为任何Java类。
+
+[source,java]
+----
+SqlTemplate
+  .forQuery(client, "SELECT * FROM users WHERE id=#{id}")
+  .mapTo(User.class)
+  .execute(Collections.singletonMap("id", 1))
+  .onSuccess(users -> {
+    users.forEach(user -> {
+      System.out.println(user.firstName + " " + user.lastName);
+    });
+  });
+----
+
+相似的，参数映射是用 `link:../../apidocs/io/vertx/core/json/JsonObject.html#mapFrom-java.lang.Object-[JsonObject.mapFrom]` 将对象映射为 `JsonObject` 而实现的，
+而后用 key/value pairs 来生成模板参数。
+
+[source,java]
+----
+User u = new User();
+u.id = 1;
+
+SqlTemplate
+  .forUpdate(client, "INSERT INTO users VALUES (#{id},#{firstName},#{lastName})")
+  .mapFrom(User.class)
+  .execute(u)
+  .onSuccess(res -> {
+    System.out.println("User inserted");
+  });
+----
+
+[[_java_datetime_api_mapping]]
+=== Java Date/Time API 映射
+
+您可以用 _jackson-modules-java8_ 的Jackson扩展包来实现对 `java.time` 的映射。
+
+您需要加入 Jackson JSR 310 datatype 依赖：
+
+
+* Maven (在您的 `pom.xml` 文件):
+
+[source,xml]
+----
+<dependency>
+ <groupId>com.fasterxml.jackson.datatype</groupId>
+ <artifactId>jackson-datatype-jsr310</artifactId>
+ <version>${jackson.version}</version>
+</dependency>
+----
+* Gradle (在您的 `build.gradle` 文件):
+
+[source,groovy]
+----
+dependencies {
+ compile 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson.version}'
+}
+----
+
+然后您需要将时间模块注册到 Jackson的 `ObjectMapper` ：
+
+[source,java]
+----
+ObjectMapper mapper = io.vertx.core.json.jackson.DatabindCodec.mapper();
+
+mapper.registerModule(new JavaTimeModule());
+----
+
+您可以用 `java.time` 包中的类型，例如 `LocalDateTime` ：
+
+[source,java]
+----
+public class LocalDateTimePojo {
+
+ public LocalDateTime localDateTime;
+
+}
+----
+
+[[_mapping_with_vert_x_data_objects]]
+== 用Vert.x数据对象做映射
+
+SQL 客户端模版组件可为 Vert.x 数据对象生成映射方法。
+
+Vert.x 数据对象是指被 `@DataObject` 注解修饰的普通 Java Bean。
+
+[source,java]
+----
+@DataObject
+class UserDataObject {
+
+  private long id;
+  private String firstName;
+  private String lastName;
+
+  public long getId() {
+    return id;
+  }
+
+  public void setId(long id) {
+    this.id = id;
+  }
+
+  public String getFirstName() {
+    return firstName;
+  }
+
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
+  public String getLastName() {
+    return lastName;
+  }
+
+  public void setLastName(String lastName) {
+    this.lastName = lastName;
+  }
+}
+----
+
+[[_code_generation]]
+=== 代码生成
+
+任何被 `link:../../apidocs/io/vertx/sqlclient/templates/annotations/RowMapped.html[@RowMapped]` 或 `link:../../apidocs/io/vertx/sqlclient/templates/annotations/ParametersMapped.html[@ParametersMapped]` 注解修饰的数据对象将触发相关映射类的生成。
+
+_codegen_ 注解执行器在编译期间生成这些类。
+这是Java编译器的特性，所以 _不需要额外步骤_ ，仅需要在构建时保证配置的正确性：
+
+构建时添加 `io.vertx:vertx-codegen:processor` 和 `io.vertx:vertx-sql-client-templates`
+依赖：
+
+以下是Maven配置示例
+
+[source,xml]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-codegen</artifactId>
+ <version>4.0.2</version>
+ <classifier>processor</classifier>
+</dependency>
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-sql-client-templates</artifactId>
+ <version>4.0.2</version>
+</dependency>
+----
+
+Gradle中依然可以使用此特性：
+
+[source]
+----
+annotationProcessor "io.vertx:vertx-codegen:4.0.2:processor"
+compile "io.vertx:vertx-sql-client-templates:4.0.2"
+----
+
+IDE都会对 annotation processors 提供支持
+
+codegen `processor` classifier 在jar中添加服务代理注解执行器的自动配置，
+这是通过 `META-INF/services` 机制实现的。
+
+如果需要，也可以用普通jar包，但是您需要额外声明注解执行器。
+Maven 示例：
+
+[source,xml]
+----
+<plugin>
+ <artifactId>maven-compiler-plugin</artifactId>
+ <configuration>
+   <annotationProcessors>
+     <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
+   </annotationProcessors>
+ </configuration>
+</plugin>
+----
+
+[[_row_mapping_2]]
+=== 行映射
+
+您可以通过在数据对象上声明 `link:../../apidocs/io/vertx/sqlclient/templates/annotations/RowMapped.html[@RowMapped]` 注解的方式生成一个行映射器。
+
+[source,java]
+----
+@DataObject
+@RowMapped
+class UserDataObject {
+
+  private long id;
+  private String firstName;
+  private String lastName;
+
+  public long getId() {
+    return id;
+  }
+
+  public void setId(long id) {
+    this.id = id;
+  }
+
+  public String getFirstName() {
+    return firstName;
+  }
+
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
+  public String getLastName() {
+    return lastName;
+  }
+
+  public void setLastName(String lastName) {
+    this.lastName = lastName;
+  }
+}
+----
+
+默认情况下，每一列的名称与数据对象属性的名称相对应，例如 `userName` 属性会
+绑定 `userName` 列。
+
+通过 `link:../../apidocs/io/vertx/sqlclient/templates/annotations/Column.html[@Column]` 注解，您可以用自定义名称。
+
+[source,java]
+----
+@DataObject
+@RowMapped
+class UserDataObject {
+
+  private long id;
+  @Column(name = "first_name")
+  private String firstName;
+  @Column(name = "last_name")
+  private String lastName;
+
+  public long getId() {
+    return id;
+  }
+
+  public void setId(long id) {
+    this.id = id;
+  }
+
+  public String getFirstName() {
+    return firstName;
+  }
+
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
+  public String getLastName() {
+    return lastName;
+  }
+
+  public void setLastName(String lastName) {
+    this.lastName = lastName;
+  }
+}
+----
+
+您可以用注解修饰属性、getter、setter方法。
+
+生成的映射器可以如 <<row_mapping_with_custom_mapper, 行映射章节>> 所示来做行映射。
+
+[source,java]
+----
+SqlTemplate
+  .forQuery(client, "SELECT * FROM users WHERE id=#{id}")
+  .mapTo(UserDataObjectRowMapper.INSTANCE)
+  .execute(Collections.singletonMap("id", 1))
+  .onSuccess(users -> {
+    users.forEach(user -> {
+      System.out.println(user.getFirstName() + " " + user.getLastName());
+    });
+  });
+----
+
+[[_parameters_mapping_2]]
+=== 参数映射
+
+您可以通过在数据对象上加 `link:../../apidocs/io/vertx/sqlclient/templates/annotations/ParametersMapped.html[@ParametersMapped]` 注解的方式生成参数映射器
+
+[source,java]
+----
+@DataObject
+@ParametersMapped
+class UserDataObject {
+
+  private long id;
+  private String firstName;
+  private String lastName;
+
+  public long getId() {
+    return id;
+  }
+
+  public void setId(long id) {
+    this.id = id;
+  }
+
+  public String getFirstName() {
+    return firstName;
+  }
+
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
+  public String getLastName() {
+    return lastName;
+  }
+
+  public void setLastName(String lastName) {
+    this.lastName = lastName;
+  }
+}
+----
+
+默认情况下，每个参数的名称和数据对象的属性名称相对应，例如
+`userName` 属性绑定到 `userName` 参数。
+
+通过 `link:../../apidocs/io/vertx/sqlclient/templates/annotations/TemplateParameter.html[@TemplateParameter]` 注解，您可以使用自定义参数名称。
+
+[source,java]
+----
+@DataObject
+@ParametersMapped
+class UserDataObject {
+
+  private long id;
+  @TemplateParameter(name = "first_name")
+  private String firstName;
+  @TemplateParameter(name = "last_name")
+  private String lastName;
+
+  public long getId() {
+    return id;
+  }
+
+  public void setId(long id) {
+    this.id = id;
+  }
+
+  public String getFirstName() {
+    return firstName;
+  }
+
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
+  public String getLastName() {
+    return lastName;
+  }
+
+  public void setLastName(String lastName) {
+    this.lastName = lastName;
+  }
+}
+----
+
+您可以用注解修饰属性、getter、setter方法。
+
+生成的映射器可以用来做参数映射，正如 <<params_mapping_with_custom_mapper, 参数映射章节>> 所示
+
+[source,java]
+----
+UserDataObject user = new UserDataObject().setId(1);
+
+SqlTemplate
+  .forQuery(client, "SELECT * FROM users WHERE id=#{id}")
+  .mapFrom(UserDataObjectParamMapper.INSTANCE)
+  .execute(user)
+  .onSuccess(users -> {
+    users.forEach(row -> {
+      System.out.println(row.getString("firstName") + " " + row.getString("lastName"));
+    });
+  });
+----
+
+[[_java_enum_types_mapping]]
+=== Java 枚举类型映射
+
+如果客户端（例如 Reactive PostgreSQL client）提供了支持，那么您可以映射Java枚举类型。
+
+Java枚举类经常被映射为 string/number/自定义数据库枚举类型。
+
+[[_naming_format]]
+=== 命名格式
+
+默认的模版下，参数和数据库列之间的映射不忽略大小写。您可以在 `Column`
+和 `TemplateParameter` 注解中用您喜欢的格式来重写默认名称。
+
+您也可以在 `RowMapped` 和 `ParametersMapped` 注解中配置一个特定的大小写格式：
+
+[source,java]
+----
+@DataObject
+@RowMapped(formatter = SnakeCase.class)
+@ParametersMapped(formatter = QualifiedCase.class)
+class UserDataObject {
+  // ...
+}
+----
+
+Vert.x提供了下列大小写模式：
+
+- `link:../../apidocs/io/vertx/codegen/format/CamelCase.html[CamelCase]` : `FirstName`
+- `link:../../apidocs/io/vertx/codegen/format/LowerCamelCase.html[LowerCamelCase]` : `firstName` - 类似驼峰命名法但是小写字母开头，这是默认方式。
+- `link:../../apidocs/io/vertx/codegen/format/SnakeCase.html[SnakeCase]` : `first_name`
+- `link:../../apidocs/io/vertx/codegen/format/KebabCase.html[KebabCase]` : `first-name`
+- `link:../../apidocs/io/vertx/codegen/format/QualifiedCase.html[QualifiedCase]` : `first.name`

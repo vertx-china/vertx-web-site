@@ -1,33 +1,33 @@
-= .htpasswd Auth Provider
+= .htpasswd 鉴权与授权的提供程序（.htpasswd鉴授权提供者）
 
-We provide an implementation of `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` which uses the Apache htpasswd file format
-to perform authentication. The provider will not watch for updates to the file after loading. If you need dynamic
-user management it would be more convenient to use dynamic providers such as jdbc or mongo providers.
+Vert.x提供了 `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` 的实现类， 它使用Apache htpasswd
+的文件格式来执行身份验证。提供程序加载后，将不会监视文件的更新。
+如果您需要动态的用户管理，使用动态提供程序（如jdbc或mongo提供程序）会更加的方便。
 
-To use this project, add the following
-dependency to the _dependencies_ section of your build descriptor:
+要使用此项目，
+在构建描述文件的 _dependencies_ 部分添加以下依赖项：
 
-* Maven (in your `pom.xml`):
+* Maven (在 `pom.xml` 文件中)：
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
-<groupId>io.vertx</groupId>
-<artifactId>vertx-auth-htpasswd</artifactId>
-<version>4.0.0</version>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-auth-htpasswd</artifactId>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle (在 `build.gradle` 文件中)：
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-auth-htpasswd:4.0.0'
+compile 'io.vertx:vertx-auth-htpasswd:4.0.3'
 ----
 
-To create an instance you first need an htpasswd file. This file is created using the apache htpasswd tool.
+要创建一个实例，您首先需要一份htpasswd文件。htpasswd文件可以使用apache htpasswd工具生成。
 
-Once you've got one of these you can create a `link:../../apidocs/io/vertx/ext/auth/htpasswd/HtpasswdAuth.html[HtpasswdAuth]` instance as follows:
+若您已拥有一个Vertx实例，那么您可按以下方式创建 `link:../../apidocs/io/vertx/ext/auth/htpasswd/HtpasswdAuth.html[HtpasswdAuth]` 实例：
 
 [source,java]
 ----
@@ -35,21 +35,23 @@ HtpasswdAuth authProvider = HtpasswdAuth
   .create(vertx, new HtpasswdAuthOptions());
 ----
 
-Once you've got your instance you can authenticate with it just like any `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]`.
+获得HtpasswdAuth实例后， 您可以像使用任何的 `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` 实例一样，使用它进行身份验证。
 
-The out of the box config assumes the usage of the file htpasswd in the root of the project.
+缺省配置默认 .htpasswd 文件存在于项目的根目录中。
 
-== Provider internal behavior
+[[_provider_internal_behavior]]
+== 提供程序的内部行为
 
-The provider will load the specified htpasswd file at start time and will not watch for modifications. If you
-require dynamic reloads, you will need to restart the provider.
+提供程序将在启动时加载指定的htpasswd文件，并且不会监视文件的修改。
+如果需要动态加载, 您需要重新启动程序。
 
-The implementation does not have any other state than the htpasswd file itself.
+除htpasswd文件本身之外，该实现是无状态的。
 
-== Authentication
+[[_authentication]]
+== 鉴权/身份验证
 
-When authenticating using this implementation, it assumes that the username and password are parsed as a JSON
-object which we refer from now on as authentication info:
+使用此实现进行身份验证时，假定用户名和密码是被解析为JSON对象，
+那么我们将为其验证身份信息：
 
 [source,java]
 ----
@@ -66,6 +68,7 @@ authProvider.authenticate(authInfo)
   });
 ----
 
-== Authorization
+[[_authorization]]
+== 授权
 
-Apache htpasswd file is a pure authentication mechanism and not authorization. This means that permission checks will always be `false`.
+Apache htpasswd文件是一个纯粹的身份验证机制，并非是授权。这意味着权限检查将始终默认为false。

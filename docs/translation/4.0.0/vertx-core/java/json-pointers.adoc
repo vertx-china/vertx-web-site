@@ -1,0 +1,31 @@
+[[_json_pointers]]
+== Json 指针（Json Pointers）
+
+Vert.x 提供了一个 https://tools.ietf.org/html/rfc6901[Json指针 RFC6901] 的实现。
+无论是查询还是写入，你都可以使用Json指针来完成。你可以基于字符串、URI，或者通过手动追加路径(path)的方式，
+来构建 `link:../../apidocs/io/vertx/core/json/pointer/JsonPointer.html[JsonPointer]` 对象：
+
+[source,java]
+----
+JsonPointer pointer1 = JsonPointer.from("/hello/world");
+// Build a pointer manually
+JsonPointer pointer2 = JsonPointer.create()
+  .append("hello")
+  .append("world");
+----
+
+在初始化Json指针后，你可以使用 `link:../../apidocs/io/vertx/core/json/pointer/JsonPointer.html#queryJson-java.lang.Object-[queryJson]` 方法做查询，
+也可以使用 `link:../../apidocs/io/vertx/core/json/pointer/JsonPointer.html#writeJson-java.lang.Object-java.lang.Object-[writeJson]` 方法修改JSON的值：
+
+[source,java]
+----
+Object result1 = objectPointer.queryJson(jsonObject);
+// Query a JsonArray
+Object result2 = arrayPointer.queryJson(jsonArray);
+// Write starting from a JsonObject
+objectPointer.writeJson(jsonObject, "new element");
+// Write starting from a JsonObject
+arrayPointer.writeJson(jsonArray, "new element");
+----
+
+你可以将Vert.x的Json指针功能应用在任何类型的对象上，只需实现一个自定义的 `link:../../apidocs/io/vertx/core/json/pointer/JsonPointerIterator.html[JsonPointerIterator]` 即可。

@@ -1,0 +1,65 @@
+[[_consul_configuration_store]]
+=== Consul 配置中心
+
+Consul配置中心扩展了 Vert.x Configuration Retriever ，
+并提供了从 https://www.consul.io[Consul] 获取配置的方法。
+
+[[_using_the_consul_configuration_store]]
+==== 使用Consul配置中心
+
+使用Consul配置中心，
+需在您的项目构建配置中添加如下 _依赖_ ：
+
+* Maven（在您的 `pom.xml` 文件中）：
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-config-consul</artifactId>
+ <version>4.0.0</version>
+</dependency>
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-config</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+* Gradle （在您的 `build.gradle` 文件）:
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-config:4.0.0'
+compile 'io.vertx:vertx-config-consul:4.0.0'
+----
+
+[[_configuring_the_store_5]]
+==== 设置配置中心
+
+将该库加入classpath或者项目依赖后，您需要配置
+`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` 以使用该配置中心：
+
+[source, java]
+----
+ConfigStoreOptions store = new ConfigStoreOptions()
+    .setType("consul")
+    .setConfig(new JsonObject()
+      .put("host", "localhost")
+      .put("port", 8500)
+      .put("prefix", "foo")
+      .put("raw-data", false)
+    );
+
+ConfigRetriever retriever = ConfigRetriever.create(vertx,
+    new ConfigRetrieverOptions().addStore(store));
+----
+
+这个配置用来创建
+`link:../../apidocs/io/vertx/ext/consul/ConsulClient.html[ConsulClient]` 对象。更多详细信息请查阅Vert.x Consul Client文档。
+以下为设置 Consul 配置中心所需的参数：
+
+`prefix`:: 构建配置树时需要被忽略的前缀，默认为空。
+`delimiter`:: 用来分割Consul中的key的分隔符，用以维护配置树中的级别。默认为 "/"。
+`raw-data`:: 如果 `raw-data` 为 `true` ，则配置值不会进行类型转换，并且您可以用
+`config.getString(key)` 来获取原始数据，默认为 `true` 。

@@ -1,0 +1,265 @@
+[[_datagram_sockets_udp]]
+== 数据报套接字（UDP）
+
+在Vert.x中使用用户数据报协议（UDP）就是小菜一碟。
+
+UDP是无连接的传输，这意味着您与远程客户端没有建立持续的连接。
+
+所以，您发送和接收的数据包都要包含有远程的地址。
+
+除此之外，UDP不像TCP的使用那样安全，
+这也就意味着不能保证发送的数据包一定会被对应的接收端（Endpoint）接收。
+
+唯一可以保证的是，数据包要么被完整地接收，要么完全收不到，
+
+因为每一个数据包将会作为一个包发送，所以在通常情况下您不能发送大于网络接口的最大传输单元（MTU）的数据包。
+（译者注：实际上大于MTU的包是可以发送成功的，只不过数据包会在IP层做分片。由于分片不携带4层信息，所以有些NAT为了性能等因素会丢弃分片报文。而接收分片报文时，需要所有分片在规定时间内全部接收到，才算作收到一个完整的UDP包，所以分片报文的传输失败率会更高。一般不要发送超过 `MTU - len(IP.header) - len(UDP.header)` 长度的包。）
+
+但是要注意，即使数据包尺寸小于MTU，它仍然可能会发送失败。
+
+它失败的尺寸取决于操作系统等（其他原因），所以按照经验法则就是尝试发送小数据包。
+
+依照UDP的本质，它最适合一些允许丢弃数据包的应用
+（如监视应用程序）。
+
+其优点是与TCP相比具有更少的开销，
+而且可以由NetServer和NetClient处理（参考前文）。
+
+[[_creating_a_datagramsocket]]
+=== 创建 DatagramSocket
+
+要使用UDP，您首先要创建一个 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]` 实例，
+无论您是要仅仅发送数据或者收发数据，这都是一样的。
+
+[source,java]
+----
+DatagramSocket socket = vertx.createDatagramSocket(new DatagramSocketOptions());
+----
+
+返回的 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]` 实例不会绑定到特定端口。
+如果您只想发送数据（如作为客户端）的话，这是没问题的，但更多详细的内容在下一节。
+
+[[_sending_datagram_packets]]
+=== 发送数据报包
+
+如上所述，用户数据报协议（UDP）将数据分组发送给远程对等体，
+但是以不持续的方式来传送到它们。
+
+这意味着每个数据包都可以发送到不同的远程对等体。
+
+发送数据包很容易，如下所示：
+
+[source,java]
+----
+DatagramSocket socket = vertx.createDatagramSocket(new DatagramSocketOptions());
+Buffer buffer = Buffer.buffer("content");
+// 发送Buffer
+socket.send(buffer, 1234, "10.0.0.1", asyncResult -> {
+  System.out.println("Send succeeded? " + asyncResult.succeeded());
+});
+// 发送一个字符串
+socket.send("A string used as content", 1234, "10.0.0.1", asyncResult -> {
+  System.out.println("Send succeeded? " + asyncResult.succeeded());
+});
+----
+
+[[_receiving_datagram_packets]]
+=== 接收数据报包
+
+若您想要接收数据包，则您需要调用 `listen(...)` 方法绑定
+`link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]` 。
+
+这样您就可以接收到被发送至 `link:../../apidocs/io/vertx/core/datagram/DatagramPacket.html[DatagramPacket]` 所监听的地址和端口的
+`link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]` 。
+
+除此之外，您还要设置一个 `Handler`，每接收到一个 `link:../../apidocs/io/vertx/core/datagram/DatagramPacket.html[DatagramPacket]` 时它都会被调用。
+
+`link:../../apidocs/io/vertx/core/datagram/DatagramPacket.html[DatagramPacket]` 有以下方法：
+
+- `link:../../apidocs/io/vertx/core/datagram/DatagramPacket.html#sender--[sender]` ：表示数据发送方的InetSocketAddress。
+- `link:../../apidocs/io/vertx/core/datagram/DatagramPacket.html#data--[data]` ：保存接收数据的Buffer。
+
+当您需要监听一个特定地址和端口时，您可以像下边这样：
+
+[source,java]
+----
+DatagramSocket socket = vertx.createDatagramSocket(new DatagramSocketOptions());
+socket.listen(1234, "0.0.0.0", asyncResult -> {
+  if (asyncResult.succeeded()) {
+    socket.handler(packet -> {
+      // 对包进行处理
+    });
+  } else {
+    System.out.println("Listen failed" + asyncResult.cause());
+  }
+});
+----
+
+注意，即使 `AsyncResult` 成功，它只意味着它可能已经写入了网络堆栈，
+但不保证它已经到达或者将到达远端。
+
+若您需要这样的保证，您可在TCP之上建立一些握手逻辑。
+
+[[_multicast]]
+=== 多播
+
+[[_sending_multicast_packets]]
+==== 发送多播数据包
+
+多播允许多个Socket接收相同的数据包，
+该目标可以通过加入到同一个可发送数据包的多播组来实现。
+
+我们将在下一节中介绍如何加入多播组，从而接收数据包。
+
+现在让我们专注于如何发送多播报文，发送多播报文与发送普通数据报报文没什么不同。
+唯一的区别是您可以将多播组的地址传递给send方法发送出去。
+
+如下所示：
+
+[source,java]
+----
+DatagramSocket socket = vertx.createDatagramSocket(new DatagramSocketOptions());
+Buffer buffer = Buffer.buffer("content");
+// 发送Buffer到多播地址
+socket.send(buffer, 1234, "230.0.0.1", asyncResult -> {
+  System.out.println("Send succeeded? " + asyncResult.succeeded());
+});
+----
+
+所有已经加入多播组 230.0.0.1 的Socket都将收到该报文。
+
+[[_receiving_multicast_packets]]
+===== 接收多播数据包
+
+若要接收特定多播组的数据包，您需要通过调用 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]` 的 `listen(...)`
+方法来绑定一个地址并且加入多播组。
+
+这样，您将能够接收到被发送到 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]` 所监听的地址和端口的数据报，
+同时也可以接收被发送到该多播组的数据报。
+
+除此之外，您还可设置一个处理器，它在每次接收到DatagramPacket时会被调用。
+
+`link:../../apidocs/io/vertx/core/datagram/DatagramPacket.html[DatagramPacket]` 有以下方法：
+
+- `sender()`: 表示数据报发送方的InetSocketAddress
+- `data()`: 保存接收数据的Buffer
+
+因此，要监听指定的地址和端口、并且接收多播组230.0.0.1的数据报，
+您需要执行如下操作：
+
+[source,java]
+----
+DatagramSocket socket = vertx.createDatagramSocket(new DatagramSocketOptions());
+socket.listen(1234, "0.0.0.0", asyncResult -> {
+  if (asyncResult.succeeded()) {
+    socket.handler(packet -> {
+      // 对数据包进行处理
+    });
+
+    // 加入多播组
+    socket.listenMulticastGroup("230.0.0.1", asyncResult2 -> {
+        System.out.println("Listen succeeded? " + asyncResult2.succeeded());
+    });
+  } else {
+    System.out.println("Listen failed" + asyncResult.cause());
+  }
+});
+----
+
+[[_unlisten_leave_a_multicast_group]]
+===== 取消订阅/离开多播组
+
+有时候您想只在特定时间内接收多播组的数据包。
+
+这种情况下，您可以先监听他们，之后再取消监听。
+
+如下所示：
+
+[source,java]
+----
+DatagramSocket socket = vertx.createDatagramSocket(new DatagramSocketOptions());
+socket.listen(1234, "0.0.0.0", asyncResult -> {
+    if (asyncResult.succeeded()) {
+      socket.handler(packet -> {
+        // 对数据包进行处理
+      });
+
+      // 加入多播组
+      socket.listenMulticastGroup("230.0.0.1", asyncResult2 -> {
+          if (asyncResult2.succeeded()) {
+            // 现在将接收组的数据包
+
+            // 做一些事情
+
+            socket.unlistenMulticastGroup("230.0.0.1", asyncResult3 -> {
+              System.out.println("Unlisten succeeded? " + asyncResult3.succeeded());
+            });
+          } else {
+            System.out.println("Listen failed" + asyncResult2.cause());
+          }
+      });
+    } else {
+      System.out.println("Listen failed" + asyncResult.cause());
+    }
+});
+----
+
+[[_blocking_multicast]]
+===== 屏蔽多播
+
+除了取消监听一个多播地址以外，也可以做到屏蔽指定发送者地址的多播。
+
+请注意这仅适用于某些操作系统和内核版本，
+所以请检查操作系统文档看是它是否支持。
+
+这是专家级别的技巧。
+
+要屏蔽来自特定地址的多播，您可以在DatagramSocket上调用 `blockMulticastGroup(...)`，
+如下所示：
+
+[source,java]
+----
+DatagramSocket socket = vertx.createDatagramSocket(new DatagramSocketOptions());
+
+// 一些代码
+
+// 这将拒收从10.0.0.2发送的数据包
+socket.blockMulticastGroup("230.0.0.1", "10.0.0.2", asyncResult -> {
+  System.out.println("block succeeded? " + asyncResult.succeeded());
+});
+----
+
+[[_datagramsocket_properties]]
+==== DatagramSocket 属性
+
+当创建 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]` 时，您可以通过
+`link:../../apidocs/io/vertx/core/datagram/DatagramSocketOptions.html[DatagramSocketOptions]` 对象来设置多个属性以更改它的功能。这些（属性）如下：
+
+- `link:../../apidocs/io/vertx/core/datagram/DatagramSocketOptions.html#setSendBufferSize-int-[setSendBufferSize]` 以字节为单位设置发送缓冲区的大小。
+- `link:../../apidocs/io/vertx/core/datagram/DatagramSocketOptions.html#setReceiveBufferSize-int-[setReceiveBufferSize]` 设置TCP接收缓冲区大小
+（以字节为单位）。
+- `link:../../apidocs/io/vertx/core/datagram/DatagramSocketOptions.html#setReuseAddress-boolean-[setReuseAddress]` 若为true，
+则TIME_WAIT状态中的地址在关闭后可重用。
+- `link:../../apidocs/io/vertx/core/datagram/DatagramSocketOptions.html#setTrafficClass-int-[setTrafficClass]`
+- `link:../../apidocs/io/vertx/core/datagram/DatagramSocketOptions.html#setBroadcast-boolean-[setBroadcast]` 设置或清除SO_BROADCAST套接字选项。
+设置此选项时，数据报（UDP）数据包可能会发送到本地接口的广播地址。
+- `link:../../apidocs/io/vertx/core/datagram/DatagramSocketOptions.html#setMulticastNetworkInterface-java.lang.String-[setMulticastNetworkInterface]` 设置或清除IP_MULTICAST_LOOP套接字选项，
+设置此选项时，多播数据包也将在
+本地接口上接收。
+- `link:../../apidocs/io/vertx/core/datagram/DatagramSocketOptions.html#setMulticastTimeToLive-int-[setMulticastTimeToLive]` 设置IP_MULTICAST_TTL套接字选项。
+TTL表示“活动时间”，单这种情况下，它指定允许数据包经过的IP跳数，特别是用于多播流量。
+转发数据包的每个路由器或网关会递减TTL，
+如果路由器将TTL递减为0，则不会再转发。
+
+[[_datagramsocket_local_address]]
+==== DatagramSocket本地地址
+
+您可以通过调用 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html#localAddress--[localAddress]` 来查找套接字的本地地址（即UDP Socket这边的地址）。
+若您在调用 `listen(...)` 之前已经绑定了 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]`
+，则它将返回一个InetSocketAddress，否则返回null。
+
+[[_closing_a_datagramsocket]]
+==== 关闭DatagramSocket
+
+您可以通过调用 `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html#close-io.vertx.core.Handler-[close]` 方法来关闭Socket，它将关闭
+Socket并释放所有资源。

@@ -1,0 +1,261 @@
+[[_vault_config_store]]
+=== Vault配置中心
+
+Vault配置中心扩展了 Vert.x Configuration Retriever 并提供了从 Vault (https://www.vaultproject.io/) 获取配置的方法。
+所以，配置（即secrets）是从Vault获取的。
+
+> 这个配置中心的 secrets 引擎是 Vault 的 Key/Value version 1 和 version 2 引擎（ https://www.vaultproject.io/docs/secrets/kv/index.html ）。暂不支持其他secrets引擎。
+
+[[_using_the_vault_config_store]]
+==== 使用Vault配置中心
+
+要使用Vault配置中心，
+添加如下依赖：
+
+* Maven （在您的 `pom.xml` 文件）：
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-config-vault</artifactId>
+ <version>4.0.2</version>
+</dependency>
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-config</artifactId>
+ <version>4.0.2</version>
+</dependency>
+----
+
+* Gradle （在您的 `build.gradle` 文件）：
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-config:4.0.2'
+compile 'io.vertx:vertx-config-vault:4.0.2'
+----
+
+==== 指定配置中心
+
+将该库加入classpath或者项目依赖后，您需要配置
+`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` 来使用这个配置中心：
+
+[source, java]
+----
+ConfigStoreOptions store = new ConfigStoreOptions()
+  .setType("vault")
+  .setConfig(config);
+
+ConfigRetriever retriever = ConfigRetriever.create(vertx,
+  new ConfigRetrieverOptions().addStore(store));
+----
+
+要使用Vault配置中心，则设置 `type` 为 `vault` 。其配置以JSON形式提供。
+它配置了对Vault的访问权限、认证信息和secret路径：
+
+[source, java]
+----
+JsonObject vault_config = new JsonObject()
+  .put("host", "127.0.0.1") // The host name
+  .put("port", 8200) // The port
+  .put("ssl", true); // 是否使用SSL (默认禁用)
+
+// 认证
+PemKeyCertOptions certs = new PemKeyCertOptions()
+  .addCertPath("target/vault/config/ssl/client-cert.pem")
+  .addKeyPath("target/vault/config/ssl/client-privatekey.pem");
+vault_config.put("pemKeyCertOptions", certs.toJson());
+
+// Truststore
+JksOptions jks = new JksOptions()
+  .setPath("target/vault/config/ssl/truststore.jks");
+vault_config.put("trustStoreOptions", jks.toJson());
+
+// 读取secret的路径
+vault_config.put("path", "secret/my-secret");
+
+ConfigStoreOptions store = new ConfigStoreOptions()
+  .setType("vault")
+  .setConfig(vault_config);
+
+ConfigRetriever retriever = ConfigRetriever.create(vertx,
+  new ConfigRetrieverOptions().addStore(store));}
+----
+
+`vault_config` 对象可以包含 HTTP client / Web client 的配置，
+例如 trust stores、timeout、certificates、port和host。 `path` 和 `host` 强制必填。 
+`path` 指定了需要获取的secret。 `host` 是Vault服务的hostname。默认情况下使用8200端口。
+默认SSL关闭，但是生产环境下您需要开启它。
+
+然后，您需要用如下中的一个方法来配置token或者认证机制。
+
+[[_using_an_existing_token]]
+==== 使用已经存在的token
+
+如果您已经得到了token，则在配置中设置 `token` 属性：
+
+[source, java]
+----
+JsonObject vault_config = new JsonObject();
+
+// ...
+
+//  读取secret的路径
+vault_config.put("path", "secret/my-secret");
+
+// The token
+vault_config.put("token", token);
+
+ConfigStoreOptions store = new ConfigStoreOptions()
+  .setType("vault")
+  .setConfig(vault_config);
+
+ConfigRetriever retriever = ConfigRetriever.create(vertx,
+  new ConfigRetrieverOptions().addStore(store));
+----
+
+您可以使用root token，但是不建议这样做。当token被回收，则对secret的访问也会受阻。
+如果token可刷新，则当它过期的时候会被刷新。
+
+[[_generating_a_token]]
+==== 生成token
+
+如果您的token本身具有创建token的权限，您可以请求生成token：
+
+[source, java]
+----
+JsonObject vault_config = new JsonObject();
+
+// ...
+
+// 读取secret的路径
+vault_config.put("path", "secret/my-secret");
+
+// 生成token的配置
+
+// 配置token请求 (https://www.vaultproject.io/docs/auth/token.html)
+JsonObject tokenRequest = new JsonObject()
+  .put("ttl", "1h")
+  .put("noDefault", true)
+
+  // (parts of the tokenRequest object) 用来做生成操作的token（tokenRequest object 的一部分）
+  .put("token", token);
+
+vault_config.put("auth-backend", "token") // 指定所用的 auth backend
+  .put("renew-window", 5000L) // 更新误差容限（毫秒）
+  .put("token-request", tokenRequest); // 传入token生成的配置
+
+ConfigStoreOptions store = new ConfigStoreOptions()
+  .setType("vault")
+  .setConfig(vault_config);
+
+ConfigRetriever retriever = ConfigRetriever.create(vertx,
+  new ConfigRetrieverOptions().addStore(store));
+----
+
+当用这种方式，根配置中不必提供token，然后，用于生成token的token嵌于JSON数据被传入。
+如果生成的token可刷新，那么在它过期的时候会自动刷新。 
+`renew-window` 是更新token有效性的时间窗口。
+如果生成的token失效，则访问权限受阻。
+
+==== 使用证书
+
+您可以使用TLS证书作为认证机制。所以，您不需要自己生成token，
+它是自动生成的。
+
+[source, java]
+----
+JsonObject vault_config = new JsonObject();
+
+// ...
+
+PemKeyCertOptions certs = new PemKeyCertOptions()
+  .addCertPath("target/vault/config/ssl/client-cert.pem")
+  .addKeyPath("target/vault/config/ssl/client-privatekey.pem");
+vault_config.put("pemKeyCertOptions", certs.toJson());
+
+PemTrustOptions trust = new PemTrustOptions()
+  .addCertPath("target/vault/config/ssl/cert.pem");
+vault_config.put("pemTrustStoreOptions", trust.toJson());
+
+JksOptions jks = new JksOptions()
+  .setPath("target/vault/config/ssl/truststore.jks");
+vault_config.put("trustStoreOptions", jks.toJson());
+
+vault_config.put("auth-backend", "cert");
+
+// 读取secret的路径
+vault_config.put("path", "secret/my-secret");
+
+ConfigStoreOptions store = new ConfigStoreOptions()
+  .setType("vault")
+  .setConfig(vault_config);
+
+ConfigRetriever retriever = ConfigRetriever.create(vertx,
+  new ConfigRetrieverOptions().addStore(store));
+----
+
+查看HTTP客户端和Web客户端的配置来传输证书。如果生成的token可刷新，
+那么token会被刷新；如果不是，则配置中心会再次尝试认证。
+
+[[_using_approle]]
+==== 使用 AppRole
+
+当您的应用被Vault所知悉且您已经持有 `appRoleId` 和 `secretId` , 此时会用到 `AppRole` 。
+您不需要自己生成token，这个token会自动生成：
+
+[source, java]
+----
+JsonObject vault_config = new JsonObject();
+
+// ...
+
+vault_config
+  .put("auth-backend", "approle") // Set the auth-backend to approle
+  .put("approle", new JsonObject()  // Configure the role id and secret it
+    .put("role-id", appRoleId).put("secret-id", secretId)
+  );
+
+// 读取secret的路径
+vault_config.put("path", "secret/my-secret");
+
+ConfigStoreOptions store = new ConfigStoreOptions()
+  .setType("vault")
+  .setConfig(vault_config);
+
+ConfigRetriever retriever = ConfigRetriever.create(vertx,
+  new ConfigRetrieverOptions().addStore(store));
+----
+
+如果生成的token可刷新，那么他会被刷新；否则配置中心会再次尝试认证。
+
+==== 使用 username 和 password
+
+user/app 在使用 username/password做认证的时候，会以 `userpass` 作为验证后台。
+您并不需要自己生成token，因为认证过程中token已经生成：
+
+[source, java]
+----
+JsonObject vault_config = new JsonObject();
+
+// ...
+
+vault_config
+  .put("auth-backend", "userpass") // 使用 userpass 作为验证后端
+  .put("user-credentials", new JsonObject()
+    .put("username", username).put("password", password)
+  );
+
+// 读取secrete路径
+vault_config.put("path", "secret/my-secret");
+
+ConfigStoreOptions store = new ConfigStoreOptions()
+  .setType("vault")
+  .setConfig(vault_config);
+
+ConfigRetriever retriever = ConfigRetriever.create(vertx,
+  new ConfigRetrieverOptions().addStore(store));
+----
+
+如果生成的token可刷新，那么他会被刷新；否则配置中心会再次尝试认证。

@@ -1,0 +1,321 @@
+= Vert.x AMQP Client
+:toc: left
+
+Vert.x AMQP 客户端可以与 https://en.wikipedia.org/wiki/Advanced_Message_Queuing_Protocol[AMQP 1.0]
+broker 和 router 互通。他可以做到如下事情：
+
+* 连接一个 AMQP 的 broker 或 router - 支持 SASL 和 TLS 连接
+* 消费 queue 或 topic 当中的消息
+* 向 queue 或 topic 中发送消息
+* 发送消息后检查ACK
+
+AMQP 1.0 协议支持持久订阅、持久化、安全保障、会话、复杂路由...... 更多
+该协议的细节详见 https://www.amqp.org/[AMQP homepage] 。
+
+Vert.x AMQP 客户端基于 Vert.x Proton 实现。如果您需要更细粒度的控制，我们建议您
+直接使用 https://github.com/vert-x3/vertx-proton[Vert.x Proton]
+
+[[_using_vert_x_amqp_client]]
+== 使用 Vert.x AMQP 客户端
+
+
+* Maven（在您的 `pom.xml` 文件中）：
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-amqp-client</artifactId>
+ <version>4.0.2</version>
+</dependency>
+----
+
+* Gradle（在您的 `build.gradle` 文件中）：
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-amqp-client:4.0.2'
+----
+
+[[_creating_an_amqp_client]]
+== 创建 AMQP 客户端
+
+一旦您在 _CLASSPATH_ 中添加该客户端，您可以按如下实例化 `link:../../apidocs/io/vertx/amqp/AmqpClient.html[AmqpClient]`
+对象
+
+[source,java]
+----
+AmqpClientOptions options = new AmqpClientOptions()
+  .setHost("localhost")
+  .setPort(5672)
+  .setUsername("user")
+  .setPassword("secret");
+// 用内部Vert.x实例创建客户端
+AmqpClient client1 = AmqpClient.create(options);
+
+// 显式使用Vert.x实例
+AmqpClient client2 = AmqpClient.create(vertx, options);
+----
+
+创建  `link:../../apidocs/io/vertx/amqp/AmqpClient.html[AmqpClient]` 对象有两个方法。您可以显式的传一个Vert.x 实例，
+如果您正在 Vert.x应用或 Vert.x Verticle内，请用此方式；否则您可以省略传Vert.x参数，
+当客户端关闭时，有一个内部的Vert.x对象会被创建/关闭。
+
+要创建 `link:../../apidocs/io/vertx/amqp/AmqpClient.html[AmqpClient]` ，您需要传 `link:../../apidocs/io/vertx/amqp/AmqpClientOptions.html[AmqpClientOptions]` 参数。
+这个options参数包含了 broker 和 router 的位置信息，认证信息等.....
+用options参数可以配置AMQP客户端的许多方面。
+注意：您也可以用这些options来控制底层的 Proton client 。
+
+也可以从系统参数或者环境变量来配置 host、port、username、password：
+
+* Host：系统参数： `amqp-client-host` ，环境变量： `AMQP_CLIENT_HOST` （强制必填项）
+* Port：系统参数： `amqp-client-port` ，环境变量： `AMQP_CLIENT_PORT` （默认为5672）
+* Username：系统参数： `amqp-client-username` ，环境变量： `AMQP_CLIENT_USERNAME`
+* Password：系统参数： `amqp-client-password` ，环境变量： `AMQP_CLIENT_PASSWORD` （默认为5672）
+
+[[_establishing_a_connection]]
+== 建立连接
+
+一旦您创建了一个客户端，您需要显式地连接远程服务。
+这可用 `connect` 方法实现：
+
+[source,java]
+----
+client.connect(ar -> {
+  if (ar.failed()) {
+    System.out.println("Unable to connect to the broker");
+  } else {
+    System.out.println("Connection succeeded");
+    AmqpConnection connection = ar.result();
+  }
+});
+----
+
+一旦 `连接` 建立成功或失败，则相应处理器会被调用。值得注意的是 `连接` 用于建立receiver和sender。
+
+[[_creating_a_receiver]]
+== 创建receiver
+
+receiver 用于接收消息。AMQP receiver 可以用如下两种方式获取：
+
+[source,java]
+----
+connection.createReceiver("my-queue",
+  done -> {
+    if (done.failed()) {
+      System.out.println("Unable to create receiver");
+    } else {
+      AmqpReceiver receiver = done.result();
+      receiver.handler(msg -> {
+        // 每次接收到消息就被调用
+        System.out.println("Received " + msg.bodyAsString());
+      });
+    }
+  }
+);
+
+connection.createReceiver("my-queue",
+  done -> {
+    if (done.failed()) {
+      System.out.println("Unable to create receiver");
+    } else {
+      AmqpReceiver receiver = done.result();
+      receiver
+        .exceptionHandler(t -> {
+          // 抛出异常
+        })
+        .handler(msg -> {
+          // 关联消息处理器
+        });
+    }
+  }
+);
+----
+
+这两种方式的主要区别在于 _何时_ 关联消息处理器。第一种方式
+直接设置处理器，并且立即开始接收消息；第二种方式中，
+处理器在连接创建完成之后被人工关联。这样，您可以获得更多控制权并添加其他的处理器。
+
+在 completion handler 中传入的 receiver 可以作为Stream来使用。所以您可以暂停、恢复
+消息的接收。背压协议（back-pressure protocol）由
+http://docs.oasis-open.org/amqp/core/v1.0/csprd02/amqp-core-transport-v1.0-csprd02.html#doc-flow-control[AMQP credits] 实现。
+
+接收到的消息是 `link:../../apidocs/io/vertx/amqp/AmqpMessage.html[AmqpMessage]` 实例。这些实例是不可变（immutable）的，
+并且支持访问大多数AMQP元数据。请查看
+http://docs.oasis-open.org/amqp/core/v1.0/amqp-core-messaging-v1.0.html#type-properties[properties] 列表作参考。注意：
+要从从消息体中获取 JSON object 或 JSON array ，那么作为AMQP _数据_ 的值则是必须的。
+
+您也可以用客户端直接创建 receiver ：
+
+[source, java]
+----
+client.createReceiver("my-queue"
+  ,
+  done -> {
+    if (done.failed()) {
+      System.out.println("Unable to create receiver");
+    } else {
+      AmqpReceiver receiver = done.result();
+      receiver.handler(msg -> {
+        // 每次接收消息时都被调用
+        System.out.println("Received " + msg.bodyAsString());
+      });
+    }
+  }
+);
+----
+
+这个示例中，连接是自动创建的。您可以用
+`link:../../apidocs/io/vertx/amqp/AmqpReceiver.html#connection--[connection]` 方法获取它。
+
+默认情况下，消息自动发送ACK响应，您可以用
+`link:../../apidocs/io/vertx/amqp/AmqpReceiverOptions.html#setAutoAcknowledgement-boolean-[setAutoAcknowledgement]` 来禁用这个此操作。然后您则需要用如下方法
+显式的发送ACK：
+* `link:../../apidocs/io/vertx/amqp/AmqpMessage.html#accepted--[accepted]`
+* `link:../../apidocs/io/vertx/amqp/AmqpMessage.html#rejected--[rejected]`
+* `link:../../apidocs/io/vertx/amqp/AmqpMessage.html#released--[released]`
+
+[[_creating_a_sender]]
+== 创建 sender
+
+sender可以将消息发送到 queue 和 topic 当中。您可以通过如下方式获取到 sender：
+
+[source,java]
+----
+connection.createSender("my-queue", done -> {
+  if (done.failed()) {
+    System.out.println("Unable to create a sender");
+  } else {
+    AmqpSender result = done.result();
+  }
+});
+----
+
+一旦您获取了 AMQP sender，您就可以创建消息。
+因为 `link:../../apidocs/io/vertx/amqp/AmqpMessage.html[AmqpMessage]` 是不可变（immutable）的，所以要用 `link:../../apidocs/io/vertx/amqp/AmqpMessageBuilder.html[AmqpMessageBuilder]` 类来执行创建操作。
+以下是一些例子：
+
+[source,java]
+----
+AmqpMessageBuilder builder = AmqpMessage.create();
+
+// 一条普通的消息
+AmqpMessage m1 = builder.withBody("hello").build();
+
+// 指定了地址的消息
+AmqpMessage m2 = builder.withBody("hello").address("another-queue").build();
+
+// 带有JSON消息体、元数据、TTL的消息
+AmqpMessage m3 = builder
+  .withJsonObjectAsBody(new JsonObject().put("message", "hello"))
+  .subject("subject")
+  .ttl(10000)
+  .applicationProperties(new JsonObject().put("prop1", "value1"))
+  .build();
+----
+
+在您创建sender和消息之后，您可以用如下方法发送消息：
+
+* `link:../../apidocs/io/vertx/amqp/AmqpSender.html#send-io.vertx.amqp.AmqpMessage-[send]` - 发送消息
+* `link:../../apidocs/io/vertx/amqp/AmqpSender.html#sendWithAck-io.vertx.amqp.AmqpMessage-io.vertx.core.Handler-[sendWithAck]` - 发送消息并监控其ACK
+
+以下是最简单的发消息方式：
+
+[source,java]
+----
+sender.send(AmqpMessage.create().withBody("hello").build());
+----
+
+发送消息时，您可以监控其ACK
+
+[source,java]
+----
+sender.sendWithAck(AmqpMessage.create().withBody("hello").build(), acked -> {
+  if (acked.succeeded()) {
+    System.out.println("Message accepted");
+  } else {
+    System.out.println("Message not accepted");
+  }
+});
+----
+
+注意：如果传输状态为 `ACCEPTED` ，那么就视为该消息已收到ACK。
+其他情况则视为未收到ACK（详细的信息可以从回传的 cause 中获得）。
+
+`link:../../apidocs/io/vertx/amqp/AmqpSender.html[AmqpSender]` 可以用作 write stream。流的控制是用 AMQP credits 实现的
+
+您也可以用客户端直接生成sender：
+
+[source, java]
+----
+client.createSender("my-queue", maybeSender -> {
+  //...
+});
+----
+
+这个示例中，连接是自动建立的。您可以用
+`link:../../apidocs/io/vertx/amqp/AmqpSender.html#connection--[connection]` 获取它。
+
+[[_implementing_request_reply]]
+== 实现 request-reply
+
+要实现 request-reply ，您可以用动态receiver和匿名sender。动态receiver
+不关联于用户创建的address，但broker提供这个address。匿名sender也不和指定的address关联，
+它要求所有的消息都包含一个address。
+
+以下便展示了如何实现 request-reply：
+
+[source, java]
+----
+connection.createAnonymousSender(responseSender -> {
+  // 获取匿名sender用于响应消息
+  // 注册 main receiver:
+  connection.createReceiver("my-queue", done -> {
+    if (done.failed()) {
+      System.out.println("Unable to create receiver");
+    } else {
+      AmqpReceiver receiver = done.result();
+      receiver.handler(msg -> {
+        // 获取到了消息，响应之
+        responseSender.result().send(AmqpMessage.create()
+          .address(msg.replyTo())
+          .correlationId(msg.id()) // 发送消息id作为关联的id
+          .withBody("my response to your request")
+          .build()
+        );
+      });
+    }
+  });
+});
+
+// sender端（发送请求并等待接收响应）
+connection.createDynamicReceiver(replyReceiver -> {
+  // 获取receiver，address由broker提供
+  String replyToAddress = replyReceiver.result().address();
+
+  // 关联处理器用于接收响应
+  replyReceiver.result().handler(msg -> {
+    System.out.println("Got the reply! " + msg.bodyAsString());
+  });
+
+  // 创建sender并发送消息：
+  connection.createSender("my-queue", sender -> {
+    sender.result().send(AmqpMessage.create()
+      .replyTo(replyToAddress)
+      .id("my-message-id")
+      .withBody("This is my request").build());
+  });
+});
+----
+
+要响应一个消息，就要将它回应到指定的address。另外，用 `message id` 作为 `correlation id` 是一个好的做法，
+这样响应的接收者可以将响应与请求相关联。
+
+[[_closing_the_client]]
+== 关闭客户端
+
+一旦您创建了recever或sender的连接，那么您需要用 `close` 方法关闭他们。
+即关闭连接以及所有相关的reciever和sender。
+
+一旦客户端不再使用了，您就必须关闭它。这同时会关闭所有连接，
+最终关闭receiver和sender。

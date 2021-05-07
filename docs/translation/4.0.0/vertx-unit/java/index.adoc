@@ -1,0 +1,1113 @@
+= Vertx unit
+
+异步多语言单元测试。
+
+[[_introduction]]
+== 介绍
+
+Vert.x Unit 用多语言的异步API在JVM上 运行单元测试。
+Vert.x Unit 借鉴了已有的测试框架，例如 http://junit.org[JUnit] or http://qunitjs.com[QUnit]
+并同时遵循了Vert.x的做法。
+
+所以 Vert.x Unit 自然就成为了测试 Vert.x 应用的选择。
+
+要使用 Vert.x Unit，
+那么请添加如下依赖：
+
+* Maven （在您的 `pom.xml` 文件）：
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-unit</artifactId>
+ <version>4.0.0</version>
+ <scope>test</scope>
+</dependency>
+----
+
+* Gradle （在您的 `build.gradle` 文件）：
+
+[source,groovy,subs="+attributes"]
+----
+testCompile ${io.vertx}:${vertx-unit}:4.0.0
+----
+
+Vert.x Unit 能够以各种方式使用并可以在您代码中任何位置运行，它仅以正确的方式报告执行结果。
+以下示例展示了一个最简的测试用例套件。
+
+[source,java]
+----
+TestSuite suite = TestSuite.create("the_test_suite");
+suite.test("my_test_case", context -> {
+  String s = "value";
+  context.assertEquals("value", s);
+});
+suite.run();
+----
+
+`run` 方法执行了整个套件并且执行套件中所有的测试用例。
+测试用例套件可能失败也可能通过。如果外界不关心测试结果，
+那么测试用例的通过与否便不重要。
+
+[source,java]
+----
+TestSuite suite = TestSuite.create("the_test_suite");
+suite.test("my_test_case", context -> {
+  String s = "value";
+  context.assertEquals("value", s);
+});
+suite.run(new TestOptions().addReporter(new ReportOptions().setTo("console")));
+----
+
+执行之时，测试套件会在控制台报告每一步的结果：
+
+----
+Begin test suite the_test_suite
+Begin test my_test
+Passed my_test
+End test suite the_test_suite , run: 1, Failures: 0, Errors: 0
+----
+
+`reporters` 选项配置了套件执行器的reporter，用以报告测试用例执行结果，
+更多信息详见 <<reporting>> 章节
+
+[[_writing_a_test_suite]]
+== 编写一个测试套件
+
+测试套件是一系列测试用例组成的有名称的集合，测试用例则是一个直接回调。
+套件生命周期中可以设置回调函数，这些函数可以在执行测试用例前后执行，
+也可以在用作初始化/发布服务的套件前后。
+
+[source,java]
+----
+TestSuite suite = TestSuite.create("the_test_suite");
+suite.test("my_test_case_1", context -> {
+  // Test 1
+});
+suite.test("my_test_case_2", context -> {
+  // Test 2
+});
+suite.test("my_test_case_3", context -> {
+  // Test 3
+});
+----
+
+流式API让测试用例可以作链式调用：
+
+[source,java]
+----
+TestSuite suite = TestSuite.create("the_test_suite");
+suite.test("my_test_case_1", context -> {
+  // Test 1
+}).test("my_test_case_2", context -> {
+  // Test 2
+}).test("my_test_case_3", context -> {
+  // Test 3
+});
+----
+
+测试用例的声明顺序并不保证其执行顺序，所以测试用例不可以依赖于其他测试用例来运行。
+这不是一个好的做法。
+
+Vert.x Unit 提供了 _before_ 和 _after_ 回调来作总体的启动或清理资源操作：
+
+[source,java]
+----
+TestSuite suite = TestSuite.create("the_test_suite");
+suite.before(context -> {
+  // 测试套件启动
+}).test("my_test_case_1", context -> {
+  // Test 1
+}).test("my_test_case_2", context -> {
+  // Test 2
+}).test("my_test_case_3", context -> {
+  // Test 3
+}).after(context -> {
+  // 测试套件清理资源
+});
+----
+
+这些方法的声明顺序并不重要，示例中在用例之前声明 _before_ ，
+在用例之后声明 _after_ ，
+然而在运行套件之前，他们可以在任何位置声明，
+
+_before_ 回调函数执行于所有测试用例之前，如果其运行失败，
+则整个测试套件将停止运行并报告失败结果。 _after_ 回调函数在整个测试套件中最后执行，
+除非 _before_ 回调函数运行失败。
+
+类似的，Vert.x Unit 提供了 _beforeEach_ 和 _afterEach_ 回调，
+在每一个测试用例前后执行：
+
+[source,java]
+----
+TestSuite suite = TestSuite.create("the_test_suite");
+suite.beforeEach(context -> {
+  // 测试用例启动
+}).test("my_test_case_1", context -> {
+  // Test 1
+}).test("my_test_case_2", context -> {
+  // Test 2
+}).test("my_test_case_3", context -> {
+  // Test 3
+}).afterEach(context -> {
+  // 测试用例资源清理
+});
+----
+
+_beforeEach_ 回调函数执行于每一个测试用例之前，一旦其运行失败，那测试用例将不再被执行，
+并报告失败结果。 _afterEach_ 回调函数仅在测试用例之后被执行，
+除非 _beforeEach_ 函数运行失败。
+
+[[_asserting]]
+== 断言
+
+Vert.x Unit 提供了 `link:../../apidocs/io/vertx/ext/unit/TestContext.html[TestContext]` 对象用来在测试用例中作断言操作。
+_context_ 对象提供了用于断言的常用方法。
+
+=== assertEquals
+
+断言两个对象相等，适用于 _基本类型_ 和 _json类型_ 。
+
+[source,java]
+----
+suite.test("my_test_case", context -> {
+  context.assertEquals(10, callbackCount);
+});
+----
+
+有一个重载的方法用于提供测试信息：
+
+[source,java]
+----
+suite.test("my_test_case", context -> {
+  context.assertEquals(10, callbackCount, "Should have been 10 instead of " + callbackCount);
+});
+----
+
+通常地，每一个断言函数都提供了重载的版本。
+
+=== assertNotEquals
+
+与 _assertEquals_ 相反。
+
+[source,java]
+----
+suite.test("my_test_case", context -> {
+  context.assertNotEquals(10, callbackCount);
+});
+----
+
+=== assertNull
+
+断言一个对象是null，适用于 _基本类型_ 和 _json类型_ 。
+
+[source,java]
+----
+suite.test("my_test_case", context -> {
+  context.assertNull(null);
+});
+----
+
+=== assertNotNull
+
+与 _assertNull_ 相反。
+
+[source,java]
+----
+suite.test("my_test_case", context -> {
+  context.assertNotNull("not null!");
+});
+----
+
+=== assertInRange
+
+`link:../../apidocs/io/vertx/ext/unit/TestContext.html#assertInRange-double-double-double-[assertInRange]` 方法作用于实数范围。
+
+----
+suite.test("my_test_case", context -> {
+
+  // 断言0.1 在误差范围 +/- 0.5范围内等于0.2
+
+  context.assertInRange(0.1, 0.2, 0.5);
+});
+----
+
+[[_asserttrue_and_assertfalse]]
+=== 断言成功以及断言失败
+
+对于布尔表达式的断言。
+
+[source,java]
+----
+suite.test("my_test_case", context -> {
+  context.assertTrue(var);
+  context.assertFalse(value > 10);
+});
+----
+
+[[_failing]]
+=== 失败
+
+最后但并非最不重要的，_test_ 提供了一个 _fail_ 方法用来抛出断言错误的异常：
+
+[source,java]
+----
+suite.test("my_test_case", context -> {
+  context.fail("That should never happen");
+  // 剩下的代码不会执行。
+});
+----
+
+`失败` 对象本身既可以是 _string_ 也可以是一个 _error_ 。
+_error_ 对象取决于所使用的编程语言，对于 Java 或者 Groovy 而言，可以是任何 _Throwable_ 的子类，
+对于 JavaScript 则是一个 _error_ ，对于 Ruby 则是一个 _Exception_。
+
+[[_using_third_party_assertion_framework]]
+=== 使用第三方断言框架
+
+您也可以用任何其他的断言框架，例如比较流行的 _hamcrest_ 和 _assertj_ 。
+我们建议您用 `link:../../apidocs/io/vertx/ext/unit/TestContext.html#verify-io.vertx.core.Handler-[verify]` ，
+使用我们提供的 _处理器（Handler）_ 来执行断言。
+这样的话，我们才能正确的处理异步测试的结束动作。
+
+[source,java]
+----
+suite.test("my_test_case", context -> context.verify(v -> {
+  // 这里 junit中的 Assert 对象可以是 assertj hamcrest或其他库中的Assert对象
+  // 甚至可以手动抛出 AssertionError
+  Assert.assertNotNull("not null!");
+  Assert.assertEquals(10, callbackCount);
+}));
+----
+
+[[_asynchronous_testing]]
+== 异步测试
+
+前述示例的前提是，假设所有的测试用例在各自回调之后会结束，
+这是测试用例回调函数的默认行为。在测试用例回调函数之后结束测试是可取的，
+例如：
+
+.Async 对象异步的完成测试用例
+[source,java]
+----
+suite.test("my_test_case", context -> {
+  Async async = context.async();
+  eventBus.consumer("the-address", msg -> {
+    // <2>
+    async.complete();
+  });
+  // <1>
+});
+----
+<1> 回调函数结束，但是测试用例没结束
+<2> 总线事件的回调函数来终止测试
+
+用 `link:../../apidocs/io/vertx/ext/unit/TestContext.html#async--[async]` 方法创建一个 `link:../../apidocs/io/vertx/ext/unit/Async.html[Async]` 对象表示测试用例还未结束。
+当执行 `link:../../apidocs/io/vertx/ext/unit/Async.html#complete--[complete]` 方法时，
+测试用例才算结束。
+
+NOTE: 当 `complete` 回调函数未被执行时，测试用例会在指定超时时间之后失败。
+
+同一个测试用例中可以创建多个 `Async` 对象，
+必须调用所有Async对象的 _completed_ 方法来终止测试。
+
+.多个Async对象合作
+[source,java]
+----
+suite.test("my_test_case", context -> {
+
+  HttpClient client = vertx.createHttpClient();
+  client.request(HttpMethod.GET, 8080, "localhost", "/", context.asyncAssertSuccess(req -> {
+      req.send(context.asyncAssertSuccess(resp -> {
+        context.assertEquals(200, resp.statusCode());
+      }));
+    }));
+
+  Async async = context.async();
+  vertx.eventBus().consumer("the-address", msg -> {
+    async.complete();
+  });
+});
+----
+
+Async 对象也可以用在 _before_ 或 _after_ 回调中，
+这将很方便的在 _before_ 回调中，实现依赖于多个异步结果的启动操作：
+
+.执行测试用例之前异步启动 http server
+[source,java]
+----
+suite.before(context -> {
+  Async async = context.async();
+  HttpServer server = vertx.createHttpServer();
+  server.requestHandler(requestHandler);
+  server.listen(8080, ar -> {
+    context.assertTrue(ar.succeeded());
+    async.complete();
+  });
+});
+----
+
+您也可以等待 `link:../../apidocs/io/vertx/ext/unit/Async.html[Async]` 直到其结束，
+类似Java的 count-down latch：
+
+.Wait for completion
+[source, java]
+----
+Async async = context.async();
+HttpServer server = vertx.createHttpServer();
+server.requestHandler(requestHandler);
+server.listen(8080, ar -> {
+  context.assertTrue(ar.succeeded());
+  async.complete();
+});
+
+// Wait until completion
+async.awaitSuccess();
+----
+
+WARNING: 该方法不应该在事件循环（event loop）上执行！
+
+Async 可以创建一个初始计数值，
+当用 `link:../../apidocs/io/vertx/ext/unit/Async.html#countDown--[countDown]` 方法将 count-down 的值减到0时：
+
+.等待，直到count-down值为0
+[source, java]
+----
+Async async = context.async(2);
+HttpServer server = vertx.createHttpServer();
+server.requestHandler(requestHandler);
+server.listen(8080, ar -> {
+  context.assertTrue(ar.succeeded());
+  async.countDown();
+});
+
+vertx.setTimer(1000, id -> {
+  async.complete();
+});
+
+// Wait until completion of the timer and the http request
+async.awaitSuccess();
+----
+
+调用Async的 `complete()` 方法会像往常一样结束，实际上它将count-down值直接设置为 `0` 。
+
+[[_asynchronous_assertions]]
+== 异步断言
+
+`link:../../apidocs/io/vertx/ext/unit/TestContext.html[TestContext]` 提供了很有用的方法，这些方法提供了强大的异步测试框架：
+
+`link:../../apidocs/io/vertx/ext/unit/TestContext.html#asyncAssertSuccess--[asyncAssertSuccess]` 方法返回一个类似 `link:../../apidocs/io/vertx/ext/unit/Async.html[Async]` {@literal Handler<AsyncResult<T>>} 对象，
+它在运行成功时执行 `Async` 对象，并在失败时，
+让整个测试用例失败，并返回失败原因。
+
+[source,java]
+----
+Async async = context.async();
+vertx.deployVerticle("my.verticle", ar -> {
+  if (ar.succeeded()) {
+    async.complete();
+  } else {
+    context.fail(ar.cause());
+  }
+});
+
+// 可用如下代替
+
+vertx.deployVerticle("my.verticle", context.asyncAssertSuccess());
+----
+
+`link:../../apidocs/io/vertx/ext/unit/TestContext.html#asyncAssertSuccess-io.vertx.core.Handler-[asyncAssertSuccess]` 方法返回一个类似于 `link:../../apidocs/io/vertx/ext/unit/Async.html[Async]` 的 {@literal Handler<AsyncResult<T>>} 对象，
+运行成功时它执行了代理 {@literal Handler<T>} ，
+而在运行出错时让整个测试用例失败，并返回错误原因。
+
+[source,java]
+----
+AtomicBoolean started = new AtomicBoolean();
+Async async = context.async();
+vertx.deployVerticle(new AbstractVerticle() {
+  public void start() throws Exception {
+    started.set(true);
+  }
+}, ar -> {
+  if (ar.succeeded()) {
+    context.assertTrue(started.get());
+    async.complete();
+  } else {
+    context.fail(ar.cause());
+  }
+});
+
+// Can be replaced by
+
+vertx.deployVerticle("my.verticle", context.asyncAssertSuccess(id -> {
+  context.assertTrue(started.get());
+}));
+----
+
+当 `Handler` 退出时，Async对象同时也会处于 `completed` 状态，除非Async对象在函数调用期间被创建，
+这会在 _链式_ 异步操作时提供方便：
+
+[source,java]
+----
+Async async = context.async();
+vertx.deployVerticle("my.verticle", ar1 -> {
+  if (ar1.succeeded()) {
+    vertx.deployVerticle("my.otherverticle", ar2 -> {
+      if (ar2.succeeded()) {
+        async.complete();
+      } else {
+        context.fail(ar2.cause());
+      }
+    });
+  } else {
+    context.fail(ar1.cause());
+  }
+});
+
+// Can be replaced by
+
+vertx.deployVerticle("my.verticle", context.asyncAssertSuccess(id ->
+        vertx.deployVerticle("my_otherverticle", context.asyncAssertSuccess())
+));
+----
+
+`link:../../apidocs/io/vertx/ext/unit/TestContext.html#asyncAssertFailure--[asyncAssertFailure]` 方法返回了一个类似 `link:../../apidocs/io/vertx/ext/unit/Async.html[Async]` 的 {@literal Handler<AsyncResult<T>>} 对象,
+它在运行失败时执行 `Async` ，
+并在成功时让测试用例失败。
+
+[source,java]
+----
+Async async = context.async();
+vertx.deployVerticle("my.verticle", ar -> {
+  if (ar.succeeded()) {
+    context.fail();
+  } else {
+    async.complete();
+  }
+});
+
+// 可用如下代替
+
+vertx.deployVerticle("my.verticle", context.asyncAssertFailure());
+----
+
+`link:../../apidocs/io/vertx/ext/unit/TestContext.html#asyncAssertFailure-io.vertx.core.Handler-[asyncAssertFailure]` 方法返回一个类似 `link:../../apidocs/io/vertx/ext/unit/Async.html[Async]` 的  {@literal Handler<AsyncResult<T>>} 对象，
+它在运行失败时，
+执行代理处理器 {@literal Handler<Throwable>} ，
+并在执行成功时让测试用例失败。
+
+[source,java]
+----
+Async async = context.async();
+vertx.deployVerticle("my.verticle", ar -> {
+  if (ar.succeeded()) {
+    context.fail();
+  } else {
+    context.assertTrue(ar.cause() instanceof IllegalArgumentException);
+    async.complete();
+  }
+});
+
+// 可用如下代替
+
+vertx.deployVerticle("my.verticle", context.asyncAssertFailure(cause -> {
+  context.assertTrue(cause instanceof IllegalArgumentException);
+}));
+----
+
+`Handler` 退出时，这个Async也会处于完成状态，除非在执行过程中，创建了新的Async对象
+
+[[_repeating_test]]
+== 重复测试
+
+当测试随机条件或测试不经常失败时，例如在竞争条件下，
+为了增加测试失败的可能性，多次运行同一测试是个方便的方式。
+
+.重复一个测试
+[source,java]
+----
+TestSuite.create("my_suite").test("my_test", 1000, context -> {
+  // 这里会执行1000次
+});
+----
+
+如果声明了 _beforeEach_ 和 _afterEach_ 回调，那么每当测试用例执行一次，它们也会被执行一次。
+
+NOTE: 重复的测试用例是顺序执行的
+
+[[_sharing_objects]]
+== 共享对象
+
+`link:../../apidocs/io/vertx/ext/unit/TestContext.html[TestContext]` 对象提供了 `get`/`put`/`remove` 操作，用于在回调函数之间共享状态。
+
+在 _before_ 回调函数中添加的任何对象都可以在其他回调函数中访问到。
+每一个测试用例都会操作一个共享状态的副本。所以，对于共享状态的更新仅仅在一个测试用例之内有效。
+
+.在回调函数之间共享状态
+[source,java]
+----
+TestSuite.create("my_suite").before(context -> {
+
+  // cases host对于所有的测试用例可见
+  context.put("host", "localhost");
+
+}).beforeEach(context -> {
+
+  // 为每一个测试用例生成一个port
+  int port = helper.randomPort();
+
+  // 获取host
+  String host = context.get("host");
+
+  // 启动服务
+  Async async = context.async();
+  HttpServer server = vertx.createHttpServer();
+  server.requestHandler(req -> {
+    req.response().setStatusCode(200).end();
+  });
+  server.listen(port, host, ar -> {
+    context.assertTrue(ar.succeeded());
+    context.put("port", port);
+    async.complete();
+  });
+
+}).test("my_test", context -> {
+
+  // 获取共享状态
+  int port = context.get("port");
+  String host = context.get("host");
+
+  // 发送请求
+  HttpClient client = vertx.createHttpClient();
+  client.request(HttpMethod.GET, port, host, "/resource", context.asyncAssertSuccess(req -> {
+    req.send(context.asyncAssertSuccess(resp -> {
+      context.assertEquals(200, resp.statusCode());
+    }));
+  }));
+});
+----
+
+WARNING: 只有java才能共享所有类型的对象，其他语言只能共享基本类型和json类型。
+其他类型对象的共享操作应该利用当前编程语言的特性来实现。
+
+[[_running]]
+== 运行
+
+当创建了一个测试套件，除非调用 `link:../../apidocs/io/vertx/ext/unit/TestSuite.html#run--[run]` 方法，否则测试用例不会执行。
+
+.运行一个测试套件
+[source,java]
+----
+suite.run();
+----
+
+这个测试套件也可以用指定的 `link:../../apidocs/io/vertx/core/Vertx.html[Vertx]` 来运行：
+
+.提供一个Vertx对象来执行测试用例
+[source,java]
+----
+suite.run(vertx);
+----
+
+当使用 `Vertx` 对象来运行时，测试套件则会使用该Vert.x对象的 eventloop 来运行测试用例，
+更多信息详见 <<event_loop>> 一章。
+
+一个测试套件可以用Vert.x命令行接口来执行，即使用 `vertx test` 命令：
+
+.用Vert.x CLI 执行测试用例
+[source]
+----
+> vertx test the_test_suite.js
+Begin test suite the_test_suite
+Succeeded in deploying verticle
+Begin test my_test_case
+Passed my_test_case
+End test suite my_suite , run: 1, Failures: 0, Errors: 0
+----
+
+这种测试套件仅仅需要通过 `link:../../apidocs/io/vertx/ext/unit/TestSuite.html#run--[run]` 命令来执行，
+`vertx test` 命令则负责配置报告和超时等。
+例如：
+
+[source,java]
+----
+TestSuite suite = TestSuite.create("the_test_suite");
+suite.test("my_test_case", context -> {
+  String s = "value";
+  context.assertEquals("value", s);
+});
+suite.run();
+----
+
+`vertx test` 命令扩展了 `vertx run` 命令。它改变了JVM的退出行为，
+当测试套件开始执行，并且返回了测试结果（例如success (0) or failure (1)）的时候，JVM才会退出。
+
+NOTE: 同一个Verticle中可以执行多个测试套件，
+Vert.x Unit会等待所有的测试套件执行完成。
+
+[[_test_suite_completion]]
+=== 测试套件执行完毕
+
+我们没办法假设测试套件将何时执行完毕，
+如果有代码需要在测试用例执行完毕之后才执行，
+那么这段代码要声明在 _after_ 回调函数中或者让其作为 `link:../../apidocs/io/vertx/ext/unit/Completion.html[Completion]` 的回调。
+
+.测试套件 _执行回调函数_
+[source,java]
+----
+TestCompletion completion = suite.run(vertx);
+
+// 普通的完成回调函数
+completion.handler(ar -> {
+  if (ar.succeeded()) {
+    System.out.println("Test suite passed!");
+  } else {
+    System.out.println("Test suite failed:");
+    ar.cause().printStackTrace();
+  }
+});
+----
+
+`link:../../apidocs/io/vertx/ext/unit/Completion.html[Completion]` 对象也提供了 `link:../../apidocs/io/vertx/ext/unit/Completion.html#resolve-io.vertx.core.Promise-[resolve]` 方法，
+该方法接收 `Promise` 对象参数，这个 `Promise` 会在测试套件执行时被触发通知。
+
+.用测试套件解析初始Promise
+[source,java]
+----
+TestCompletion completion = suite.run();
+
+// 当测试套件执行完毕，Promise则被解析
+completion.resolve(startPromise);
+----
+
+这样可以轻松的创建一个 _test_ Verticle，这个Verticle是由测试套件部署起来的，
+而部署Verticle的代码中可以很容易的知悉成功或者失败。
+
+completion 对象也可以像 count-down latch 一样使用，他会阻塞直至测试套件执行完。
+这应该用于当前线程与测试套件线程不一样时的场景。
+
+.阻塞至测试套件执行完毕
+[source,java]
+----
+Completion completion = suite.run();
+
+//  阻塞至测试套件执行完毕
+completion.await();
+----
+
+`await` 方法在线程被interrupt或者超时的时候抛出异常。
+
+`link:../../apidocs/io/vertx/ext/unit/Completion.html#awaitSuccess--[awaitSuccess]` 方法是一个变种，
+它在测试套件运行失败时抛出异常
+
+.阻塞至测试套件执行成功
+[source,java]
+----
+Completion completion = suite.run();
+
+// 阻塞至测试套件执行成功 否则抛出异常
+completion.awaitSuccess();
+----
+
+[[_time_out]]
+=== 超时
+
+测试套件中的每一个测试用例都必须在超时时间内执行完毕。默认超时时间是 _2分钟_ ，
+超时时间可以用 _test options_ 来设置：
+
+.设置测试套件的超时时间
+[source,java]
+----
+TestOptions options = new TestOptions().setTimeout(10000);
+
+// 10秒超时时间
+suite.run(options);
+----
+
+[[_event_loop]]
+=== 事件循环（Event loop）
+
+Vert.x Unit 是一系列task的执行过程，每个task由前一个task的完成动作来触发。
+这些task负责平衡eventloop的调度，
+但是这取决于当前执行上下文（例如，测试套件在 `main` 方法中执行，或者嵌入一个verticle ）
+是否配置了 `Vertx` 对象。
+
+`link:../../apidocs/io/vertx/ext/unit/TestOptions.html#setUseEventLoop-java.lang.Boolean-[setUseEventLoop]`
+以配置事件循环（event loop）的使用方式：
+
+.事件循环（Event loop）的使用
+|===
+| | useEventLoop:null | useEventLoop:true | useEventLoop:false
+
+| `Vertx` instance
+| 使用 vertx event loop
+| 使用 vertx event loop
+| 强制不使用 event loop
+
+| 在 `Verticle` 中
+| 使用当前 event loop
+| 使用当前 event loop
+| 强制不使用 event loop
+
+| 在 _main_ 方法中
+| 不使用 event loop
+| 错误
+| 不使用 event loop
+
+|===
+
+`useEventLoop` 默认为 `null` , 这说明，
+如果条件允许则使用一个event loop，当没有event loop 可用时，不使用event loop。
+
+[[_reporting]]
+== 测试报告
+
+测试报告是测试套件中的重要部分，
+Vert.x Unit可以用不同配置来运行不同的 reporter。
+
+默认情况下，不配置reporter，但是当运行测试套件时，
+可以用 _test options_ 来配置一个或多个 reporter：
+
+.使用终端reporter并将其用作junit xml文件
+[source,java]
+----
+ReportOptions consoleReport = new ReportOptions().
+    setTo("console");
+
+// 将Junit报告信息文件放在当前目录
+ReportOptions junitReport = new ReportOptions().
+    setTo("file:.").
+    setFormat("junit");
+
+suite.run(new TestOptions().
+        addReporter(consoleReport).
+        addReporter(junitReport)
+);
+----
+
+[[_console_reporting]]
+=== 控制台报告
+
+将信息报告至JVM的 `System.out` 和 `System.err` ：
+
+报告至::
+_终端_
+格式::
+_常规_ 或 _junit_
+
+[[_file_reporting]]
+=== 文件报告
+
+如果想将报告输出至文件，您必须提供一个 `Vertx` 对象：
+
+to::
+_file_ `:` _dir name_
+格式::
+_simple_ 或 _junit_
+示例::
+`file:.`
+
+文件reporter会在配置的目录中创建文件，这些文件会以测试套件的名称和格式来命名
+（例如， _常规格式_ 创建 _txt_ 文件，_
+junit格式_ 创建 _xml_ 文件）。
+
+[[_log_reporting]]
+=== 日志报告
+
+如果要向logger发送报告，您必须提供一个 `Vertx` 对象：
+
+to::
+_log_ `:` _logger name_
+示例::
+`log:mylogger`
+
+[[_event_bus_reporting]]
+=== 事件总线报告
+
+如果要向事件总线报告事件，那么您必须提供一个 `Vertx` 对象：
+
+to::
+_bus_ `:` _event bus address_
+示例::
+`bus:the-address`
+
+它将测试套件的执行过程和报告解耦合。
+
+通过事件总线发送的消息可以通过 `link:../../apidocs/io/vertx/ext/unit/collect/EventBusCollector.html[EventBusCollector]` 来收集起来，
+并实现自定义报告
+
+[source,java]
+----
+EventBusCollector collector = EventBusCollector.create(
+    vertx,
+    new ReportingOptions().addReporter(
+        new ReportOptions().setTo("file:report.xml").setFormat("junit")));
+
+collector.register("the-address");
+----
+
+[[_vertx_integration]]
+== Vertx 整合
+
+默认情况下，断言和失败必须在 `link:../../apidocs/io/vertx/ext/unit/TestContext.html[TestContext]` 之内完成，另外 _断言失败_ 仅仅在Vert.x Unit的调用下才会有效。
+
+[source,java]
+----
+suite.test("my_test_case", ctx -> {
+
+  // '失败'会被Vert.x Unit 报告
+  throw new RuntimeException("it failed!");
+});
+----
+
+在一个常规的Vert.x回调中，会忽略失败：
+
+[source,java]
+----
+suite.test("test-server", testContext -> {
+  HttpServer server = vertx.createHttpServer().requestHandler(req -> {
+    if (req.path().equals("/somepath")) {
+      throw new AssertionError("Wrong path!");
+    }
+    req.response().end();
+  });
+});
+----
+
+从 Vert.x 3.3 版本开始，您可以设置一个全局异常处理器来报告 event loop 没有捕捉到的异常：
+
+[source,java]
+----
+suite.before(testContext -> {
+
+  // 报告未被捕捉到到异常，以其作为 Vert.x Unit 失败事件
+  vertx.exceptionHandler(testContext.exceptionHandler());
+});
+
+suite.test("test-server", testContext -> {
+  HttpServer server = vertx.createHttpServer().requestHandler(req -> {
+    if (req.path().equals("/somepath")) {
+      throw new AssertionError("Wrong path!");
+    }
+    req.response().end();
+  });
+});
+----
+
+如果异常处理器设置在 _before_ 部分，那么 `link:../../apidocs/io/vertx/ext/unit/TestContext.html[TestContext]` 则会在 _before_,
+_test_ 和 _after_ 部分之间共享。
+所以将异常处理器置于 _before_ 部分是一个正确到做法
+
+[[_junit_integration]]
+== Junit 整合
+
+尽管Vertx Unit是多语言的，且不是基于Junit的，但是您依然可以在Junit上运行Vert.x Unit测试套件以及测试用例，
+并允许您将测试用例整合到JUnit，允许整合到您的build system，也可以整合到IDE中。
+
+.将一个Java类作为JUnit测试套件
+[source,java]
+----
+@RunWith(VertxUnitRunner.class)
+public class JUnitTestSuite {
+  @Test
+  public void testSomething(TestContext context) {
+    context.assertFalse(false);
+  }
+}
+----
+
+`link:../../apidocs/io/vertx/ext/unit/junit/VertxUnitRunner.html[VertxUnitRunner]` 使用Junit注解来对这个类进行解析，
+并创建该类对象之后创建测试套件。
+该类中的方法应该在参数中声明一个 `link:../../apidocs/io/vertx/ext/unit/TestContext.html[TestContext]` 参数
+，不声明该参数也是可以的。
+然而 `TestContext` 是在异步测试过程中能够获取相关Vertx对象的唯一方式。
+
+在Groovy语言中，
+用 `io.vertx.groovy.ext.unit.junit.VertxUnitRunner` 也可以达到整合Junit的目的。
+
+[[_running_a_test_on_a_vert_x_context]]
+=== 在 Vert.x 上下文中执行一个测试
+
+默认情况下执行测试方法的是Junit线程。
+`link:../../apidocs/io/vertx/ext/unit/junit/RunTestOnContext.html[RunTestOnContext]` Junit rule可以改变这个行为，使测试方法都运行于 Vert.x event loop 线程。
+
+因此，当某状态在测试方法/Vert.x处理器之间共享时，您就需要小心了，因为他们并不是在同一个线程上运行的，
+例如，在Vert.x处理器中累加一个计数器然后在测试方法中断言计数器的值。
+使用恰当地同步机制是解决此问题的一种方式，
+另外还可以在Vert.x context中执行测试方法，这样共享状态则会在处理器之间传播。
+
+以此目的，`link:../../apidocs/io/vertx/ext/unit/junit/RunTestOnContext.html[RunTestOnContext]` rule 需要一个 `link:../../apidocs/io/vertx/core/Vertx.html[Vertx]` 对象。
+您可以主动提供这个对象，如果不提供，这个 rule 会隐式创建它。
+这个对象可以在测试执行过程中获取，
+这也使该rule成为管理Vert.x实例的一种方式。
+
+.Run a Java class as a JUnit test suite
+.运行一个Java类作为JUnit测试套件
+[source,java]
+----
+@RunWith(VertxUnitRunner.class)
+public class RunOnContextJUnitTestSuite {
+
+  @Rule
+  public RunTestOnContext rule = new RunTestOnContext();
+
+  @Test
+  public void testSomething(TestContext context) {
+    // 使用这个隐式创建的vertx对象
+    Vertx vertx = rule.vertx();
+  }
+}
+----
+
+rule可以用 {@literal @Rule} 或 {@literal @ClassRule} 注解修饰，
+前者管理每个测试的Vert.x对象，后者则管理该测试类中所有测试方法相关的那一个Vertx对象。
+
+WARNING: 切记，用这个rule的时候您不可以阻塞 event loop 。使用像 `CountDownLatch` 类的做法，
+则必须要小心。
+
+[[_timeout]]
+=== 超时
+
+Vert.x Unit 默认超时时间两分钟，这可以用 `@Test` 注解中的 `timeout` 属性来指定：
+
+.在测试方法级别配置超时时间
+[source,java]
+----
+public class JunitTestWithTimeout {
+
+  @Test(timeout = 1000l)
+  public void testSomething(TestContext context) {
+    //...
+  }
+
+}
+----
+
+对于更全局的配置，可以用 `link:../../apidocs/io/vertx/ext/unit/junit/Timeout.html[Timeout]` rule：
+
+.类级别超时时间配置
+[source,java]
+----
+@RunWith(VertxUnitRunner.class)
+public class TimeoutTestSuite {
+
+  @Rule
+  public Timeout rule = Timeout.seconds(1);
+
+  @Test
+  public void testSomething(TestContext context) {
+    //...
+  }
+}
+----
+
+NOTE: `@Test` 的超时设置会覆盖 `link:../../apidocs/io/vertx/ext/unit/junit/Timeout.html[Timeout]` rule 的配置。
+
+[[_parameterized_tests]]
+=== 参数化测试
+
+JUnit提供了非常有用的 `参数化` 测试，
+Vert.x Unit 测试可以利用 `link:../../apidocs/io/vertx/ext/unit/junit/VertxUnitRunnerWithParametersFactory.html[VertxUnitRunnerWithParametersFactory]` 来指定执行器：
+
+.运行参数化的Vert.x Unit测试
+[source,java]
+----
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(VertxUnitRunnerWithParametersFactory.class)
+public class SimpleParameterizedTest {
+
+  @Parameterized.Parameters
+  public static Iterable<Integer> data() {
+    return Arrays.asList(0, 1, 2);
+  }
+
+  public SimpleParameterizedTest(int value) {
+    //...
+  }
+
+  @Test
+  public void testSomething(TestContext context) {
+    // 用当前值来执行测试方法
+  }
+}
+----
+
+Groovy语言中，您可以用 `io.vertx.groovy.ext.unit.junit.VertxUnitRunnerWithParametersFactory` 来实现参数化测试：
+
+[[_repeating_a_test]]
+=== 重复测试
+
+当测试随机条件或测试不经常失败时，例如在竞争条件下，
+为了增加测试失败的可能性，多次运行同一测试是个方便的方式。
+
+如果用Junit，测试用例必须用 `link:../../apidocs/io/vertx/ext/unit/junit/Repeat.html[@Repeat]` 注解修饰，来指定重复执行。
+测试用例也必须定义根据自身规则定义 `link:../../apidocs/io/vertx/ext/unit/junit/RepeatRule.html[RepeatRule]` 。
+
+.用Junit重复测试
+[source,java]
+----
+@RunWith(VertxUnitRunner.class)
+public class RepeatingTest {
+
+  @Rule
+  public RepeatRule rule = new RepeatRule();
+
+  @Repeat(1000)
+  @Test
+  public void testSomething(TestContext context) {
+    // 执行1000次
+  }
+}
+----
+
+如果声明了RepeatRule，那么 _before_ 和 _after_ 方法会在每次执行测试方法时都执行一次。
+
+NOTE: 重复测试是顺序执行
+
+[[_using_with_other_assertion_libraries]]
+=== 用其他断言库
+
+Vert.x Unit 的可用性从 Vert.x 3.3 开始有了巨大的提升。您可以用
+http://hamcrest.org/[Hamcrest] ，
+http://joel-costigliola.github.io/assertj/[AssertJ] ，
+https://github.com/rest-assured/rest-assured/[Rest Assured] ，甚至其他您想用的断言库来写测试用例。这是由 <<vertx_integration>> 章节里介绍的全局异常处理器的机制实现的。
+
+您可以在 https://github.com/vert-x3/vertx-examples/tree/master/unit-examples[vertx-examples] 工程中，
+找到Vert.x Unit中用 Hamcrest 和 AssertJ 的示例。
+
+[[_java_language_integration]]
+== Java 语言整合
+
+[[_test_suite_integration]]
+=== 测试套件整合
+
+Java语言提供了class，
+而且可以用如下映射规则来直接利用Java class创建测试套件：
+
+检查 `测试套件对象` 的参数和方法，保留带有 `link:../../apidocs/io/vertx/ext/unit/TestContext.html[TestContext]` 参数的public且非静态方法并通过方法名映射到Vert.x Unit测试套件：
+
+* `before` : before callback
+* `after` : after callback
+* `beforeEach` : beforeEach callback
+* `afterEach` : afterEach callback
+*  以 _test_ 开头的名称: 以方法名命名的测试用例
+
+.用Java类写的测试套件
+[source,java]
+----
+public class MyTestSuite {
+
+  public void testSomething(TestContext context) {
+    context.assertFalse(false);
+  }
+}
+----
+
+这个类可以很容易的转化成Vert.x 测试套件：
+
+.从Java对象创建测试套件
+[source,java]
+----
+TestSuite suite = TestSuite.create(new MyTestSuite());
+----

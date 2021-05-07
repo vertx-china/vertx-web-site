@@ -1,0 +1,164 @@
+[[_json]]
+== JSON
+:toc: left
+
+和其他一些语言不同，Java 没有对 http://json.org/[JSON] 做原生支持（first class support），
+因此我们提供了两个类，以便在 Vert.x 应用中更方便地处理 JSON。
+
+[[_json_objects]]
+=== JSON objects
+
+`link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` 类用来描述JSON对象。
+
+一个JSON 对象基本上只是一个 Map 结构。它具有字符串的键，值可以是任意一种JSON 支持的类型
+（如 string, number, boolean）。
+
+JSON 对象也支持 null 值。
+
+[[_creating_json_objects]]
+==== 创建 JSON 对象
+
+可以使用默认构造函数创建空的JSON对象。
+
+您可以通过一个 JSON 格式的字符串创建JSON对象：
+
+[source,java]
+----
+String jsonString = "{\"foo\":\"bar\"}";
+JsonObject object = new JsonObject(jsonString);
+----
+
+您可以根据Map创建JSON对象：
+
+[source,java]
+----
+Map<String, Object> map = new HashMap<>();
+map.put("foo", "bar");
+map.put("xyz", 3);
+JsonObject object = new JsonObject(map);
+----
+
+[[_putting_entries_into_a_json_object]]
+==== 将键值对放入 JSON 对象
+
+使用 `link:../../apidocs/io/vertx/core/json/JsonObject.html#put-java.lang.String-java.lang.Object-[put]` 方法可以将值放入到JSON对象里。
+
+这个API是流式的，因此这个方法可以被链式地调用。
+
+[source,java]
+----
+JsonObject object = new JsonObject();
+object.put("foo", "bar").put("num", 123).put("mybool", true);
+----
+
+[[_getting_values_from_a_json_object]]
+==== 从 JSON 对象获取值
+
+您可使用 `getXXX` 方法从JSON对象中获取值。例如：
+
+[source,java]
+----
+String val = jsonObject.getString("some-key");
+int intVal = jsonObject.getInteger("some-other-key");
+----
+
+[[_mapping_between_json_objects_and_java_objects]]
+==== JSON 对象和 Java 对象间的映射
+
+您可以根据 Java 对象的字段创建一个JSON 对象，如下所示：
+
+你可以根据一个 JSON 对象来实例化一个Java 对象并填充字段值。如下所示：
+
+[source,java]
+----
+request.bodyHandler(buff -> {
+  JsonObject jsonObject = buff.toJsonObject();
+  User javaObject = jsonObject.mapTo(User.class);
+});
+----
+
+请注意上述代码直接使用了 Jackson 的 `ObjectMapper#convertValue()` 来执行映射。
+关于字段和构造函数的可见性的影响、对象引用的序列化和反序列化等等的问题，
+可参考 Jackson 的文档获取更多信息。
+
+在最简单的情况下，如果 Java 类中所有的字段都是
+`public`（或者有 `public` 的 getter/setter）时，并且有一个 `public` 的默认构造函数（或不定义构造函数），`mapFrom` 和 `mapTo` 都应该成功。
+
+只要不存在对象的循环引用，嵌套的 Java 对象就可以和嵌套的 JSON
+对象相互序列化/反序列化。
+
+[[_encoding_a_json_object_to_a_string]]
+==== 将 JSON 对象编码成字符串
+
+您可使用 `link:../../apidocs/io/vertx/core/json/JsonObject.html#encode--[encode]` 方法将一个对象编码成字符串格式。（译者注：如要得到更优美、格式化的字符串，可以使用 `link:../../apidocs/io/vertx/core/json/JsonObject.html#encodePrettily--[encodePrettily]` 方法。）
+
+[[_json_arrays]]
+=== JSON 数组
+
+`link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` 类用来描述 JSON数组。
+
+一个JSON 数组是一个值的序列（值的类型可以是 string、number、boolean 等）。
+
+JSON 数组同样可以包含 `null` 值。
+
+[[_creating_json_arrays]]
+==== 创建 JSON 数组
+
+可以使用默认构造函数创建空的JSON数组。
+
+您可以根据JSON格式的字符串创建一个JSON数组：
+
+[source,java]
+----
+String jsonString = "[\"foo\",\"bar\"]";
+JsonArray array = new JsonArray(jsonString);
+----
+
+[[_adding_entries_into_a_json_array]]
+==== 将数组项添加到JSON数组
+
+您可以使用 `link:../../apidocs/io/vertx/core/json/JsonArray.html#add-java.lang.Object-[add]` 方法添加数组项到JSON数组中：
+
+[source,java]
+----
+JsonArray array = new JsonArray();
+array.add("foo").add(123).add(false);
+----
+
+[[_getting_values_from_a_json_array]]
+==== 从 JSON 数组中获取值
+
+您可使用 `getXXX` 方法从JSON 数组中获取值。例如：
+
+[source,java]
+----
+String val = array.getString(0);
+Integer intVal = array.getInteger(1);
+Boolean boolVal = array.getBoolean(2);
+----
+
+[[_encoding_a_json_array_to_a_string]]
+==== 将 JSON 数组编码成字符串
+
+您可以使用 `link:../../apidocs/io/vertx/core/json/JsonArray.html#encode--[encode]` 编码成字符串格式。
+
+[[_creating_arbitrary_json]]
+==== 创建任意类型的 JSON
+
+创建 JSON 对象或数组的前提是，你需要事先已知其输入是合法的字符串。（译者注：这里说的“合法”指的是，你在使用 `JsonObject` 时，需要事先知道构造函数输入的字符串是一个json object `{...}`，同理，使用 `JsonArray` 时，字符串需要是一个json array `[...]`，否则即使输入了一个规范的Json字符串，也没有办法成功解析。）
+
+当你不确定字符串是否合法时，你应当转而使用 `link:../../apidocs/io/vertx/core/json/Json.html#decodeValue-java.lang.String-[Json.decodeValue]` 方法。
+
+[source,java]
+----
+Object object = Json.decodeValue(arbitraryJson);
+if (object instanceof JsonObject) {
+  // That's a valid json object
+} else if (object instanceof JsonArray) {
+  // That's a valid json array
+} else if (object instanceof String) {
+  // That's valid string
+} else {
+  // etc...
+}
+----

@@ -1,0 +1,105 @@
+= Vert.x SockJS 服务代理
+:toc: left
+
+当您编写一个Vert.x应用时，可能会需要在某个地方隔离一个功能，并且让这个功能在程序中的其他部分也可用。这就是服务代理的主要目的。
+服务代理能在事件总线上公开一个 _服务_ ，只要知道发布服务的 _地址_ ，就能在任何的Vert.x组件中使用这个服务。这就是Vert.x服务代理可以实现的功能。
+但是，Vert.x服务代理生成的客户端没办法直接在浏览器或Node.js应用中使用。
+而Vert.x SockJS服务代理生成的客户端就可以在浏览器或Node.js应用中使用。
+这些客户端依赖SockJS桥来将Vert.x事件总线中的事件传出/传入SockJS。
+
+[[_using_vert_x_sockjs_service_proxy]]
+== 使用Vert.x SockJS 服务代理
+
+要使用Vert.x SockJS 服务代理，需要添加如下依赖
+
+* Maven（在您的 `pom.xml` 文件中添加）：
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-sockjs-service-proxy</artifactId>
+ <version>4.0.0</version>
+</dependency>
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-service-proxy</artifactId>
+ <version>${vertx.version}</version>
+</dependency>
+----
+
+* Gradle（在您的 `build.gradle` 文件中添加）：
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-sockjs-service-proxy:4.0.0'
+compile 'io.vertx:vertx-service-proxy:${vertx.version}'
+----
+
+请注意！由于服务代理机制依赖于代码生成，所以对 _服务接口_ 进行修改后需要先重新编译源码让代码生成器重新生成代理类代码。
+
+在更进一步之前，我们建议您去查阅 http://vertx.io/docs/vertx-service-proxy/java[服务代理文档].
+
+[[_consuming_your_service_from_a_browser_or_from_node_js]]
+== 在浏览器或者Node.js应用中调用您的服务
+
+上一节展示了如何在Java中创建服务代理。然而，您可以使用基于SockJS的代理直接在浏览器或node.js应用中调用服务。
+
+首先，您需要配置SockJS桥，让服务代理与服务进行通信。关于SockJS桥的更多详细内容请参考
+http://vertx.io/docs/vertx-web/java/#_sockjs_event_bus_bridge[vertx-web]:
+
+[source, java]
+----
+SomeDatabaseService service = new SomeDatabaseServiceImpl();
+new ServiceBinder(vertx)
+  .setAddress("database-service-address")
+  .register(SomeDatabaseService.class, service);
+
+Router router = Router.router(vertx);
+// 允许指定地址的事件通过EventBus桥输入/输出
+SockJSBridgeOptions opts = new SockJSBridgeOptions()
+    .addInboundPermitted(new PermittedOptions()
+        .setAddress("database-service-address"))
+    .addOutboundPermitted(new PermittedOptions()
+        .setAddress("database-service-address"));
+
+// 创建EventBus桥并添加到路由中
+router.mountSubRouter("/eventbus", SockJSHandler.create(vertx).bridge(opts));
+
+vertx.createHttpServer().requestHandler(router).listen(8080);
+----
+
+一旦配置了SockJS桥，使用JavaScript开发的其他程序就可以直接与您的服务进行交互。在服务编译期间，将生成一个JS代理模块，其名称如下：
+`module_name-js/server-interface_simple_name` + `-proxy.js`。 举个例子，如您的接口命名为 `MyService`，代理模块就会被命名为 `my_service-proxy.js`。
+复述一次，您可以从浏览器或node.js使用此代理模块。
+
+生成的代理是一个与CommonJS，AMD和Webpack兼容的JavaScript模块。使用该代理只需EventBus桥和服务EventBus地址实例化即可。
+
+[source, js]
+----
+<script src="http://cdn.sockjs.org/sockjs-0.3.4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vertx/3.4.2/vertx-eventbus.min.js"></script>
+<!-- 这是生成出来的服务代理 -->
+<script src="vertx-database-js/some_database_service-proxy.js"></script>
+<script>
+  var eb = new EventBus('http://localhost:8080/eventbus');
+  eb.onopen = function () {
+    var svc = new SomeDatabaseService(eb, "database-service-address");
+    // 使用服务
+  };
+</script>
+----
+
+对于node.js应用，请按照下述方式使用：
+
+[source,js]
+----
+var EventBus = require('vertx3-eventbus-client');
+var SomeDatabaseService = require('../../some_database_service-proxy');
+
+var eb = new EventBus('http://localhost:8080/eventbus/');
+eb.onopen = function () {
+  var svc = new SomeDatabaseService(eb, "database-service-address");
+  // 使用服务
+};
+----

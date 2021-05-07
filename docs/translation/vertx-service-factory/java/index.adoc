@@ -51,7 +51,7 @@ classpath. If you are using a fat jar, you can use the following dependencies:
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-service-factory</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
@@ -59,7 +59,7 @@ classpath. If you are using a fat jar, you can use the following dependencies:
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-service-factory:4.0.0'
+compile 'io.vertx:vertx-service-factory:4.0.3'
 ----
 
 You can also register a `VerticleFactory` instances programmatically on your `vertx` instance using the

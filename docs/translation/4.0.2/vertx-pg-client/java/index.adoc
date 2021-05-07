@@ -1,0 +1,941 @@
+= 响应式（Reactive） PostgreSQL 客户端
+:PREPARED_PARAMS: `$1`, `$2`, etc…​
+
+响应式PostgreSQL客户端是一款以可扩展性和低开销为目标而专门为PostgreSQL数据库设计的
+客户端。
+
+客户端是响应式和非阻塞的，可以仅仅使用一条线程来处理大量的数据库连接。
+
+* 事件驱动
+* 轻量级
+* 内置连接池
+* 预查询缓存
+* 基于PostgreSQL的`NOTIFY/LISTEN`机制实现的发布/订阅
+* 批处理和游标
+* 支持原生流式操作
+* 命令管道（pipeline）
+* RxJava 1 and RxJava 2
+* 使用直接内存存储对象，避免了不必要的复制
+* 支持Java 8 Date and Time
+* SSL/TLS
+* Unix domain socket
+* 支持HTTP/1.x， SOCKS4a 或 SOCKS5 代理
+
+[[_usage]]
+== 用法
+
+在 _dependencies_ 里添加如下依赖来引入响应式PostgreSQL客户端：
+
+* Maven（在您的 `pom.xml` 文件里）：
+
+[source,xml]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-pg-client</artifactId>
+ <version>4.0.2</version>
+</dependency>
+----
+* Gradle（在您的 `build.gradle` 文件里）：
+
+[source,groovy]
+----
+dependencies {
+ compile 'io.vertx:vertx-pg-client:4.0.2'
+}
+----
+
+[[_getting_started]]
+== 开始使用
+
+如下是一种最为简单的连接、查询、关闭连接的方式
+
+[source,java]
+----
+PgConnectOptions connectOptions = new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret");
+
+// Pool options
+PoolOptions poolOptions = new PoolOptions()
+  .setMaxSize(5);
+
+// Create the client pool
+PgPool client = PgPool.pool(connectOptions, poolOptions);
+
+// A simple query
+client
+  .query("SELECT * FROM users WHERE id='julien'")
+  .execute(ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> result = ar.result();
+    System.out.println("Got " + result.size() + " rows ");
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+
+  // Now close the pool
+  client.close();
+});
+----
+
+[[_connecting_to_postgresql]]
+== 连接PostgreSQL
+
+大多数时间，您将使用连接池连接到 PostgreSQL：
+
+[source,java]
+----
+PgConnectOptions connectOptions = new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret");
+
+// Pool options
+PoolOptions poolOptions = new PoolOptions()
+  .setMaxSize(5);
+
+// Create the pooled client
+PgPool client = PgPool.pool(connectOptions, poolOptions);
+----
+
+池化PostgreSQL客户端使用连接池去执行数据库操作，
+所有操作都会遵循从池里拿到连接、执行、释放连接到池里这三个步骤。
+
+您可以传入一个连接池到正在运行的Vert.x实例里：
+
+[source,java]
+----
+PgConnectOptions connectOptions = new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret");
+
+// Pool options
+PoolOptions poolOptions = new PoolOptions()
+  .setMaxSize(5);
+
+// Create the pooled client
+PgPool client = PgPool.pool(vertx, connectOptions, poolOptions);
+----
+
+如果不再需要连接池，您需要将其释放：
+
+[source,java]
+----
+pool.close();
+----
+
+当您想要在同一条连接上执行多个操作时，您需要使用客户端
+`link:../../apidocs/io/vertx/pgclient/PgConnection.html[connection]` 。
+
+您可以很方便地从连接池里拿到一条连接：
+
+[source,java]
+----
+PgConnectOptions connectOptions = new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret");
+
+// Pool options
+PoolOptions poolOptions = new PoolOptions()
+  .setMaxSize(5);
+
+// Create the pooled client
+PgPool client = PgPool.pool(vertx, connectOptions, poolOptions);
+
+// Get a connection from the pool
+client.getConnection().compose(conn -> {
+  System.out.println("Got a connection from the pool");
+
+  // All operations execute on the same connection
+  return conn
+    .query("SELECT * FROM users WHERE id='julien'")
+    .execute()
+    .compose(res -> conn
+      .query("SELECT * FROM users WHERE id='emad'")
+      .execute())
+    .onComplete(ar -> {
+      // Release the connection to the pool
+      conn.close();
+    });
+}).onComplete(ar -> {
+  if (ar.succeeded()) {
+
+    System.out.println("Done");
+  } else {
+    System.out.println("Something went wrong " + ar.cause().getMessage());
+  }
+});
+----
+
+为了连接可以重用，一旦当前连接上的操作已经完成，您需要关闭并释放连接到连接池里。
+
+某些情况下您希望通过Unix domain socket类型的连接来提升性能，我们通过Vert.x本机传输支持了这种方式。
+
+首先确保您已经在classpath下添加了 `netty-transport-native` 这个必须的依赖，同时开启了Unix domain socket功能（pg）选项。
+
+[source,java]
+----
+PgConnectOptions connectOptions = new PgConnectOptions()
+  .setHost("/var/run/postgresql")
+  .setPort(5432)
+  .setDatabase("the-db");
+
+// Pool options
+PoolOptions poolOptions = new PoolOptions()
+  .setMaxSize(5);
+
+// Create the pooled client
+PgPool client = PgPool.pool(connectOptions, poolOptions);
+
+// Create the pooled client with a vertx instance
+// Make sure the vertx instance has enabled native transports
+PgPool client2 = PgPool.pool(vertx, connectOptions, poolOptions);
+----
+
+更多详情可以在这里找到 https://vertx.io/docs/vertx-core/java/#_native_transports[Vert.x 文档]。
+
+[[_connect_retries]]
+== 重连
+
+您可以配置客户端在建立连接失败的时候的重试策略
+
+[source,java]
+----
+options
+  .setReconnectAttempts(2)
+  .setReconnectInterval(1000);
+----
+
+[[_configuration]]
+== 配置
+
+有如下几种配置客户端的可选方案。
+
+[[_data_object]]
+=== data object
+
+通过指定 `PgConnectOptions` 数据对象是一种简单的客户端的配置方式。
+
+[source,java]
+----
+PgConnectOptions connectOptions = new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret");
+
+// Pool Options
+PoolOptions poolOptions = new PoolOptions().setMaxSize(5);
+
+// Create the pool from the data object
+PgPool pool = PgPool.pool(vertx, connectOptions, poolOptions);
+
+pool.getConnection(ar -> {
+  // Handling your connection
+});
+----
+
+您也可以使用 `setProperties`或 `addProperty`方法配置通用属性。注意 `setProperties` 将覆盖默认的客户端属性。
+
+例如，您可以通过添加 `search_path` 属性来配置一个默认的schema。
+
+[source,java]
+----
+PgConnectOptions connectOptions = new PgConnectOptions();
+
+// Set the default schema
+Map<String, String> props = new HashMap<>();
+props.put("search_path", "myschema");
+connectOptions.setProperties(props);
+----
+
+关于可用属性的更多信息可以在这里找到 https://www.postgresql.org/docs/current/runtime-config-client.html[PostgreSQL Manuals]。
+
+[[_connection_uri]]
+=== 连接uri
+
+除了使用 `PgConnectionOptions` 对象，我们也提供了另一种基于URI的可选配置方案：
+
+[source,java]
+----
+String connectionUri = "postgresql://dbuser:secretpassword@database.server.com:3211/mydb";
+
+// Create the pool from the connection URI
+PgPool pool = PgPool.pool(connectionUri);
+
+// Create the connection from the connection URI
+PgConnection.connect(vertx, connectionUri, res -> {
+  // Handling your connection
+});
+----
+
+关于连接uri字符串格式的更多信息可以在这里找到 https://www.postgresql.org/docs/9.6/static/libpq-connect.html#LIBPQ-CONNSTRING[PostgreSQL 手册]。
+
+当前版本的客户端支持在连接uri里使用如下参数
+
+* host
+* hostaddr
+* port
+* user
+* password
+* dbname
+* sslmode
+* properties including(application_name, fallback_application_name, search_path)
+
+NOTE: 通过URI配置的属性将会覆盖默认的配置属性。
+
+[[_environment_variables]]
+=== 环境变量
+
+您也可以使用环境变量来设置连接的属性值，以此来避免硬编码数据库连接信息。
+您可以参考 https://www.postgresql.org/docs/9.6/static/libpq-envars.html[官方文档]来了解更多详情。
+目前支持下列这些配置参数：
+
+* `PGHOST`
+* `PGHOSTADDR`
+* `PGPORT`
+* `PGDATABASE`
+* `PGUSER`
+* `PGPASSWORD`
+* `PGSSLMODE`
+
+如果您没有在连接时指定连接对象或者URI字符串，此时将会使用环境变量。
+
+[source,java]
+----
+$ PGUSER=user \
+ PGHOST=the-host \
+ PGPASSWORD=secret \
+ PGDATABASE=the-db \
+ PGPORT=5432 \
+ PGSSLMODE=DISABLE
+----
+
+[source,java]
+----
+PgPool pool = PgPool.pool();
+
+// Create the connection from the environment variables
+PgConnection.connect(vertx, res -> {
+  // Handling your connection
+});
+----
+
+[[_sasl_scram_sha_256_authentication_mechanism]]
+=== SASL SCRAM-SHA-256 鉴权机制。
+
+为了使用 sasl SCRAM-SHA-256鉴权，需要在 _dependencies_ 里添加如下依赖：
+
+* Maven（在您的 `pom.xml` 文件里）：
+
+[source,xml]
+----
+<dependency>
+ <groupId>com.ongres.scram</groupId>
+ <artifactId>client</artifactId>
+ <version>2.1</version>
+</dependency>
+----
+* Gradle（在您的 `build.gradle` 文件里）：
+
+[source,groovy]
+----
+dependencies {
+ compile 'com.ongres.scram:client:2.1'
+}
+----
+
+NOTE: SCRAM-SHA-256-PLUS（在Postgresql 11中加入）当前版本客户端暂不支持。
+
+
+include::queries.adoc[]
+
+您可以使用 'RETURNING' 从查询里拿到生成的key：
+
+[source,java]
+----
+client
+  .preparedQuery("INSERT INTO color (color_name) VALUES ($1), ($2), ($3) RETURNING color_id")
+  .execute(Tuple.of("white", "red", "blue"), ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> rows = ar.result();
+    System.out.println(rows.rowCount());
+    for (Row row : rows) {
+      System.out.println("generated key: " + row.getInteger("color_id"));
+    }
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+include::connections.adoc[]
+
+include::transactions.adoc[]
+
+include::cursor.adoc[]
+
+NOTE: PostreSQL会在事务结束后销毁游标，因而游标API应该在事务内使用，
+否则您将可能收到 `34000` PostgreSQL错误码。
+
+[[_tracing_queries]]
+== 跟踪查询
+
+include::tracing.adoc[]
+
+[[_postgresql_type_mapping]]
+== PostgreSQL 类型映射
+
+当前版本客户端支持下列的PostgreSQL类型
+
+* BOOLEAN (`java.lang.Boolean`)
+* INT2 (`java.lang.Short`)
+* INT4 (`java.lang.Integer`)
+* INT8 (`java.lang.Long`)
+* FLOAT4 (`java.lang.Float`)
+* FLOAT8 (`java.lang.Double`)
+* CHAR (`java.lang.String`)
+* VARCHAR (`java.lang.String`)
+* TEXT (`java.lang.String`)
+* ENUM (`java.lang.String`)
+* NAME (`java.lang.String`)
+* SERIAL2 (`java.lang.Short`)
+* SERIAL4 (`java.lang.Integer`)
+* SERIAL8 (`java.lang.Long`)
+* NUMERIC (`io.vertx.sqlclient.data.Numeric`)
+* UUID (`java.util.UUID`)
+* DATE (`java.time.LocalDate`)
+* TIME (`java.time.LocalTime`)
+* TIMETZ (`java.time.OffsetTime`)
+* TIMESTAMP (`java.time.LocalDateTime`)
+* TIMESTAMPTZ (`java.time.OffsetDateTime`)
+* INTERVAL (`io.vertx.pgclient.data.Interval`)
+* BYTEA (`io.vertx.core.buffer.Buffer`)
+* JSON (`io.vertx.core.json.JsonObject`, `io.vertx.core.json.JsonArray`, `Number`, `Boolean`, `String`, `io.vertx.sqlclient.Tuple#JSON_NULL`)
+* JSONB (`io.vertx.core.json.JsonObject`, `io.vertx.core.json.JsonArray`, `Number`, `Boolean`, `String`, `io.vertx.sqlclient.Tuple#JSON_NULL`)
+* POINT (`io.vertx.pgclient.data.Point`)
+* LINE (`io.vertx.pgclient.data.Line`)
+* LSEG (`io.vertx.pgclient.data.LineSegment`)
+* BOX (`io.vertx.pgclient.data.Box`)
+* PATH (`io.vertx.pgclient.data.Path`)
+* POLYGON (`io.vertx.pgclient.data.Polygon`)
+* CIRCLE (`io.vertx.pgclient.data.Circle`)
+* TSVECTOR (`java.lang.String`)
+* TSQUERY (`java.lang.String`)
+
+Tuple（元组）在解码时使用上述类型映射关系存储解码出的值，并且在合法的条件下可以动态转换为实际类型的值：
+
+[source,java]
+----
+pool
+  .query("SELECT 1::BIGINT \"VAL\"")
+  .execute(ar -> {
+  RowSet<Row> rowSet = ar.result();
+  Row row = rowSet.iterator().next();
+
+  // Stored as java.lang.Long
+  Object value = row.getValue(0);
+
+  // Convert to java.lang.Integer
+  Integer intValue = row.getInteger(0);
+});
+----
+
+Tuple（元组）编码时使用上述关系作为类型间的映射关系，除非类型为数字，在这种情况下将会使用 `java.lang.Number`：
+
+[source,java]
+----
+pool
+  .query("SELECT 1::BIGINT \"VAL\"")
+  .execute(ar -> {
+  RowSet<Row> rowSet = ar.result();
+  Row row = rowSet.iterator().next();
+
+  // Stored as java.lang.Long
+  Object value = row.getValue(0);
+
+  // Convert to java.lang.Integer
+  Integer intValue = row.getInteger(0);
+});
+----
+
+上述类型的数组形式也是支持的。
+
+[[_handling_json]]
+=== JSON
+
+PostgreSQL的 `JSON` 和 `JSONB`  用下列的java类型表示：
+
+- `String`
+- `Number`
+- `Boolean`
+- `io.vertx.core.json.JsonObject`
+- `io.vertx.core.json.JsonArray`
+- `io.vertx.sqlclient.Tuple#JSON_NULL` for representing the JSON null literal
+
+[source,java]
+----
+Tuple tuple = Tuple.of(
+  Tuple.JSON_NULL,
+  new JsonObject().put("foo", "bar"),
+  3);
+
+// Retrieving json
+Object value = tuple.getValue(0); // Expect JSON_NULL
+
+//
+value = tuple.get(JsonObject.class, 1); // Expect JSON object
+
+//
+value = tuple.get(Integer.class, 2); // Expect 3
+value = tuple.getInteger(2); // Expect 3
+----
+
+[[_handling_numeric]]
+=== 数字类型（Numeric）
+
+java的 `link:../../apidocs/io/vertx/sqlclient/data/Numeric.html[Numeric]` 用来表示PostgreSQL的 `NUMERIC` 类型。
+
+[source,java]
+----
+Numeric numeric = row.get(Numeric.class, 0);
+if (numeric.isNaN()) {
+  // Handle NaN
+} else {
+  BigDecimal value = numeric.bigDecimalValue();
+}
+----
+
+[[_handling_arrays]]
+== 数组
+
+数组可以用在 `link:../../apidocs/io/vertx/sqlclient/Tuple.html[Tuple]` 和 `link:../../apidocs/io/vertx/sqlclient/Row.html[Row]`：
+
+[source,java]
+----
+Tuple tuple = Tuple.of(new String[]{ "a", "tuple", "with", "arrays" });
+
+// Add a string array to the tuple
+tuple.addArrayOfString(new String[]{"another", "array"});
+
+// Get the first array of string
+String[] array = tuple.getArrayOfStrings(0);
+----
+
+[[_handling_datetime_infinity]]
+== 日期/时间类型（Date/Time）的最值
+
+PostgreSQL定义了几个特殊的值用来表示这些最值。
+
+相应类型的最大/最小值由这些常量 https://www.postgresql.org/docs/9.0/datatype-datetime.html[特殊值] 表示。
+
+- `OffsetDateTime.MAX`/OffsetDateTime.MIN`
+- `LocalDateTime.MAX`/LocalDateTime.MIN`
+- `LocalDate.MAX`/LocalDate.MIN`
+
+[source,java]
+----
+client
+  .query("SELECT 'infinity'::DATE \"LocalDate\"")
+  .execute(ar -> {
+    if (ar.succeeded()) {
+      Row row = ar.result().iterator().next();
+      System.out.println(row.getLocalDate("LocalDate").equals(LocalDate.MAX));
+    } else {
+      System.out.println("Failure: " + ar.cause().getMessage());
+    }
+  });
+----
+
+[[_handling_custom_types]]
+== 自定义类型
+
+发送和从Postgres接收的自定义类型都由字符串来表示。
+
+您可以读取PostgreSQL并以字符串的形式得到自定义的类型值
+
+[source,java]
+----
+client
+  .preparedQuery("SELECT address, (address).city FROM address_book WHERE id=$1")
+  .execute(Tuple.of(3),  ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> rows = ar.result();
+    for (Row row : rows) {
+      System.out.println("Full Address " + row.getString(0) + ", City " + row.getString(1));
+    }
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+您也可以向PostgreSQL写入字符串
+
+[source,java]
+----
+client
+  .preparedQuery("INSERT INTO address_book (id, address) VALUES ($1, $2)")
+  .execute(Tuple.of(3, "('Anytown', 'Second Ave', false)"),  ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> rows = ar.result();
+    System.out.println(rows.rowCount());
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+[[_handling_text_search]]
+== 文本检索
+
+文本检索使用的是java的 `String`
+
+[source,java]
+----
+client
+  .preparedQuery("SELECT to_tsvector( $1 ) @@ to_tsquery( $2 )")
+  .execute(Tuple.of("fat cats ate fat rats", "fat & rat"),  ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> rows = ar.result();
+    for (Row row : rows) {
+      System.out.println("Match : " + row.getBoolean(0));
+    }
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+`tsvector` 和 `tsquery` 可以使用java的 `String` 类型来从数据库中获取
+
+[source,java]
+----
+client
+  .preparedQuery("SELECT to_tsvector( $1 ), to_tsquery( $2 )")
+  .execute(Tuple.of("fat cats ate fat rats", "fat & rat"),  ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> rows = ar.result();
+    for (Row row : rows) {
+      System.out.println("Vector : " + row.getString(0) + ", query : "+row.getString(1));
+    }
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+[[_handling_enumerated_types]]
+== 枚举类型
+
+PostgreSQL的 https://www.postgresql.org/docs/9.1/datatype-enum.html[枚举类型] 被映射为java的字符串。
+
+[source,java]
+----
+client
+  .preparedQuery("INSERT INTO colors VALUES ($2)")
+  .execute(Tuple.of("red"),  res -> {
+    // ...
+  });
+----
+
+[[_using_java_enum_types]]
+== 使用Java枚举类型
+
+您可以将Java的 https://docs.oracle.com/javase/tutorial/java/javaOO/enum.html[枚举类型]
+映射为下列这些列类型：
+
+- Strings (VARCHAR, TEXT)
+- PosgreSQL enumerated types
+- Numbers (INT2, INT4, INT8)
+
+[source,java]
+----
+client
+  .preparedQuery("INSERT INTO colors VALUES ($1)")
+  .execute(Tuple.of(Color.red))
+  .flatMap(res ->
+    client
+      .preparedQuery("SELECT color FROM colors")
+      .execute()
+  ).onComplete(res -> {
+    if (res.succeeded()) {
+      RowSet<Row> rows = res.result();
+      for (Row row : rows) {
+        System.out.println(row.get(Color.class, "color"));
+      }
+    }
+});
+----
+
+String and PostgreSQL enumerated types 对应Java枚举类的 `name()` 方法的返回值。
+
+Numbers类型对应Java枚举类的 `ordinal()` 方法的返回值。
+
+[[_collector_queries]]
+== Collector式查询
+
+您可以将Java collector与查询API结合使用：
+
+[source,java]
+----
+Collector<Row, ?, Map<Long, String>> collector = Collectors.toMap(
+  row -> row.getLong("id"),
+  row -> row.getString("last_name"));
+
+// Run the query with the collector
+client.query("SELECT * FROM users")
+  .collecting(collector)
+  .execute(ar -> {
+  if (ar.succeeded()) {
+    SqlResult<Map<Long, String>> result = ar.result();
+
+    // Get the map created by the collector
+    Map<Long, String> map = result.value();
+    System.out.println("Got " + map);
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+collector式查询的结果集处理过程中不能再拿到 `link:../../apidocs/io/vertx/sqlclient/Row.html[Row]` 的引用，因为
+pg客户端在处理collector时，只会用一个row用于处理整个集合。
+
+Java的 `Collectors` 类提供了很多很有趣的预定义的collector，比如您可以很容易
+从row集合里得到一个字符串：
+
+[source,java]
+----
+Collector<Row, ?, String> collector = Collectors.mapping(
+  row -> row.getString("last_name"),
+  Collectors.joining(",", "(", ")")
+);
+
+// Run the query with the collector
+client.query("SELECT * FROM users").collecting(collector).execute(ar -> {
+    if (ar.succeeded()) {
+      SqlResult<String> result = ar.result();
+
+      // Get the string created by the collector
+      String list = result.value();
+      System.out.println("Got " + list);
+    } else {
+      System.out.println("Failure: " + ar.cause().getMessage());
+    }
+  });
+----
+
+[[_pubsub]]
+== 发布/订阅
+
+PostgreSQL支持发布/订阅式的通信方式。
+
+您可以设置一个 `link:../../apidocs/io/vertx/pgclient/PgConnection.html#notificationHandler-io.vertx.core.Handler-[notificationHandler]` 用于
+接收PostgreSQL的通知消息：
+
+[source,java]
+----
+connection.notificationHandler(notification -> {
+  System.out.println("Received " + notification.getPayload() + " on channel " + notification.getChannel());
+});
+
+connection
+  .query("LISTEN some-channel")
+  .execute(ar -> {
+  System.out.println("Subscribed to channel");
+});
+----
+
+PgSubscriber (`link:../../apidocs/io/vertx/pgclient/pubsub/PgSubscriber.html[PgSubscriber]`) 是一种用作
+处理单条连接上的订阅的通道（channel）管理器：
+
+[source,java]
+----
+PgSubscriber subscriber = PgSubscriber.subscriber(vertx, new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret")
+);
+
+// You can set the channel before connect
+subscriber.channel("channel1").handler(payload -> {
+  System.out.println("Received " + payload);
+});
+
+subscriber.connect(ar -> {
+  if (ar.succeeded()) {
+
+    // Or you can set the channel after connect
+    subscriber.channel("channel2").handler(payload -> {
+      System.out.println("Received " + payload);
+    });
+  }
+});
+----
+
+channel（通道）方法的参数即通道名称（接收端）需要和PostgreSQL发送通知时的通道名称保持一致。
+注意这里和SQL中的通道名称的形式不同，在 `link:../../apidocs/io/vertx/pgclient/pubsub/PgSubscriber.html[PgSubscriber]`
+内部会把待提交的通道名称预处理为带引号的形式：
+
+[source,java]
+----
+PgSubscriber subscriber = PgSubscriber.subscriber(vertx, new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret")
+);
+
+subscriber.connect(ar -> {
+    if (ar.succeeded()) {
+      // Complex channel name - name in PostgreSQL requires a quoted ID
+      subscriber.channel("Complex.Channel.Name").handler(payload -> {
+        System.out.println("Received " + payload);
+      });
+      subscriber.channel("Complex.Channel.Name").subscribeHandler(subscribed -> {
+        subscriber.actualConnection()
+          .query("NOTIFY \"Complex.Channel.Name\", 'msg'")
+          .execute(notified -> {
+            System.out.println("Notified \"Complex.Channel.Name\"");
+          });
+      });
+
+      // PostgreSQL simple ID's are forced lower-case
+      subscriber.channel("simple_channel").handler(payload -> {
+          System.out.println("Received " + payload);
+      });
+      subscriber.channel("simple_channel").subscribeHandler(subscribed -> {
+        // The following simple channel identifier is forced to lower case
+        subscriber.actualConnection()
+          .query("NOTIFY Simple_CHANNEL, 'msg'")
+          .execute(notified -> {
+            System.out.println("Notified simple_channel");
+          });
+      });
+
+      // The following channel name is longer than the current
+      // (NAMEDATALEN = 64) - 1 == 63 character limit and will be truncated
+      subscriber.channel("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbb")
+        .handler(payload -> {
+        System.out.println("Received " + payload);
+      });
+    }
+  });
+----
+您可以自定义一个方法来实现重连，该方法的参数为 `retries` （重试次数），
+返回值为 `amountOfTime`（重试间隔）：
+
+* 当 `amountOfTime < 0`: 不重试，并关闭订阅
+* 当 `amountOfTime = 0`: 立即重试
+* 当 `amountOfTime > 0`: 在 `amountOfTime` 毫秒之后发起重试
+
+[source,java]
+----
+PgSubscriber subscriber = PgSubscriber.subscriber(vertx, new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret")
+);
+
+// Reconnect at most 10 times after 100 ms each
+subscriber.reconnectPolicy(retries -> {
+  if (retries < 10) {
+    return 100L;
+  } else {
+    return -1L;
+  }
+});
+----
+
+默认的策略是不重连。
+
+[[_cancelling_request]]
+== 取消请求
+
+PostgreSQL 支持取消正在运行的请求. 您可以使用 `link:../../apidocs/io/vertx/pgclient/PgConnection.html#cancelRequest-io.vertx.core.Handler-[cancelRequest]` 正在运行的请求. 取消请求的操作在执行时将和PostgreSQL服务端新建一条连接、执行取消请求、关闭这条连接。
+
+[source,java]
+----
+connection
+  .query("SELECT pg_sleep(20)")
+  .execute(ar -> {
+  if (ar.succeeded()) {
+    // imagine this is a long query and is still running
+    System.out.println("Query success");
+  } else {
+    // the server will abort the current query after cancelling request
+    System.out.println("Failed to query due to " + ar.cause().getMessage());
+  }
+});
+connection.cancelRequest(ar -> {
+  if (ar.succeeded()) {
+    System.out.println("Cancelling request has been sent");
+  } else {
+    System.out.println("Failed to send cancelling request");
+  }
+});
+----
+
+> 取消请求可能不会起作用——如果请求到达时，服务端已经处理完了当前查询请求，此时取消操作不会起作用。反之，取消请求得以执行，目标命令执行提前终止并返回一条错误消息。
+
+更多详细信息可以在这里找到 https://www.postgresql.org/docs/11/protocol-flow.html#id-1.10.5.7.9[official documentation]。
+
+[[_using_ssltls]]
+== 使用 SSL/TLS
+
+为客户端连接添加SSL的操作，您可以参考Vert.x的
+`NetClient` 的 `link:../../apidocs/io/vertx/pgclient/PgConnectOptions.html[PgConnectOptions]` 配置操作。
+当前版本客户端支持全部的PostgreSql https://www.postgresql.org/docs/current/libpq-ssl.html#LIBPQ-SSL-PROTECTION[SSL模式]配置，您可以通过 `sslmode` 配置它们。客户端默认不启用SSL模式。
+`ssl` 参数仅作为一种设置 `sslmode` 的快捷方式。 `setSsl(true)` 等价于 `setSslMode(VERIFY_CA)`，`setSsl(false)` 等价于 `setSslMode(DISABLE)`。
+
+[source,java]
+----
+PgConnectOptions options = new PgConnectOptions()
+  .setPort(5432)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret")
+  .setSslMode(SslMode.VERIFY_CA)
+  .setPemTrustOptions(new PemTrustOptions().addCertPath("/path/to/cert.pem"));
+
+PgConnection.connect(vertx, options, res -> {
+  if (res.succeeded()) {
+    // Connected with SSL
+  } else {
+    System.out.println("Could not connect " + res.cause());
+  }
+});
+----
+
+更多详细信息可以在这里找到 http://vertx.io/docs/vertx-core/java/#ssl[Vert.x documentation]。
+
+[[_using_a_proxy]]
+== 使用代理
+
+您可以配置客户端使用HTTP/1.x 连接，SOCKS4a 或 SOCKS5 代理。
+
+更多信息可以在这里找到 http://vertx.io/docs/vertx-core/java/#_using_a_proxy_for_client_connections[Vert.x documentation]。
+
+ifeval::["java" == "java"]
+include::override/rxjava2.adoc[]
+endif::[]

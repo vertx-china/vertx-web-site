@@ -1,0 +1,85 @@
+[[_kubernetes_configmap_store]]
+=== Kubernetes ConfigMap 配置中心
+
+Kubernetes ConfigMap 配置中心扩展了 Vert.x Configuration Retriever 并提供了 对于 Kubernetes 的 ConfigMap 和 Secrets 的支持。
+所以，配置是从 k8s 里的 configMap 或者 secret 对象中读取的。
+
+[[_using_the_kubernetes_configmap_store]]
+==== 使用 Kubernetes ConfigMap 配置中心
+f
+要使用 Kubernetes ConfigMap 配置中心，
+则添加如下依赖：
+
+* Maven (在您的 `pom.xml` 文件):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-config-kubernetes-configmap</artifactId>
+ <version>4.0.0</version>
+</dependency>
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-config</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+* Gradle (在您的 `build.gradle` 文件):
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-config:4.0.0'
+compile 'io.vertx:vertx-config-kubernetes-configmap:4.0.0'
+----
+
+[[_configuring_the_store]]
+==== 设置配置中心
+
+将该库加入classpath或者项目依赖后，您需要配置
+`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` 来使用这个配置中心：
+
+[source, java]
+----
+ConfigStoreOptions store = new ConfigStoreOptions()
+    .setType("configmap")
+    .setConfig(new JsonObject()
+        .put("namespace", "my-project-namespace")
+        .put("name", "configmap-name")
+    );
+
+ConfigRetriever retriever = ConfigRetriever.create(vertx,
+    new ConfigRetrieverOptions().addStore(store));
+----
+
+您需要设置这个配置中心来找到正确的configMap。这通过如下配置项来解决：
+
+* `namespace` - 项目的namespace，默认值为 `default` 。如果设置了 `KUBERNETES_NAMESPACE` 环境变量，
+则会覆盖其值。
+* `name` - configMap的名称
+* `optional` - configMap是否是可选项（默认为 `true` ）
+
+如果configMap是由数个元素组成，您可以用 `key` 参数来告诉 Vert.x
+来读取哪一个 `key` 。
+
+Vert.x应用必须要有读取configMap的权限。
+
+要从secret中读取数据，只需要将 `secret` 属性配置为 `true` ：
+
+[source, java]
+----
+ConfigStoreOptions store = new ConfigStoreOptions()
+    .setType("configmap")
+    .setConfig(new JsonObject()
+        .put("namespace", "my-project-namespace")
+        .put("name", "my-secret")
+        .put("secret", true)
+    );
+
+ConfigRetriever retriever = ConfigRetriever.create(vertx,
+    new ConfigRetrieverOptions().addStore(store));
+----
+
+如果configMap访问不到，那么您会得到一个空的JSON object对象作为配置块。
+要禁用这个行为并显式声明失败，您需要设置 `optional` 为 `false` .

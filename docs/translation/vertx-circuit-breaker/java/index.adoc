@@ -1,7 +1,7 @@
-= Vert.x Circuit Breaker
+= Vert.x 断路器
 
-Circuit Breaker 是Vert.x 熔断 _模式_ 的实现。
-它用来追踪故障，当失败次数达到阈值时 _触发熔断_ ，并提供可选择的失败回退。
+Circuit Breaker 是Vert.x 断路 _模式_ 的实现。
+它用来追踪故障，当失败次数达到阈值时 _触发断路_ ，并提供可选择的失败回退。
 
 支持以下故障:
 
@@ -9,7 +9,7 @@ Circuit Breaker 是Vert.x 熔断 _模式_ 的实现。
 * 代码里主动抛出异常
 * 没有完成的 `Future`（即超时）。
 
-熔断器要旨是保障其操作是非阻塞且异步的，
+断路器要旨是保障其操作是非阻塞且异步的，
 以受益于Vert.x 执行模型。
 
 [[_using_the_vert_x_circuit_breaker]]
@@ -25,7 +25,7 @@ Circuit Breaker 是Vert.x 熔断 _模式_ 的实现。
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-circuit-breaker</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
@@ -33,19 +33,19 @@ Circuit Breaker 是Vert.x 熔断 _模式_ 的实现。
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-circuit-breaker:4.0.0'
+compile 'io.vertx:vertx-circuit-breaker:4.0.3'
 ----
 
 [[_using_the_circuit_breaker]]
-== 使用熔断器
+== 使用断路器
 
-使用熔断器需要按以下步骤进行：
+使用断路器需要按以下步骤进行：
 
-1. 创建一个熔断器，并配置成你所需要的超时，最大故障次数等参数
+1. 创建一个断路器，并配置成你所需要的超时，最大故障次数等参数
 
-2. 使用熔断器执行代码
+2. 使用断路器执行代码
 
-**重要！！！** 熔断器应该是稳定的单例，而不是每次使用就重新创建它。推荐将该单例存放在某个领域中。
+**重要！！！** 断路器应该是稳定的单例，而不是每次使用就重新创建它。推荐将该单例存放在某个领域中。
 
 例子:
 
@@ -60,13 +60,13 @@ CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
 );
 
 // ---
-// 将熔断器存放在某个领域中并像如下方式使用
+// 将断路器存放在某个领域中并像如下方式使用
 // ---
 
 breaker.execute(promise -> {
-  // 在熔断器中执行的代码
+  // 在断路器中执行的代码
   // 这里的代码可以成功或者失败，
-  // 如果该 promise 在这里被标记为失败，熔断器将自增失败数
+  // 如果该 promise 在这里被标记为失败，断路器将自增失败数
 }).onComplete(ar -> {
   // 处理结果.
 });
@@ -108,7 +108,7 @@ breaker.<String>execute(promise -> {
 * 调用 `execute` 方法时,返回 `link:../../apidocs/io/vertx/core/Future.html[Future]`
 * 调用 `executeAndReport` 方法时,提供 `link:../../apidocs/io/vertx/core/Future.html[Future]` 参数
 
-也可以增加一个可选参数,用于熔断时进行失败回退（fallback）:
+也可以增加一个可选参数,用于断路时进行失败回退（fallback）:
 
 [source,java]
 ----
@@ -117,7 +117,7 @@ CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
 );
 
 // ---
-// 熔断器会临时存储该次运行结果,用于熔断判断
+// 断路器会临时存储该次运行结果,用于断路判断
 // ---
 
 breaker.executeWithFallback(
@@ -133,7 +133,7 @@ breaker.executeWithFallback(
             }
           })).onComplete(promise);
       }, v -> {
-      // 当熔断器熔断时,返回Hello
+      // 当断路器断路时,返回Hello
       return "Hello";
     })
     .onComplete(ar -> {
@@ -141,7 +141,7 @@ breaker.executeWithFallback(
     });
 ----
 
-每当熔断器熔断的时候,都会调用失败回退（fallback），也可以调用
+每当断路器断路的时候,都会调用失败回退（fallback），也可以调用
 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#isFallbackOnFailure--[isFallbackOnFailure]` 方法开启失败回退。
 当回退函数被成功设置之后，回退函数将会接收 `link:../../apidocs/java/lang/Throwable.html[Throwable]` 对象为参数并返回预期类型。
 
@@ -152,7 +152,7 @@ breaker.executeWithFallback(
 CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
     new CircuitBreakerOptions().setMaxFailures(5).setTimeout(2000)
 ).fallback(v -> {
-  //  当熔断器熔断时将调用此处代码
+  //  当断路器断路时将调用此处代码
   return "hello";
 });
 
@@ -217,7 +217,7 @@ breaker.<String>execute(
 [[_callbacks]]
 == 回调
 
-您可以配置熔断开启或关闭时的回调函数：
+您可以配置断路开启或关闭时的回调函数：
 
 [source,java]
 ----
@@ -244,44 +244,44 @@ breaker.<String>execute(
     });
 ----
 
-当熔断器决定尝试复位的时候（ half-open 状态），我们也可以注册 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreaker.html#halfOpenHandler-io.vertx.core.Handler-[halfOpenHandler]` 的回调从而得到回调通知。
+当断路器决定尝试复位的时候（ half-open 状态），我们也可以注册 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreaker.html#halfOpenHandler-io.vertx.core.Handler-[halfOpenHandler]` 的回调从而得到回调通知。
 
 [[_event_bus_notification]]
 == 事件总线通知
 
-每当熔断器发生状态改变的时候,熔断器都会在事件总线上推送通知，总线通默认地址为：`vertx.circuit-breaker`。
+每当断路器发生状态改变的时候，断路器都会在事件总线上推送通知，总线通默认地址为：`vertx.circuit-breaker`。
 当然这个也是可以配置的，调用方法
 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#setNotificationAddress-java.lang.String-[setNotificationAddress]`. If `null` is
 你可以设置总线通知地址。如果设置为 `null` 那么总线通知将被禁用。
 
 每个总线通知都会包含一个 Json Object对象，该对象包括以下字段：
 
-* `state` : 熔断器最新的状态（`OPEN`, `CLOSED`, `HALF_OPEN`）
-* `name` : 熔断器的名称
+* `state` : 断路器最新的状态（`OPEN`, `CLOSED`, `HALF_OPEN`）
+* `name` : 断路器的名称
 * `failures` : 错误次数
 * `node` : 节点标识 (如果事件总线并非运行在集群模式中，那么该值为：`local`)
 
 [[_the_half_open_state]]
 == 半开状态
 
-当熔断器处于开路状态时，对其调用会立即失败，不会执行实际操作。经过适当的时间 (通过
+当断路器处于开路状态时，对其调用会立即失败，不会执行实际操作。经过适当的时间 (通过
 `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#setResetTimeout-long-[setResetTimeout]` 配置）,
-熔断器决定是否恢复状态，此时进入半开启状态（half-open state）。在这种状态下，
-允许下一次熔断器的调用实际调用如果成功，熔断器将复位并返回到关闭状态，
-回归正常的模式；但是如果这次调用失败，则熔断器返回到熔断状态，直到下次半开状态。
+断路器决定是否恢复状态，此时进入半开启状态（half-open state）。在这种状态下，
+允许下一次断路器的调用实际调用如果成功，断路器将复位并返回到关闭状态，
+回归正常的模式；但是如果这次调用失败，则断路器返回到断路状态，直到下次半开状态。
 
 [[_reported_exceptions]]
 == 异常
 
 回退函数将会接收到：
 
-* 当熔断器开启时，会抛出 `link:../../apidocs/io/vertx/circuitbreaker/OpenCircuitException.html[OpenCircuitException]` 
+* 当断路器开启时，会抛出 `link:../../apidocs/io/vertx/circuitbreaker/OpenCircuitException.html[OpenCircuitException]` 
 * 当操作超时，会抛出 `link:../../apidocs/io/vertx/circuitbreaker/TimeoutException.html[TimeoutException]`
 
 [[_pushing_circuit_breaker_metrics_to_the_hystrix_dashboard]]
-== 将熔断器指标推送到Hystrix看板（Dashboard）
+== 将断路器指标推送到Hystrix看板（Dashboard）
 
-Netflix Hystrix带有一个看板（dashboard），用于显示熔断器的当前状态。 Vert.x 熔断器可以发布其指标（metric），以供Hystrix 仪表板使用。 Hystrix 仪表板需要一个发送指标的SSE流，
+Netflix Hystrix带有一个看板（dashboard），用于显示断路器的当前状态。 Vert.x 断路器可以发布其指标（metric），以供Hystrix 仪表板使用。 Hystrix 仪表板需要一个发送指标的SSE流，
 此流由 `link:../../apidocs/io/vertx/circuitbreaker/HystrixMetricHandler.html[HystrixMetricHandler]`
 该 Vert.x Web 处理器所提供：
 
@@ -302,7 +302,7 @@ vertx.createHttpServer()
   .listen(8080);
 ----
 
-在Hystrix 看板, 配置 stream url 地址,例如: `http://localhost:8080/metrics`. 现在就可以获取Vert.x的熔断器指标了。
+在Hystrix 看板, 配置 stream url 地址,例如: `http://localhost:8080/metrics`. 现在就可以获取Vert.x的断路器指标了。
 
 *注意*：这些指标量是由 Vert.x Web Handler 使用 Event Bus 事件通知收集。
 如您不想使用默认的通知地址，请在创建的时候设置。
@@ -310,7 +310,7 @@ vertx.createHttpServer()
 [[_using_netflix_hystrix]]
 == 使用 Netflix Hystrix
 
-https://github.com/Netflix/Hystrix[Hystrix] 提供了熔断器模式的实现。可以在Vert.x中使用Hystrix提供的熔断器或组合使用。
+https://github.com/Netflix/Hystrix[Hystrix] 提供了断路器模式的实现。可以在Vert.x中使用Hystrix提供的断路器或组合使用。
 本节介绍在Vert.x应用程序中使用Hystrix的技巧。
 
 首先，您需要将Hystrix添加到你的依赖中。

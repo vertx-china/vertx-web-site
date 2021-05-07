@@ -1,41 +1,39 @@
-=== Consul bridge
+[[_consul_bridge]]
+=== Consul 网桥
 
-This discovery bridge imports services from http://consul.io[Consul] into the Vert.x service discovery. The bridge
-connects to a Consul agent (server) and periodically scan for services:
+Consul服务发现网桥从 http://consul.io[Consul] 导入服务到Vert.x服务发现。这个网桥链接了 Consul agent 服务 并周期性扫描以下服务：
 
-* new services are imported
-* services in maintenance mode or that has been removed from consul are removed
+* 新导入的服务
+* 移除 处于 `maintenance` 模式的服务或已经从consul中被移除的服务
 
-This bridge uses the HTTP API for Consul. It does not export to Consul and does not support service modification.
+这个桥接器使用的是 Consul 的HTTP API接口。它不能将服务导出到Consul，并且也不支持服务的修改。
 
-The service type is deduced from `tags`. If a `tag` matches a known service type, this service type will be used.
-If not, the service is imported as `unknown`. Only `http-endpoint` is supported for now.
+服务的类型是通过 `tags` 推断出来的，如果有一个 `tag` 和已知的服务类型一样，那么就使用这种服务类型，如果没有匹配的，那么服务导入后将标记为unknown类型。目前暂时只支持http-endpoint类型。
 
+[[_using_the_bridge]]
+==== 桥接器的使用
 
-==== Using the bridge
+要使用该服务发现桥接器，需要将如下的依赖包加入到依赖配置文件中：
 
-To use this Vert.x discovery bridge, add the following dependency to the _dependencies_ section of your build
-descriptor:
-
-* Maven (in your `pom.xml`):
+* Maven (`pom.xml` 文件):
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-service-discovery-bridge-consul</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle (`build.gradle` 文件):
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-service-discovery-bridge-consul:4.0.0'
+compile 'io.vertx:vertx-service-discovery-bridge-consul:4.0.3'
 ----
 
-Then, when creating the service discovery registers this bridge as follows:
+然后，在创建服务发现对象的时候，像下面这样注册桥接器：
 
 [source, java]
 ----
@@ -47,9 +45,9 @@ ServiceDiscovery.create(vertx)
             .put("scan-period", 2000));
 ----
 
-You can configure the:
+你可以做一些配置：
 
-* agent host using the `host` property, it defaults to `localhost`
-* agent port using the `port` property, it defaults to 8500
-* acl token using the `acl_token` property, it defaults to null
-* scan period using the `scan-period` property. The time is set in ms, and is 2000 ms by default
+* `host` 属性，配置 agent 的地址，默认是 `localhost`
+* `port` 属性，配置 agent 的端口，默认的端口是 8500
+* `acl_token` 属性，配置 agent 的访问控制令牌，默认值是 null
+* `scan-period` 属性，配置扫描的频率，扫描的单位是毫秒（ms），默认是 2000 ms

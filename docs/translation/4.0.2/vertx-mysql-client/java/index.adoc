@@ -1,0 +1,1117 @@
+= 响应式 MySQL 客户端
+:PREPARED_PARAMS: `?`
+
+响应式 MySQL 客户端具有简单易懂的 API，专注于可扩展性和低开销。
+
+*特性*
+
+* 事件驱动
+* 轻量级
+* 内置连接池
+* 预处理查询缓存
+* 支持游标
+* 流式行处理
+* RxJava 1 和 RxJava 2
+* 支持对象存储在直接内存，避免不必要的拷贝
+* 完整的数据类型支持
+* 支持存储过程
+* 支持 TLS/SSL
+* MySQL 实用程序命令支持
+* 支持 MySQL 和 MariaDB
+* 丰富的字符排序（collation）和字符集支持
+* Unix 域套接字
+
+[[_usage]]
+== 使用方法
+
+使用响应式 MySQL 客户端，需要将以下依赖项添加到项目构建工具的 _依赖_ 配置中：
+
+* Maven (在您的 `pom.xml`):
+
+[source,xml]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-mysql-client</artifactId>
+ <version>4.0.2</version>
+</dependency>
+----
+* Gradle (在您的 `build.gradle` 文件中):
+
+[source,groovy]
+----
+dependencies {
+ compile 'io.vertx:vertx-mysql-client:4.0.2'
+}
+----
+
+[[_getting_started]]
+== 开始
+
+以下是最简单的连接，查询和断开连接方法
+
+[source,java]
+----
+MySQLConnectOptions connectOptions = new MySQLConnectOptions()
+  .setPort(3306)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret");
+
+// 连接池选项
+PoolOptions poolOptions = new PoolOptions()
+  .setMaxSize(5);
+
+// 创建客户端池
+MySQLPool client = MySQLPool.pool(connectOptions, poolOptions);
+
+// 一个简单的查询
+client
+  .query("SELECT * FROM users WHERE id='julien'")
+  .execute(ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> result = ar.result();
+    System.out.println("Got " + result.size() + " rows ");
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+
+  // 现在关闭客户端池
+  client.close();
+});
+----
+
+[[_connecting_to_mysql]]
+== 连接到 MySQL
+
+大多数时间，您将使用连接池连接到 MySQL：
+
+[source,java]
+----
+MySQLConnectOptions connectOptions = new MySQLConnectOptions()
+  .setPort(3306)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret");
+
+// 连接池选项
+PoolOptions poolOptions = new PoolOptions()
+  .setMaxSize(5);
+
+// 创建带连接池的客户端
+MySQLPool client = MySQLPool.pool(connectOptions, poolOptions);
+----
+
+带连接池的客户端使用连接池，任何操作都将借用连接池中的连接来执行该操作，
+并将连接释放回连接池中。
+
+如果您使用 Vert.x 运行，您可以将 Vertx 实例传递给它：
+
+[source,java]
+----
+MySQLConnectOptions connectOptions = new MySQLConnectOptions()
+  .setPort(3306)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret");
+
+// 连接池选项
+PoolOptions poolOptions = new PoolOptions()
+  .setMaxSize(5);
+// 创建带连接池的客户端
+MySQLPool client = MySQLPool.pool(vertx, connectOptions, poolOptions);
+----
+
+当您不再需要连接池时，您需要释放它：
+
+[source,java]
+----
+pool.close();
+----
+
+当您需要在同一连接上执行多个操作时，您需要使用 
+`link:../../apidocs/io/vertx/mysqlclient/MySQLConnection.html[connection]` 客户端 。
+
+您可以轻松地从连接池中获取一个：
+
+[source,java]
+----
+MySQLConnectOptions connectOptions = new MySQLConnectOptions()
+  .setPort(3306)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret");
+
+// 连接池选项
+PoolOptions poolOptions = new PoolOptions()
+  .setMaxSize(5);
+
+// 创建带连接池的客户端
+MySQLPool client = MySQLPool.pool(vertx, connectOptions, poolOptions);
+
+// 从连接池获得连接
+client.getConnection().compose(conn -> {
+  System.out.println("Got a connection from the pool");
+
+  // 所有操作都在同一连接上执行
+  return conn
+    .query("SELECT * FROM users WHERE id='julien'")
+    .execute()
+    .compose(res -> conn
+      .query("SELECT * FROM users WHERE id='emad'")
+      .execute())
+    .onComplete(ar -> {
+      // 释放连接池的连接
+      conn.close();
+    });
+}).onComplete(ar -> {
+  if (ar.succeeded()) {
+
+    System.out.println("Done");
+  } else {
+    System.out.println("Something went wrong " + ar.cause().getMessage());
+  }
+});
+----
+
+连接完成后，您必须关闭它以释放到连接池中，以便可以重复使用。
+
+[[_unix_domain_socket]]
+=== Unix 域套接字
+
+有时为了简单，安全或性能原因，需要通过 https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_socket[Unix 域套接字] 进行连接。
+
+由于 JVM 不支持域套接字，因此首先必须向项目添加本地传输（native transport）扩展。
+
+* Maven (在您的 `pom.xml`):
+
+[source,xml]
+----
+<dependency>
+ <groupId>io.netty</groupId>
+ <artifactId>netty-transport-native-epoll</artifactId>
+ <version>${netty.version}</version>
+ <classifier>linux-x86_64</classifier>
+</dependency>
+----
+* Gradle (在您的 `build.gradle` 文件中):
+
+[source,groovy]
+----
+dependencies {
+ compile 'io.netty:netty-transport-native-epoll:${netty.version}:linux-x86_64'
+}
+----
+
+NOTE: ARM64 的原生 `epoll` 支持也可以与分类器（classifier） `linux-aarch64` 一起添加。
+
+NOTE: 如果您的团队中有 Mac 用户，在 `osx-x86_64` 上添加 `netty-transport-native-kqueue` 分类器（classifier）。
+
+然后通过 `link:../../apidocs/io/vertx/mysqlclient/MySQLConnectOptions.html#setHost-java.lang.String-[MySQLConnectOptions#setHost]` 设置域套接字的路径：
+
+[source,java]
+----
+MySQLConnectOptions connectOptions = new MySQLConnectOptions()
+  .setHost("/var/run/mysqld/mysqld.sock")
+  .setDatabase("the-db");
+
+// 连接池选项
+PoolOptions poolOptions = new PoolOptions()
+  .setMaxSize(5);
+
+// 创建带连接池的客户端
+MySQLPool client = MySQLPool.pool(connectOptions, poolOptions);
+
+// 使用vertx实例创建带连接池的客户端
+// 确保vertx实例已启用native transports
+// vertxOptions.setPreferNativeTransport(true);
+MySQLPool client2 = MySQLPool.pool(vertx, connectOptions, poolOptions);
+----
+
+有关 native transport 的详细信息，请参阅 https://vertx.io/docs/vertx-core/java/#_native_transports[Vert.x 文档] 。
+
+[[_configuration]]
+== 配置
+
+有几个选项供您配置客户端。
+
+[[_data_object]]
+=== 数据对象
+
+配置客户端的简单方法就是指定 `MySQLConnectOptions` 数据对象。
+
+[source,java]
+----
+MySQLConnectOptions connectOptions = new MySQLConnectOptions()
+  .setPort(3306)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret");
+
+// 连接池选项
+PoolOptions poolOptions = new PoolOptions().setMaxSize(5);
+
+// 从数据对象创建连接池
+MySQLPool pool = MySQLPool.pool(vertx, connectOptions, poolOptions);
+
+pool.getConnection(ar -> {
+  // 处理您的连接
+});
+----
+
+[[_collations_and_character_sets]]
+==== 字符序（collations）和字符集（character sets）
+
+响应式 MySQL 客户端支持配置字符序或字符集，并将它们映射到一个相关的 `java.nio.charset.Charset` 。
+您可以为数据库连接指定字符集，例如
+
+[source,java]
+----
+MySQLConnectOptions connectOptions = new MySQLConnectOptions();
+
+// 将连接的字符集设置为utf8而不是默认的字符集utf8mb4
+connectOptions.setCharset("utf8");
+----
+
+响应式 MySQL 客户端的默认字符集是 `utf8mb4` 。字符串值，如密码和错误消息等，总是使用 `UTF-8` 字符集解码。
+
+`characterEncoding` 选项用于设置字符串（例如查询字符串和参数值）使用的 Java 字符集，默认使用 `UTF-8` 字符集；如果设置为 `null` ，则客户端将使用 Java 的默认字符集。
+
+您还可以为连接指定字符序，例如
+
+[source,java]
+----
+MySQLConnectOptions connectOptions = new MySQLConnectOptions();
+
+// 将连接的字符序设置为 utf8_general_ci 来代替默认字符序 utf8mb4_general_ci
+// 设置字符序将覆盖charset选项
+connectOptions.setCharset("gbk");
+connectOptions.setCollation("utf8_general_ci");
+----
+
+请注意，在数据对象上设置字符序将覆盖 *charset* 和 *characterEncoding* 选项。
+
+您可以执行 SQL `SHOW COLLATION;` 或 `SHOW CHARACTER SET;` 获取服务器支持的字符序和字符集。
+
+有关 MySQL 字符集和字符序的更多信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/charset.html[MySQL 参考手册]。
+
+[[_connection_attributes]]
+==== 连接属性
+
+还可以使用 `setProperties` 或 `addProperty` 方法配置连接属性。注意 `setProperties` 将覆盖客户端的默认属性。
+
+[source,java]
+----
+MySQLConnectOptions connectOptions = new MySQLConnectOptions();
+
+// 添加连接属性
+connectOptions.addProperty("_java_version", "1.8.0_212");
+
+// 覆盖属性
+Map<String, String> attributes = new HashMap<>();
+attributes.put("_client_name", "myapp");
+attributes.put("_client_version", "1.0.0");
+connectOptions.setProperties(attributes);
+----
+
+有关连接属性的更多信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/performance-schema-connection-attribute-tables.html[MySQL 参考手册]。
+
+[[_useaffectedrows]]
+==== 配置 `useAffectedRows`
+
+您可以 `useAffectedRows` 选项以决定是否在连接到服务器时设置标志 `CLIENT_FOUND_ROWS`。如果指定了 `CLIENT_FOUND_ROWS` 标志，则受影响的行计数（返回的）是查找到的行数，而不是受影响的行数。
+
+更多有关信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/mysql-affected-rows.html[MySQL 参考手册]
+
+[[_connection_uri]]
+=== 连接 URI
+
+除了使用 `MySQLConnectOptions` 数据对象进行配置外，我们还为您提供了另外一种使用连接URI进行配置的方法：
+
+[source,java]
+----
+String connectionUri = "mysql://dbuser:secretpassword@database.server.com:3211/mydb";
+
+// 从连接URI创建连接池
+MySQLPool pool = MySQLPool.pool(connectionUri);
+
+// 从连接URI创建连接
+MySQLConnection.connect(vertx, connectionUri, res -> {
+  // 处理您的连接
+});
+----
+
+有关连接字符串格式的有关更多信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/connecting-using-uri-or-key-value-pairs.html#connecting-using-uri[MySQL 参考手册]。
+
+目前，客户端支持以下的连接 uri 参数关键字（不区分大小写）：
+
+* host
+* port
+* user
+* password
+* schema
+* socket
+* useAffectedRows
+
+[[_connect_retries]]
+== 连接重试
+
+您可以将客户端配置为在连接无法建立时重试。
+
+[source,java]
+----
+options
+  .setReconnectAttempts(2)
+  .setReconnectInterval(1000);
+----
+
+include::queries.adoc[]
+
+[[_mysql_last_insert_id]]
+== MySQL LAST_INSERT_ID
+
+往表中插入一条记录后，可以获得自增值。
+
+[source,java]
+----
+client
+  .query("INSERT INTO test(val) VALUES ('v1')")
+  .execute(ar -> {
+    if (ar.succeeded()) {
+      RowSet<Row> rows = ar.result();
+      long lastInsertId = rows.property(MySQLClient.LAST_INSERTED_ID);
+      System.out.println("Last inserted id is: " + lastInsertId);
+    } else {
+      System.out.println("Failure: " + ar.cause().getMessage());
+    }
+  });
+----
+
+更多有关信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/getting-unique-id.html[如何获取最近一条插入记录的唯一ID]。
+
+include::connections.adoc[]
+
+include::transactions.adoc[]
+
+include::cursor.adoc[]
+
+[[_tracing_queries]]
+== 追踪查询
+
+include::tracing.adoc[]
+
+[[_mysql_type_mapping]]
+== MySQL 类型映射
+
+当前客户端支持以下 MySQL 类型
+
+* BOOL,BOOLEAN (`java.lang.Byte`)
+* TINYINT (`java.lang.Byte`)
+* TINYINT UNSIGNED(`java.lang.Short`)
+* SMALLINT (`java.lang.Short`)
+* SMALLINT UNSIGNED(`java.lang.Integer`)
+* MEDIUMINT (`java.lang.Integer`)
+* MEDIUMINT UNSIGNED(`java.lang.Integer`)
+* INT,INTEGER (`java.lang.Integer`)
+* INTEGER UNSIGNED(`java.lang.Long`)
+* BIGINT (`java.lang.Long`)
+* BIGINT UNSIGNED(`io.vertx.sqlclient.data.Numeric`)
+* FLOAT (`java.lang.Float`)
+* FLOAT UNSIGNED(`java.lang.Float`)
+* DOUBLE (`java.lang.Double`)
+* DOUBLE UNSIGNED(`java.lang.Double`)
+* BIT (`java.lang.Long`)
+* NUMERIC (`io.vertx.sqlclient.data.Numeric`)
+* NUMERIC UNSIGNED(`io.vertx.sqlclient.data.Numeric`)
+* DATE (`java.time.LocalDate`)
+* DATETIME (`java.time.LocalDateTime`)
+* TIME (`java.time.Duration`)
+* TIMESTAMP (`java.time.LocalDateTime`)
+* YEAR (`java.lang.Short`)
+* CHAR (`java.lang.String`)
+* VARCHAR (`java.lang.String`)
+* BINARY (`io.vertx.core.buffer.Buffer`)
+* VARBINARY (`io.vertx.core.buffer.Buffer`)
+* TINYBLOB (`io.vertx.core.buffer.Buffer`)
+* TINYTEXT (`java.lang.String`)
+* BLOB (`io.vertx.core.buffer.Buffer`)
+* TEXT (`java.lang.String`)
+* MEDIUMBLOB (`io.vertx.core.buffer.Buffer`)
+* MEDIUMTEXT (`java.lang.String`)
+* LONGBLOB (`io.vertx.core.buffer.Buffer`)
+* LONGTEXT (`java.lang.String`)
+* ENUM (`java.lang.String`)
+* SET (`java.lang.String`)
+* JSON (`io.vertx.core.json.JsonObject`, `io.vertx.core.json.JsonArray`, `Number`, `Boolean`, `String`, `io.vertx.sqlclient.Tuple#JSON_NULL`)
+* GEOMETRY(`io.vertx.mysqlclient.data.spatial.*`)
+
+元组解码在存储值时使用上述类型
+
+请注意：在Java中，没有无符号数字值的具体表示形式，因此客户端会将无符号值转换为相关的Java类型。
+
+[[_implicit_type_conversion]]
+=== 隐式类型转换
+
+当执行预处理语句时，响应式 MySQL 客户端支持隐式类型转换。
+假设您的表中有一个 `TIME` 列，下面的两个示例都是有效的。
+
+[source,java]
+----
+client
+  .preparedQuery("SELECT * FROM students WHERE updated_time = ?")
+  .execute(Tuple.of(LocalTime.of(19, 10, 25)), ar -> {
+  // 处理结果
+});
+// 这个也适用于隐式类型转换
+client
+  .preparedQuery("SELECT * FROM students WHERE updated_time = ?")
+  .execute(Tuple.of("19:10:25"), ar -> {
+  // 处理结果
+});
+----
+
+MySQL 数据类型编码是根据参数值推断的。下面是具体的类型映射：
+
+|===
+|参数值 | MySQL 类型编码
+
+|null
+|MYSQL_TYPE_NULL
+
+|java.lang.Byte
+|MYSQL_TYPE_TINY
+
+|java.lang.Boolean
+|MYSQL_TYPE_TINY
+
+|java.lang.Short
+|MYSQL_TYPE_SHORT
+
+|java.lang.Integer
+|MYSQL_TYPE_LONG
+
+|java.lang.Long
+|MYSQL_TYPE_LONGLONG
+
+|java.lang.Double
+|MYSQL_TYPE_DOUBLE
+
+|java.lang.Float
+|MYSQL_TYPE_FLOAT
+
+|java.time.LocalDate
+|MYSQL_TYPE_DATE
+
+|java.time.Duration
+|MYSQL_TYPE_TIME
+
+|java.time.LocalTime
+|MYSQL_TYPE_TIME
+
+|io.vertx.core.buffer.Buffer
+|MYSQL_TYPE_BLOB
+
+|java.time.LocalDateTime
+|MYSQL_TYPE_DATETIME
+
+|io.vertx.mysqlclient.data.spatial.*
+|MYSQL_TYPE_BLOB
+
+|default
+|MYSQL_TYPE_STRING
+|===
+
+[[_handling_boolean]]
+=== 处理布尔值
+
+在 MySQL 中 `BOOLEAN` 和 `BOOL` 数据类型是 `TINYINT(1)` 的同义词。零值视为 false，非零值视为 true。
+`BOOLEAN` 数据类型值以 `java.lang.Byte` 类型存储在 `Row` 或 `Tuple` 中，调用 `Row#getValue` 可以获取到 `java.lang.Byte` 类型的值，
+也可以调用 `Row#getBoolean` 获取 `java.lang.Boolean` 类型的值。
+
+[source,java]
+----
+client
+  .query("SELECT graduated FROM students WHERE id = 0")
+  .execute(ar -> {
+  if (ar.succeeded()) {
+    RowSet<Row> rowSet = ar.result();
+    for (Row row : rowSet) {
+      int pos = row.getColumnIndex("graduated");
+      Byte value = row.get(Byte.class, pos);
+      Boolean graduated = row.getBoolean("graduated");
+    }
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+当您想要使用一个 `BOOLEAN` 参数值执行预处理语句时，只要简单地在参数列表中添加  `java.lang.Boolean` 值即可。
+
+[source,java]
+----
+client
+  .preparedQuery("UPDATE students SET graduated = ? WHERE id = 0")
+  .execute(Tuple.of(true), ar -> {
+  if (ar.succeeded()) {
+    System.out.println("Updated with the boolean value");
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+[[_handling_json]]
+=== 处理 JSON
+
+MySQL `JSON` 数据类型由以下Java类型表示：
+
+- `String`
+- `Number`
+- `Boolean`
+- `io.vertx.core.json.JsonObject`
+- `io.vertx.core.json.JsonArray`
+- `io.vertx.sqlclient.Tuple#JSON_NULL` 表示 JSON null 字面量
+
+[source,java]
+----
+Tuple tuple = Tuple.of(
+  Tuple.JSON_NULL,
+  new JsonObject().put("foo", "bar"),
+  3);
+
+// 获取 json
+Object value = tuple.getValue(0); // 期望得到 JSON_NULL
+
+//
+value = tuple.get(JsonObject.class, 1); // 期望得到 JSON object
+
+//
+value = tuple.get(Integer.class, 2); // 期望得到 3
+value = tuple.getInteger(2); // 期望得到 3
+----
+
+[[_handling_bit]]
+=== 处理 BIT
+`BIT` 是 `java.lang.Long` 类型的映射, 但是Java没有无符号数值的概念, 因此，如果您要插入或更新一条记录为 `BIT(64)` 的最大值 , 可以将参数设置为 `-1L` 。
+
+[[_handling_time]]
+=== 处理 TIME
+
+MySQL `TIME` 数据类型可用于表示一天中的时间或范围为 `-838:59:59` 到 `838:59:59` 的时间间隔。在响应式MySQL客户端， `TIME` 数据类型自然的被映射为 `java.time.Duration`，您也可以调用 `Row#getLocalTime` 获取到 `java.time.LocalTime` 类型的值。
+
+[[_handling_numeric]]
+=== 处理 NUMERIC
+
+`link:../../apidocs/io/vertx/sqlclient/data/Numeric.html[Numeric]` Java类型用于表示MySQL的 `NUMERIC` 类型。
+
+[source,java]
+----
+Numeric numeric = row.get(Numeric.class, 0);
+if (numeric.isNaN()) {
+  // 处理 NaN
+} else {
+  BigDecimal value = numeric.bigDecimalValue();
+}
+----
+
+[[_handling_enum]]
+=== 处理 ENUM
+
+MySQL支持ENUM数据类型，客户端将这些类型检索为String数据类型。
+
+您可以像这样将Java枚举编码为String：
+
+[source,java]
+----
+client
+  .preparedQuery("INSERT INTO colors VALUES (?)")
+  .execute(Tuple.of(Color.red),  res -> {
+    // ...
+  });
+----
+
+您可以将 ENUM 类型的列读取为 Java 的枚举，如以下代码：
+
+[source,java]
+----
+client
+  .preparedQuery("SELECT color FROM colors")
+  .execute()
+  .onComplete(res -> {
+  if (res.succeeded()) {
+    RowSet<Row> rows = res.result();
+    for (Row row : rows) {
+      System.out.println(row.get(Color.class, "color"));
+    }
+  }
+});
+----
+
+[[_handling_geometry]]
+=== 处理 GEOMETRY
+
+MYSQL 还支持 `GEOMETRY`  数据类型，下面是一些示例展示您可以使用 Well-Known Text（WKT）格式或 Well-Known Binary（WKB）格式处理几何数据，数据被解码为MySQL TEXT 或 BLOB 数据类型。有很多很棒的第三方库可以处理这种格式的数据。
+
+您可以以 WKT 格式获取空间数据：
+
+[source,java]
+----
+client
+  .query("SELECT ST_AsText(g) FROM geom;")
+  .execute(ar -> {
+  if (ar.succeeded()) {
+    // 以WKT格式获取空间数据
+    RowSet<Row> result = ar.result();
+    for (Row row : result) {
+      String wktString = row.getString(0);
+    }
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+或者，您可以以WKB格式获取空间数据：
+
+[source,java]
+----
+client
+  .query("SELECT ST_AsBinary(g) FROM geom;")
+  .execute(ar -> {
+  if (ar.succeeded()) {
+    // 以WKB格式获取空间数据
+    RowSet<Row> result = ar.result();
+    for (Row row : result) {
+      Buffer wkbValue = row.getBuffer(0);
+    }
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+在响应式 MySQL 客户端中，我们还提供了一种处理几何数据类型的简单方法。
+
+您可以将几何数据作为Vert.x数据对象检索：
+
+[source,java]
+----
+client
+  .query("SELECT g FROM geom;")
+  .execute(ar -> {
+  if (ar.succeeded()) {
+    // 以Vert.x数据对象获取空间数据
+    RowSet<Row> result = ar.result();
+    for (Row row : result) {
+      Point point = row.get(Point.class, 0);
+      System.out.println("Point x: " + point.getX());
+      System.out.println("Point y: " + point.getY());
+    }
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+您也可以将WKB描述用作预处理语句参数。
+
+[source,java]
+----
+Point point = new Point(0, 1.5, 1.5);
+// 以 WKB 描述发送
+client
+  .preparedQuery("INSERT INTO geom VALUES (ST_GeomFromWKB(?))")
+  .execute(Tuple.of(point), ar -> {
+  if (ar.succeeded()) {
+    System.out.println("Success");
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+[[_collector_queries]]
+== 集合类查询
+
+您可以将查询API与Java集合类结合使用：
+
+[source,java]
+----
+Collector<Row, ?, Map<Long, String>> collector = Collectors.toMap(
+  row -> row.getLong("id"),
+  row -> row.getString("last_name"));
+
+// 运行查询使用集合类
+client.query("SELECT * FROM users").collecting(collector).execute(ar -> {
+    if (ar.succeeded()) {
+      SqlResult<Map<Long, String>> result = ar.result();
+
+      // 获取用集合类创建的map
+      Map<Long, String> map = result.value();
+      System.out.println("Got " + map);
+    } else {
+      System.out.println("Failure: " + ar.cause().getMessage());
+    }
+  });
+----
+
+集合类处理不能保留 `link:../../apidocs/io/vertx/sqlclient/Row.html[Row]` 
+的引用，因为只有一个 Row 对象用于处理整个集合。
+
+Java `Collectors` 提供了许多有趣的预定义集合类，例如，
+您可以直接用 Row 中的集合轻松拼接成一个字符串：
+
+[source,java]
+----
+Collector<Row, ?, String> collector = Collectors.mapping(
+  row -> row.getString("last_name"),
+  Collectors.joining(",", "(", ")")
+);
+
+// 运行查询使用集合类
+client.query("SELECT * FROM users").collecting(collector).execute(ar -> {
+    if (ar.succeeded()) {
+      SqlResult<String> result = ar.result();
+
+      // 获取用集合类创建的String
+      String list = result.value();
+      System.out.println("Got " + list);
+    } else {
+      System.out.println("Failure: " + ar.cause().getMessage());
+    }
+  });
+----
+
+[[_mysql_stored_procedure]]
+== MySQL 存储过程
+
+您可以在查询中运行存储过程。结果将按照 https://dev.mysql.com/doc/dev/mysql-server/8.0.12/page_protocol_command_phase_sp.html[MySQL 协议] 从服务器获取，无需任何魔法。
+
+[source,java]
+----
+client.query("CREATE PROCEDURE multi() BEGIN\n" +
+  "  SELECT 1;\n" +
+  "  SELECT 1;\n" +
+  "  INSERT INTO ins VALUES (1);\n" +
+  "  INSERT INTO ins VALUES (2);\n" +
+  "END;").execute(ar1 -> {
+  if (ar1.succeeded()) {
+    // 创建存储过程成功
+    client
+      .query("CALL multi();")
+      .execute(ar2 -> {
+      if (ar2.succeeded()) {
+        // 处理结果
+        RowSet<Row> result1 = ar2.result();
+        Row row1 = result1.iterator().next();
+        System.out.println("First result: " + row1.getInteger(0));
+
+        RowSet<Row> result2 = result1.next();
+        Row row2 = result2.iterator().next();
+        System.out.println("Second result: " + row2.getInteger(0));
+
+        RowSet<Row> result3 = result2.next();
+        System.out.println("Affected rows: " + result3.rowCount());
+      } else {
+        System.out.println("Failure: " + ar2.cause().getMessage());
+      }
+    });
+  } else {
+    System.out.println("Failure: " + ar1.cause().getMessage());
+  }
+});
+----
+
+Note: 目前尚不支持绑定OUT参数的预处理语句。
+
+[[_mysql_local_infile]]
+== MySQL 导入本地文件
+
+该客户端支持处理 LOCAL INFILE 请求, 如果要将数据从本地文件加载到服务器，则可以使用语句
+`LOAD DATA LOCAL INFILE '<filename>' INTO TABLE <table>;`。 更多有关信息，请参阅 https://dev.mysql.com/doc/refman/8.0/en/load-data.html[MySQL 参考手册].
+
+[[_authentication]]
+== 认证
+
+[[_default_authentication_plugin]]
+=== 默认身份验证插件
+
+该客户端支持指定在连接开始时使用缺省的身份验证插件。
+当前支持以下插件：
+
+- mysql_native_password
+- caching_sha2_password
+- mysql_clear_password
+
+[source,java]
+----
+MySQLConnectOptions options = new MySQLConnectOptions()
+  .setPort(3306)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret")
+  .setAuthenticationPlugin(MySQLAuthenticationPlugin.MYSQL_NATIVE_PASSWORD); // 设定默认身份验证插件
+----
+
+[[_new_authentication_method_introduced_in_mysql_8]]
+=== MySQL 8 中引入的新身份验证方法
+
+MySQL 8.0 引入了一种名为 `caching_sha2_password` 的身份验证方法，它是默认的身份验证方法。
+为了使用此新的身份验证方法连接到服务器，您需要使用安全连接（例如 启用 TLS/SSL）或使用 RSA 密钥对交换加密密码，以避免密码泄漏。RSA 密钥对在通信过程中会自动交换，但服务器 RSA 公钥可能会在这个过程中被黑客攻击，因为它通过不安全的连接传输。
+因此，如果您使用不安全的连接，并且希望避免暴露服务器 RSA 公钥的风险，可以这样设置服务器 RSA 公钥：
+
+[source,java]
+----
+MySQLConnectOptions options1 = new MySQLConnectOptions()
+  .setPort(3306)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret")
+  .setServerRsaPublicKeyPath("tls/files/public_key.pem"); // 配置公钥路径
+
+MySQLConnectOptions options2 = new MySQLConnectOptions()
+  .setPort(3306)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret")
+  .setServerRsaPublicKeyValue(Buffer.buffer("-----BEGIN PUBLIC KEY-----\n" +
+    "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3yvG5s0qrV7jxVlp0sMj\n" +
+    "xP0a6BuLKCMjb0o88hDsJ3xz7PpHNKazuEAfPxiRFVAV3edqfSiXoQw+lJf4haEG\n" +
+    "HQe12Nfhs+UhcAeTKXRlZP/JNmI+BGoBduQ1rCId9bKYbXn4pvyS/a1ft7SwFkhx\n" +
+    "aogCur7iIB0WUWvwkQ0fEj/Mlhw93lLVyx7hcGFq4FOAKFYr3A0xrHP1IdgnD8QZ\n" +
+    "0fUbgGLWWLOossKrbUP5HWko1ghLPIbfmU6o890oj1ZWQewj1Rs9Er92/UDj/JXx\n" +
+    "7ha1P+ZOgPBlV037KDQMS6cUh9vTablEHsMLhDZanymXzzjBkL+wH/b9cdL16LkQ\n" +
+    "5QIDAQAB\n" +
+    "-----END PUBLIC KEY-----\n")); // 配置公钥缓冲
+----
+
+有关 `caching_sha2_password` 身份验证方法的更多信息，请参见 https://dev.mysql.com/doc/refman/8.0/en/caching-sha2-pluggable-authentication.html[MySQL 参考手册].
+
+[[_using_ssltls]]
+== 使用 SSL/TLS
+
+配置客户端使用SSL连接, 您可以像 Vert.x `NetClient` 一样配置
+`link:../../apidocs/io/vertx/mysqlclient/MySQLConnectOptions.html[MySQLConnectOptions]` 。
+响应式 MySQL 客户端 支持所有 https://dev.mysql.com/doc/refman/8.0/en/connection-options.html#option_general_ssl-mode[SSL 模式] ，而且您能够配置 `sslmode`. 客户端默认设置为 `DISABLED` SSL 模式。
+ `ssl` 参数仅作为设置 `sslmode` 的快捷方式存在。`setSsl(true)` 等价于 `setSslMode(VERIFY_CA)` ， `setSsl(false)` 等价于 `setSslMode(DISABLED)`
+[source,java]
+----
+MySQLConnectOptions options = new MySQLConnectOptions()
+  .setPort(3306)
+  .setHost("the-host")
+  .setDatabase("the-db")
+  .setUser("user")
+  .setPassword("secret")
+  .setSslMode(SslMode.VERIFY_CA)
+  .setPemTrustOptions(new PemTrustOptions().addCertPath("/path/to/cert.pem"));
+
+MySQLConnection.connect(vertx, options, res -> {
+  if (res.succeeded()) {
+    // 用SSL连接
+  } else {
+    System.out.println("Could not connect " + res.cause());
+  }
+});
+----
+
+更多详细信息，请参阅 http://vertx.io/docs/vertx-core/java/#ssl[Vert.x 文档].
+
+[[_mysql_utility_command]]
+== MySQL 实用程序命令
+
+有时您希望使用 MySQL 实用程序命令，我们为此提供支持。有关更多信息，请参阅 https://dev.mysql.com/doc/dev/mysql-server/8.0.12/page_protocol_command_phase_utility.html[MySQL 实用程序命令].
+
+[[_com_ping]]
+=== COM_PING
+
+您可以使用 `COM_PING` 命令检查服务器是否处于活动状态。如果服务器响应 PING，将通知处理程序，否则将永远不会调用处理程序。
+
+[source,java]
+----
+connection.ping(ar -> {
+  System.out.println("The server has responded to the PING");
+});
+----
+
+[[_com_reset_connection]]
+=== COM_RESET_CONNECTION
+
+您可以使用 `COM_RESET_CONNECTION` 命令重置会话状态，这将重置连接状态，如：
+- user variables
+- temporary tables
+- prepared statements
+
+[source,java]
+----
+connection.resetConnection(ar -> {
+  if (ar.succeeded()) {
+    System.out.println("Connection has been reset now");
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+[[_com_change_user]]
+=== COM_CHANGE_USER
+
+您可以更改当前连接的用户，这将执行re-authentication并重置连接状态，如 `COM_RESET_CONNECTION` 。
+
+[source,java]
+----
+MySQLAuthOptions authenticationOptions = new MySQLAuthOptions()
+  .setUser("newuser")
+  .setPassword("newpassword")
+  .setDatabase("newdatabase");
+connection.changeUser(authenticationOptions, ar -> {
+  if (ar.succeeded()) {
+    System.out.println("User of current connection has been changed.");
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+[[_com_init_db]]
+=== COM_INIT_DB
+
+您可以使用 `COM_INIT_DB` 命令更改连接的默认schema。
+
+[source,java]
+----
+connection.specifySchema("newschema", ar -> {
+  if (ar.succeeded()) {
+    System.out.println("Default schema changed to newschema");
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+[[_com_statistics]]
+=== COM_STATISTICS
+您可以使用 `COM_STATISTICS` 命令获取某些内部状态变量的可读字符串。
+
+[source,java]
+----
+connection.getInternalStatistics(ar -> {
+  if (ar.succeeded()) {
+    System.out.println("Statistics: " + ar.result());
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+[[_com_debug]]
+=== COM_DEBUG
+
+您可以使用 `COM_DEBUG` 命令将调试信息转储到MySQL服务器的STDOUT。
+
+[source,java]
+----
+connection.debug(ar -> {
+  if (ar.succeeded()) {
+    System.out.println("Debug info dumped to server's STDOUT");
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+[[_com_set_option]]
+=== COM_SET_OPTION
+
+您可以使用 `COM_SET_OPTION` 命令设置当前连接的选项。目前只能设置 `CLIENT_MULTI_STATEMENTS`。
+
+例如，您可以使用此命令禁用 `CLIENT_MULTI_STATEMENTS` 。
+
+[source,java]
+----
+connection.setOption(MySQLSetOption.MYSQL_OPTION_MULTI_STATEMENTS_OFF, ar -> {
+  if (ar.succeeded()) {
+    System.out.println("CLIENT_MULTI_STATEMENTS is off now");
+  } else {
+    System.out.println("Failure: " + ar.cause().getMessage());
+  }
+});
+----
+
+[[_mysql_and_mariadb_version_support_matrix]]
+== MySQL 和 MariaDB 版本支持情况
+
+[cols="^,^,^,^", options="header"]
+|====
+
+2+| MySQL
+2+| MariaDB
+
+| 版本 | 是否支持 | 版本 | 是否支持
+
+|`5.5`
+|&#10004;
+|`10.1`
+|&#10004;
+
+|`5.6`
+|&#10004;
+|`10.2`
+|&#10004;
+
+|`5.7`
+|&#10004;
+|`10.3`
+|&#10004;
+
+|`8.0`
+|&#10004;
+|`10.4`
+|&#10004;
+
+|====
+
+已知问题：
+
+- 重置连接实用程序命令在 MySQL 5.5、5.6 和 MariaDB 10.1 中不可用
+- MariaDB 10.2 和 10.3 不支持更改用户实用程序命令
+
+[[_pitfalls_good_practices]]
+== 陷阱和最佳实践
+
+以下是使用响应式 MySQL 客户端时避免常见陷阱的一些最佳实践。
+
+[[_prepared_statement_count_limit]]
+=== 预处理语句的计数限制
+
+有时您可能会遇到臭名昭著的错误 `Can't create more than max_prepared_stmt_count statements (current value: 16382)` ，这是因为服务器已达到预处理语句的总数限制。
+
+您可以调整服务器系统变量  `max_prepared_stmt_count` ，但它具有上限值，因此您无法以这种方式摆脱错误。
+
+缓解这种情况的最佳方法是启用预处理语句缓存，因此可以重用具有相同 SQL 字符串的预处理语句，并且客户端不必为每个请求创建全新的预处理语句。
+执行语句后，预处理语句将自动关闭。
+这样，虽然无法完全消除错误，但达到极限的机会可以大大减少。
+
+还可以通过接口 `SqlConnection#prepare` 创建 `PreparedStatement` 对象来手动管理预处理语句的生命周期，以便可以选择何时释放语句句柄，甚至使用 https://dev.mysql.com/doc/refman/8.0/en/sql-prepared-statements.html[SQL syntax prepared statement].
+
+[[_demystifying_prepared_batch]]
+=== 揭开批量预处理神秘面纱
+
+当您要将数据批量插入到数据库中时，您可以使用 `PreparedQuery#executeBatch` ，它提供了一个简单的 API 来处理此问题。
+请记住，MySQL 原生不支持批处理协议，因此 API 只是语法糖，一个接一个执行预处理语句，这意味着比执行一个预处理语句插入多条带有值列表的记录，需要更多的网络往返耗时。
+
+[[_tricky_date_time_data_types]]
+=== 棘手的日期和时间数据类型
+
+处理 MYSQL 日期和时间数据类型（尤其是时区）是棘手的，因此响应式 MySQL 客户端不会为这些值进行魔法转换。
+
+* MySQL DATETIME 数据类型不包含时区信息，因此无论当前会话中的时区是什么，您获取的内容都与您设置的内容相同
+* MySQL TIMESTAMP 数据类型包含时区信息，因此当您设置或获取值时，服务器总是通过当前会话中设置的时区来转换该值。

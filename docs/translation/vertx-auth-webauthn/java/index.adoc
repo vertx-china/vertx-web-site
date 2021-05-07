@@ -11,7 +11,7 @@ descriptor:
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-auth-webauthn</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
@@ -19,7 +19,7 @@ descriptor:
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-auth-webauthn:4.0.0'
+compile 'io.vertx:vertx-auth-webauthn:4.0.3'
 ----
 
 https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API[WebAuthn (Web Authentication)] is a web standard
@@ -73,7 +73,7 @@ To simplify the usage of the API a simple JavaScript client application is provi
  <artifactId>vertx-auth-webauthn</artifactId>
  <classifier>client</classifier>
  <type>js</type>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
@@ -81,7 +81,7 @@ To simplify the usage of the API a simple JavaScript client application is provi
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-auth-webauthn:4.0.0:client@js'
+compile 'io.vertx:vertx-auth-webauthn:4.0.3:client@js'
 ----
 
 The script should be used in cooperation with vertx-web as it handles the API interaction between the web layer and the

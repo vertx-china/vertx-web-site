@@ -1,0 +1,31 @@
+[[_message_codecs]]
+==== 消息编解码器
+
+您可以在 Event Bus 中发送任何对象，只需为这个对象类型注册一个编解码器 `link:../../apidocs/io/vertx/core/eventbus/MessageCodec.html[message codec]` 即可。
+
+每个消息编解码器都有一个名称，您需要在发送或发布消息时通过 `link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]`
+来指定：
+
+[source,java]
+----
+eventBus.registerCodec(myCodec);
+
+DeliveryOptions options = new DeliveryOptions().setCodecName(myCodec.name());
+
+eventBus.send("orders", new MyPOJO(), options);
+----
+
+若您希望某个类总是使用特定的编解码器，那么您可以为这个类注册默认编解码器。
+这样您就不需要在每次发送的时候指定了：
+
+[source,java]
+----
+eventBus.registerDefaultCodec(MyPOJO.class, myCodec);
+
+eventBus.send("orders", new MyPOJO());
+----
+
+您可以通过 `link:../../apidocs/io/vertx/core/eventbus/EventBus.html#unregisterCodec-java.lang.String-[unregisterCodec]` 方法注销某个消息编解码器。
+
+消息编解码器的编码输入和解码输出不一定使用同一个类型。
+例如您可以编写一个编解码器来发送 MyPOJO 类的对象，但是当消息发送给处理器后解码成 MyOtherPOJO 对象。

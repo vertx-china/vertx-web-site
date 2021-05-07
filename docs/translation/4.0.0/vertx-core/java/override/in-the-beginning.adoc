@@ -1,0 +1,56 @@
+[[_in_the_beginning_there_was_vert_x]]
+== 故事从 Vert.x 开始
+
+使用Vert.x进行开发离不开 `link:../../apidocs/io/vertx/core/Vertx.html[Vertx]` 对象。
+
+它是 Vert.x 的控制中心，也是您做几乎一切事情的基础，包括创建客户端和服务器、
+获取事件总线的引用、设置定时器等等。
+
+那么如何获取它的实例呢？
+
+如果您用嵌入方式使用Vert.x，可通过以下代码创建实例：
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx();
+----
+
+NOTE: 大部分应用将只会需要一个Vert.x实例，但如果您有需要也可创建多个Vert.x实例，
+如：隔离的事件总线或不同组的客户端和服务器。
+
+[[_specifying_options_when_creating_a_vertx_object]]
+=== 创建 Vertx 对象时指定配置项
+
+如果缺省的配置不适合您，可在创建 `Vertx` 对象的同时指定配置项：
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().setWorkerPoolSize(40));
+----
+
+`link:../../apidocs/io/vertx/core/VertxOptions.html[VertxOptions]` 对象有很多配置，包括集群、高可用、池大小等。在Javadoc中描述了所有配置的细节。
+
+[[_creating_a_clustered_vert_x_object]]
+=== 创建集群模式的 Vert.x 对象
+
+如果您想创建一个 *集群模式的 Vert.x* 对象（参考 <<event_bus, event bus>> 章节了解更多事件总线集群细节），
+那么通常情况下您将需要使用另一种异步的方式来创建 `Vertx` 对象。
+
+这是因为让不同的 Vert.x 实例组成一个集群需要一些时间（也许是几秒钟）。
+在这段时间内，我们不想去阻塞调用线程，所以我们将结果异步返回给您。
+
+> 译者注：这里给个示例：
+
+[source,java]
+----
+// 注意要添加对应的集群管理器依赖，详情见集群管理器章节
+VertxOptions options = new VertxOptions();
+Vertx.clusteredVertx(options, res -> {
+  if (res.succeeded()) {
+    Vertx vertx = res.result(); // 获取到了集群模式下的 Vertx 对象
+    // 做一些其他的事情
+  } else {
+    // 获取失败，可能是集群管理器出现了问题
+  }
+});
+----

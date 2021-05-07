@@ -1,52 +1,54 @@
-= Reactive PostgreSQL Client
+= 响应式（Reactive） PostgreSQL 客户端
 :PREPARED_PARAMS: `$1`, `$2`, etc…​
 
-The Reactive PostgreSQL Client is a client for PostgreSQL with a straightforward API focusing on
-scalability and low overhead.
+响应式PostgreSQL客户端是一款以可扩展性和低开销为目标而专门为PostgreSQL数据库设计的
+客户端。
 
-The client is reactive and non blocking, allowing to handle many database connections with a single thread.
+客户端是响应式和非阻塞的，可以仅仅使用一条线程来处理大量的数据库连接。
 
-* Event driven
-* Lightweight
-* Built-in connection pooling
-* Prepared queries caching
-* Publish / subscribe using PostgreSQL `NOTIFY/LISTEN`
-* Batch and cursor
-* Row streaming
-* Command pipeling
+* 事件驱动
+* 轻量级
+* 内置连接池
+* 预查询缓存
+* 基于PostgreSQL的`NOTIFY/LISTEN`机制实现的发布/订阅
+* 批处理和游标
+* 支持原生流式操作
+* 命令管道（pipeline）
 * RxJava 1 and RxJava 2
-* Direct memory to object without unnecessary copies
-* Java 8 Date and Time
+* 使用直接内存存储对象，避免了不必要的复制
+* 支持Java 8 Date and Time
 * SSL/TLS
 * Unix domain socket
-* HTTP/1.x CONNECT, SOCKS4a or SOCKS5 proxy support
+* 支持HTTP/1.x， SOCKS4a 或 SOCKS5 代理
 
-== Usage
+[[_usage]]
+== 用法
 
-To use the Reactive PostgreSQL Client add the following dependency to the _dependencies_ section of your build descriptor:
+在 _dependencies_ 里添加如下依赖来引入响应式PostgreSQL客户端：
 
-* Maven (in your `pom.xml`):
+* Maven（在您的 `pom.xml` 文件里）：
 
 [source,xml]
 ----
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-pg-client</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
-* Gradle (in your `build.gradle` file):
+* Gradle（在您的 `build.gradle` 文件里）：
 
 [source,groovy]
 ----
 dependencies {
- compile 'io.vertx:vertx-pg-client:4.0.0'
+ compile 'io.vertx:vertx-pg-client:4.0.3'
 }
 ----
 
-== Getting started
+[[_getting_started]]
+== 开始使用
 
-Here is the simplest way to connect, query and disconnect
+如下是一种最为简单的连接、查询、关闭连接的方式
 
 [source,java]
 ----
@@ -80,9 +82,10 @@ client
 });
 ----
 
-== Connecting to PostgreSQL
+[[_connecting_to_postgresql]]
+== 连接PostgreSQL
 
-Most of the time you will use a pool to connect to PostgreSQL:
+大多数时间，您将使用连接池连接到 PostgreSQL：
 
 [source,java]
 ----
@@ -101,10 +104,10 @@ PoolOptions poolOptions = new PoolOptions()
 PgPool client = PgPool.pool(connectOptions, poolOptions);
 ----
 
-The pooled client uses a connection pool and any operation will borrow a connection from the pool
-to execute the operation and release it to the pool.
+池化PostgreSQL客户端使用连接池去执行数据库操作，
+所有操作都会遵循从池里拿到连接、执行、释放连接到池里这三个步骤。
 
-If you are running with Vert.x you can pass it your Vertx instance:
+您可以传入一个连接池到正在运行的Vert.x实例里：
 
 [source,java]
 ----
@@ -123,17 +126,17 @@ PoolOptions poolOptions = new PoolOptions()
 PgPool client = PgPool.pool(vertx, connectOptions, poolOptions);
 ----
 
-You need to release the pool when you don't need it anymore:
+如果不再需要连接池，您需要将其释放：
 
 [source,java]
 ----
 pool.close();
 ----
 
-When you need to execute several operations on the same connection, you need to use a client
-`link:../../apidocs/io/vertx/pgclient/PgConnection.html[connection]`.
+当您想要在同一条连接上执行多个操作时，您需要使用客户端
+`link:../../apidocs/io/vertx/pgclient/PgConnection.html[connection]` 。
 
-You can easily get one from the pool:
+您可以很方便地从连接池里拿到一条连接：
 
 [source,java]
 ----
@@ -176,11 +179,11 @@ client.getConnection().compose(conn -> {
 });
 ----
 
-Once you are done with the connection you must close it to release it to the pool, so it can be reused.
+为了连接可以重用，一旦当前连接上的操作已经完成，您需要关闭并释放连接到连接池里。
 
-Sometimes you want to improve performance via Unix domain socket connection, we achieve this with Vert.x Native transports.
+某些情况下您希望通过Unix domain socket类型的连接来提升性能，我们通过Vert.x本机传输支持了这种方式。
 
-Make sure you have added the required `netty-transport-native` dependency in your classpath and enabled the Unix domain socket option.
+首先确保您已经在classpath下添加了 `netty-transport-native` 这个必须的依赖，同时开启了Unix domain socket功能（pg）选项。
 
 [source,java]
 ----
@@ -201,11 +204,12 @@ PgPool client = PgPool.pool(connectOptions, poolOptions);
 PgPool client2 = PgPool.pool(vertx, connectOptions, poolOptions);
 ----
 
-More information can be found in the [Vert.x documentation](https://vertx.io/docs/vertx-core/java/#_native_transports).
+更多详情可以在这里找到 https://vertx.io/docs/vertx-core/java/#_native_transports[Vert.x 文档]。
 
-== Connect retries
+[[_connect_retries]]
+== 重连
 
-You can configure the client to retry when a connection fails to be established.
+您可以配置客户端在建立连接失败的时候的重试策略
 
 [source,java]
 ----
@@ -214,13 +218,15 @@ options
   .setReconnectInterval(1000);
 ----
 
-== Configuration
+[[_configuration]]
+== 配置
 
-There are several alternatives for you to configure the client.
+有如下几种配置客户端的可选方案。
 
+[[_data_object]]
 === data object
 
-A simple way to configure the client is to specify a `PgConnectOptions` data object.
+通过指定 `PgConnectOptions` 数据对象是一种简单的客户端的配置方式。
 
 [source,java]
 ----
@@ -242,9 +248,9 @@ pool.getConnection(ar -> {
 });
 ----
 
-You can also configure the generic properties with the `setProperties` or `addProperty` methods. Note `setProperties` will override the default client properties.
+您也可以使用 `setProperties`或 `addProperty`方法配置通用属性。注意 `setProperties` 将覆盖默认的客户端属性。
 
-For example, you can set a default schema for the connection with adding a `search_path` property.
+例如，您可以通过添加 `search_path` 属性来配置一个默认的schema。
 
 [source,java]
 ----
@@ -256,11 +262,12 @@ props.put("search_path", "myschema");
 connectOptions.setProperties(props);
 ----
 
-More information about the available properties can be found in the https://www.postgresql.org/docs/current/runtime-config-client.html[PostgreSQL Manuals].
+关于可用属性的更多信息可以在这里找到 https://www.postgresql.org/docs/current/runtime-config-client.html[PostgreSQL Manuals]。
 
-=== connection uri
+[[_connection_uri]]
+=== 连接uri
 
-Apart from configuring with a `PgConnectOptions` data object, We also provide you an alternative way to connect when you want to configure with a connection URI:
+除了使用 `PgConnectionOptions` 对象，我们也提供了另一种基于URI的可选配置方案：
 
 [source,java]
 ----
@@ -275,9 +282,9 @@ PgConnection.connect(vertx, connectionUri, res -> {
 });
 ----
 
-More information about connection string formats can be found in the https://www.postgresql.org/docs/9.6/static/libpq-connect.html#LIBPQ-CONNSTRING[PostgreSQL Manuals].
+关于连接uri字符串格式的更多信息可以在这里找到 https://www.postgresql.org/docs/9.6/static/libpq-connect.html#LIBPQ-CONNSTRING[PostgreSQL 手册]。
 
-Currently the client supports the following parameter key words in connection uri
+当前版本的客户端支持在连接uri里使用如下参数
 
 * host
 * hostaddr
@@ -288,13 +295,14 @@ Currently the client supports the following parameter key words in connection ur
 * sslmode
 * properties including(application_name, fallback_application_name, search_path)
 
-Note: configuring properties in connection URI will override the default properties.
+NOTE: 通过URI配置的属性将会覆盖默认的配置属性。
 
-=== environment variables
+[[_environment_variables]]
+=== 环境变量
 
-You can also use environment variables to set default connection setting values, this is useful
-when you want to avoid hard-coding database connection information. You can refer to the https://www.postgresql.org/docs/9.6/static/libpq-envars.html[official documentation]
-for more details. The following parameters are supported:
+您也可以使用环境变量来设置连接的属性值，以此来避免硬编码数据库连接信息。
+您可以参考 https://www.postgresql.org/docs/9.6/static/libpq-envars.html[官方文档]来了解更多详情。
+目前支持下列这些配置参数：
 
 * `PGHOST`
 * `PGHOSTADDR`
@@ -304,7 +312,7 @@ for more details. The following parameters are supported:
 * `PGPASSWORD`
 * `PGSSLMODE`
 
-If you don't specify a data object or a connection URI string to connect, environment variables will take precedence over them.
+如果您没有在连接时指定连接对象或者URI字符串，此时将会使用环境变量。
 
 [source,java]
 ----
@@ -326,11 +334,12 @@ PgConnection.connect(vertx, res -> {
 });
 ----
 
-=== SASL SCRAM-SHA-256 authentication mechanism.
+[[_sasl_scram_sha_256_authentication_mechanism]]
+=== SASL SCRAM-SHA-256 鉴权机制。
 
-To use the sasl SCRAM-SHA-256 authentication add the following dependency to the _dependencies_ section of your build descriptor:
+为了使用 sasl SCRAM-SHA-256鉴权，需要在 _dependencies_ 里添加如下依赖：
 
-* Maven (in your `pom.xml`):
+* Maven（在您的 `pom.xml` 文件里）：
 
 [source,xml]
 ----
@@ -340,7 +349,7 @@ To use the sasl SCRAM-SHA-256 authentication add the following dependency to the
  <version>2.1</version>
 </dependency>
 ----
-* Gradle (in your `build.gradle` file):
+* Gradle（在您的 `build.gradle` 文件里）：
 
 [source,groovy]
 ----
@@ -349,12 +358,12 @@ dependencies {
 }
 ----
 
-Note that SCRAM-SHA-256-PLUS (added in Postgresql 11) is not supported.
+NOTE: SCRAM-SHA-256-PLUS（在Postgresql 11中加入）当前版本客户端暂不支持。
 
 
 include::queries.adoc[]
 
-You can fetch generated keys with a 'RETURNING' clause in your query:
+您可以使用 'RETURNING' 从查询里拿到生成的key：
 
 [source,java]
 ----
@@ -373,22 +382,43 @@ client
 });
 ----
 
+带有 `RETURNING` 语句的批量查询创建了一个 `link:../../apidocs/io/vertx/sqlclient/RowSet.html[RowSet]` ，
+这个RowSet包含了该批量查询中的每一个元素。
+
+[source,java]
+----
+client
+  .preparedQuery("INSERT INTO color (color_name) VALUES ($1) RETURNING color_id")
+  .executeBatch(Arrays.asList(Tuple.of("white"), Tuple.of("red"), Tuple.of("blue")),ar -> {
+    if (ar.succeeded()) {
+      for (RowSet<Row> rows = ar.result();rows.next() != null;rows = rows.next()) {
+        Integer colorId = rows.iterator().next().getInteger("color_id");
+        System.out.println("generated key: " + colorId);
+      }
+    } else {
+      System.out.println("Failure: " + ar.cause().getMessage());
+    }
+  });
+----
+
 include::connections.adoc[]
 
 include::transactions.adoc[]
 
 include::cursor.adoc[]
 
-Note: PostreSQL destroys cursors at the end of a transaction, so the cursor API shall be used
-within a transaction, otherwise you will likely get the `34000` PostgreSQL error.
+NOTE: PostreSQL会在事务结束后销毁游标，因而游标API应该在事务内使用，
+否则您将可能收到 `34000` PostgreSQL错误码。
 
-== Tracing queries
+[[_tracing_queries]]
+== 跟踪查询
 
 include::tracing.adoc[]
 
-== PostgreSQL type mapping
+[[_postgresql_type_mapping]]
+== PostgreSQL 类型映射
 
-Currently the client supports the following PostgreSQL types
+当前版本客户端支持下列的PostgreSQL类型
 
 * BOOLEAN (`java.lang.Boolean`)
 * INT2 (`java.lang.Short`)
@@ -425,7 +455,7 @@ Currently the client supports the following PostgreSQL types
 * TSVECTOR (`java.lang.String`)
 * TSQUERY (`java.lang.String`)
 
-Tuple decoding uses the above types when storing values, it also performs on the flu conversion the actual value when possible:
+Tuple（元组）在解码时使用上述类型映射关系存储解码出的值，并且在合法的条件下可以动态转换为实际类型的值：
 
 [source,java]
 ----
@@ -443,7 +473,7 @@ pool
 });
 ----
 
-Tuple encoding uses the above type mapping for encoding, unless the type is numeric in which case `java.lang.Number` is used instead:
+Tuple（元组）编码时使用上述关系作为类型间的映射关系，除非类型为数字，在这种情况下将会使用 `java.lang.Number`：
 
 [source,java]
 ----
@@ -461,11 +491,12 @@ pool
 });
 ----
 
-Arrays of these types are supported.
+上述类型的数组形式也是支持的。
 
-=== Handling JSON
+[[_handling_json]]
+=== JSON
 
-PostgreSQL `JSON` and `JSONB` types are represented by the following Java types:
+PostgreSQL的 `JSON` 和 `JSONB`  用下列的java类型表示：
 
 - `String`
 - `Number`
@@ -492,9 +523,10 @@ value = tuple.get(Integer.class, 2); // Expect 3
 value = tuple.getInteger(2); // Expect 3
 ----
 
-=== Handling NUMERIC
+[[_handling_numeric]]
+=== 数字类型（Numeric）
 
-The `link:../../apidocs/io/vertx/sqlclient/data/Numeric.html[Numeric]` Java type is used to represent the PostgreSQL `NUMERIC` type.
+java的 `link:../../apidocs/io/vertx/sqlclient/data/Numeric.html[Numeric]` 用来表示PostgreSQL的 `NUMERIC` 类型。
 
 [source,java]
 ----
@@ -506,9 +538,10 @@ if (numeric.isNaN()) {
 }
 ----
 
-== Handling arrays
+[[_handling_arrays]]
+== 数组
 
-Arrays are available on `link:../../apidocs/io/vertx/sqlclient/Tuple.html[Tuple]` and `link:../../apidocs/io/vertx/sqlclient/Row.html[Row]`:
+数组可以用在 `link:../../apidocs/io/vertx/sqlclient/Tuple.html[Tuple]` 和 `link:../../apidocs/io/vertx/sqlclient/Row.html[Row]`：
 
 [source,java]
 ----
@@ -521,11 +554,12 @@ tuple.addArrayOfString(new String[]{"another", "array"});
 String[] array = tuple.getArrayOfStrings(0);
 ----
 
-== Handling Date/Time infinity
+[[_handling_datetime_infinity]]
+== 日期/时间类型（Date/Time）的最值
 
-PostgreSQL defines special values to represent infinity.
+PostgreSQL定义了几个特殊的值用来表示这些最值。
 
-The max/min constants of the corresponding type represents https://www.postgresql.org/docs/9.0/datatype-datetime.html[special value].
+相应类型的最大/最小值由这些常量 https://www.postgresql.org/docs/9.0/datatype-datetime.html[特殊值] 表示。
 
 - `OffsetDateTime.MAX`/OffsetDateTime.MIN`
 - `LocalDateTime.MAX`/LocalDateTime.MIN`
@@ -545,11 +579,12 @@ client
   });
 ----
 
-== Handling custom types
+[[_handling_custom_types]]
+== 自定义类型
 
-Strings are used to represent custom types, both sent to and returned from Postgres.
+发送和从Postgres接收的自定义类型都由字符串来表示。
 
-You can read from PostgreSQL and get the custom type as a string
+您可以读取PostgreSQL并以字符串的形式得到自定义的类型值
 
 [source,java]
 ----
@@ -567,7 +602,7 @@ client
 });
 ----
 
-You can also write to PostgreSQL by providing a string
+您也可以向PostgreSQL写入字符串
 
 [source,java]
 ----
@@ -583,9 +618,10 @@ client
 });
 ----
 
-== Handling text search
+[[_handling_text_search]]
+== 文本检索
 
-Text search is handling using java `String`
+文本检索使用的是java的 `String`
 
 [source,java]
 ----
@@ -603,7 +639,7 @@ client
 });
 ----
 
-`tsvector` and `tsquery` can be fetched from db using java `String`
+`tsvector` 和 `tsquery` 可以使用java的 `String` 类型来从数据库中获取
 
 [source,java]
 ----
@@ -621,9 +657,10 @@ client
 });
 ----
 
-== Handling enumerated types
+[[_handling_enumerated_types]]
+== 枚举类型
 
-PostgreSQL https://www.postgresql.org/docs/9.1/datatype-enum.html[enumerated types] are mapped to java strings.
+PostgreSQL的 https://www.postgresql.org/docs/9.1/datatype-enum.html[枚举类型] 被映射为java的字符串。
 
 [source,java]
 ----
@@ -634,10 +671,11 @@ client
   });
 ----
 
-== Using Java enum types
+[[_using_java_enum_types]]
+== 使用Java枚举类型
 
-You can map Java https://docs.oracle.com/javase/tutorial/java/javaOO/enum.html[enum types] to these column
-types:
+您可以将Java的 https://docs.oracle.com/javase/tutorial/java/javaOO/enum.html[枚举类型]
+映射为下列这些列类型：
 
 - Strings (VARCHAR, TEXT)
 - PosgreSQL enumerated types
@@ -662,13 +700,14 @@ client
 });
 ----
 
-String and PostgreSQL enumerated types are matched with the Java enum's name returned by the `name()` method.
+String and PostgreSQL enumerated types 对应Java枚举类的 `name()` 方法的返回值。
 
-Numbers types are matched with the Java enum's ordinal returned by the `ordinal()` method.
+Numbers类型对应Java枚举类的 `ordinal()` 方法的返回值。
 
-== Collector queries
+[[_collector_queries]]
+== Collector式查询
 
-You can use Java collectors with the query API:
+您可以将Java collector与查询API结合使用：
 
 [source,java]
 ----
@@ -692,11 +731,11 @@ client.query("SELECT * FROM users")
 });
 ----
 
-The collector processing must not keep a reference on the `link:../../apidocs/io/vertx/sqlclient/Row.html[Row]` as
-there is a single row used for processing the entire set.
+collector式查询的结果集处理过程中不能再拿到 `link:../../apidocs/io/vertx/sqlclient/Row.html[Row]` 的引用，因为
+pg客户端在处理collector时，只会用一个row用于处理整个集合。
 
-The Java `Collectors` provides many interesting predefined collectors, for example you can
-create easily create a string directly from the row set:
+Java的 `Collectors` 类提供了很多很有趣的预定义的collector，比如您可以很容易
+从row集合里得到一个字符串：
 
 [source,java]
 ----
@@ -719,12 +758,13 @@ client.query("SELECT * FROM users").collecting(collector).execute(ar -> {
   });
 ----
 
-== Pub/sub
+[[_pubsub]]
+== 发布/订阅
 
-PostgreSQL supports pub/sub communication channels.
+PostgreSQL支持发布/订阅式的通信方式。
 
-You can set a `link:../../apidocs/io/vertx/pgclient/PgConnection.html#notificationHandler-io.vertx.core.Handler-[notificationHandler]` to receive
-PostgreSQL notifications:
+您可以设置一个 `link:../../apidocs/io/vertx/pgclient/PgConnection.html#notificationHandler-io.vertx.core.Handler-[notificationHandler]` 用于
+接收PostgreSQL的通知消息：
 
 [source,java]
 ----
@@ -739,8 +779,8 @@ connection
 });
 ----
 
-The `link:../../apidocs/io/vertx/pgclient/pubsub/PgSubscriber.html[PgSubscriber]` is a channel manager managing a single connection that
-provides per channel subscription:
+PgSubscriber (`link:../../apidocs/io/vertx/pgclient/pubsub/PgSubscriber.html[PgSubscriber]`) 是一种用作
+处理单条连接上的订阅的通道（channel）管理器：
 
 [source,java]
 ----
@@ -768,9 +808,9 @@ subscriber.connect(ar -> {
 });
 ----
 
-The channel name that is given to the channel method will be the exact name of the channel as held by PostgreSQL for sending
-notifications.  Note this is different than the representation of the channel name in SQL, and
-internally `link:../../apidocs/io/vertx/pgclient/pubsub/PgSubscriber.html[PgSubscriber]` will prepare the submitted channel name as a quoted identifier:
+channel（通道）方法的参数即通道名称（接收端）需要和PostgreSQL发送通知时的通道名称保持一致。
+注意这里和SQL中的通道名称的形式不同，在 `link:../../apidocs/io/vertx/pgclient/pubsub/PgSubscriber.html[PgSubscriber]`
+内部会把待提交的通道名称预处理为带引号的形式：
 
 [source,java]
 ----
@@ -818,12 +858,12 @@ subscriber.connect(ar -> {
     }
   });
 ----
-You can provide a reconnect policy as a function that takes the number of `retries` as argument and returns an `amountOfTime`
-value:
+您可以自定义一个方法来实现重连，该方法的参数为 `retries` （重试次数），
+返回值为 `amountOfTime`（重试间隔）：
 
-* when `amountOfTime < 0`: the subscriber is closed and there is no retry
-* when `amountOfTime = 0`: the subscriber retries to connect immediately
-* when `amountOfTime > 0`: the subscriber retries after `amountOfTime` milliseconds
+* 当 `amountOfTime < 0` ： 不重试，并关闭订阅
+* 当 `amountOfTime = 0` ： 立即重试
+* 当 `amountOfTime > 0` ： 在 `amountOfTime` 毫秒之后发起重试
 
 [source,java]
 ----
@@ -845,11 +885,12 @@ subscriber.reconnectPolicy(retries -> {
 });
 ----
 
-The default policy is to not reconnect.
+默认的策略是不重连。
 
-== Cancelling Request
+[[_cancelling_request]]
+== 取消请求
 
-PostgreSQL supports cancellation of requests in progress. You can cancel inflight requests using `link:../../apidocs/io/vertx/pgclient/PgConnection.html#cancelRequest-io.vertx.core.Handler-[cancelRequest]`. Cancelling a request opens a new connection to the server and cancels the request and then close the connection.
+PostgreSQL 支持取消正在运行的请求. 您可以使用 `link:../../apidocs/io/vertx/pgclient/PgConnection.html#cancelRequest-io.vertx.core.Handler-[cancelRequest]` 正在运行的请求. 取消请求的操作在执行时将和PostgreSQL服务端新建一条连接、执行取消请求、关闭这条连接。
 
 [source,java]
 ----
@@ -873,16 +914,17 @@ connection.cancelRequest(ar -> {
 });
 ----
 
-> The cancellation signal might or might not have any effect — for example, if it arrives after the backend has finished processing the query, then it will have no effect. If the cancellation is effective, it results in the current command being terminated early with an error message.
+> 取消请求可能不会起作用——如果请求到达时，服务端已经处理完了当前查询请求，此时取消操作不会起作用。反之，取消请求得以执行，目标命令执行提前终止并返回一条错误消息。
 
-More information can be found in the https://www.postgresql.org/docs/11/protocol-flow.html#id-1.10.5.7.9[official documentation].
+更多详细信息可以在这里找到 https://www.postgresql.org/docs/11/protocol-flow.html#id-1.10.5.7.9[official documentation]。
 
-== Using SSL/TLS
+[[_using_ssltls]]
+== 使用 SSL/TLS
 
-To configure the client to use SSL connection, you can configure the `link:../../apidocs/io/vertx/pgclient/PgConnectOptions.html[PgConnectOptions]`
-like a Vert.x `NetClient`.
-All https://www.postgresql.org/docs/current/libpq-ssl.html#LIBPQ-SSL-PROTECTION[SSL modes] are supported and you are able to configure `sslmode`. The client is in `DISABLE` SSL mode by default.
-`ssl` parameter is kept as a mere shortcut for setting `sslmode`. `setSsl(true)` is equivalent to `setSslMode(VERIFY_CA)` and `setSsl(false)` is equivalent to `setSslMode(DISABLE)`.
+为客户端连接添加SSL的操作，您可以参考Vert.x的
+`NetClient` 的 `link:../../apidocs/io/vertx/pgclient/PgConnectOptions.html[PgConnectOptions]` 配置操作。
+当前版本客户端支持全部的PostgreSql https://www.postgresql.org/docs/current/libpq-ssl.html#LIBPQ-SSL-PROTECTION[SSL模式]配置，您可以通过 `sslmode` 配置它们。客户端默认不启用SSL模式。
+`ssl` 参数仅作为一种设置 `sslmode` 的快捷方式。 `setSsl(true)` 等价于 `setSslMode(VERIFY_CA)`，`setSsl(false)` 等价于 `setSslMode(DISABLE)`。
 
 [source,java]
 ----
@@ -904,13 +946,14 @@ PgConnection.connect(vertx, options, res -> {
 });
 ----
 
-More information can be found in the http://vertx.io/docs/vertx-core/java/#ssl[Vert.x documentation].
+更多详细信息可以在这里找到 http://vertx.io/docs/vertx-core/java/#ssl[Vert.x documentation]。
 
-== Using a proxy
+[[_using_a_proxy]]
+== 使用代理
 
-You can also configure the client to use an HTTP/1.x CONNECT, SOCKS4a or SOCKS5 proxy.
+您可以配置客户端使用HTTP/1.x 连接，SOCKS4a 或 SOCKS5 代理。
 
-More information can be found in the http://vertx.io/docs/vertx-core/java/#_using_a_proxy_for_client_connections[Vert.x documentation].
+更多信息可以在这里找到 http://vertx.io/docs/vertx-core/java/#_using_a_proxy_for_client_connections[Vert.x documentation]。
 
 ifeval::["java" == "java"]
 include::override/rxjava2.adoc[]

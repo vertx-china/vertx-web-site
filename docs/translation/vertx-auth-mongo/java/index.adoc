@@ -1,33 +1,33 @@
 = Mongo Auth Provider
 
-We provide an implementation of `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` which uses the Vert.x `link:../../apidocs/io/vertx/ext/mongo/MongoClient.html[MongoClient]`
-to perform authentication and authorisation against a MongoDb.
+Vert.X中提供了一个 `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` 的实现，
+它可以让您使用 MongoClient 针对 MongoDb 数据库执行认证和授权。
 
-To use this project, add the following
-dependency to the _dependencies_ section of your build descriptor:
+若要在自己的项目中使用它，
+需要在构建描述信息的 _dependencies_ 节点中添加以下信息：
 
-* Maven (in your `pom.xml`):
+* Maven （在 `pom.xml` 文件中）：
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-auth-mongo</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle （在 `build.gradle` 文件中）：
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-auth-mongo:4.0.0'
+compile 'io.vertx:vertx-auth-mongo:4.0.3'
 ----
 
-To create an instance you first need an instance of `link:../../apidocs/io/vertx/ext/mongo/MongoClient.html[MongoClient]`. To learn how to create one
-of those please consult the documentation for the MongoClient.
+如果要创建一个客户端实例，您首先需要一个 `link:../../apidocs/io/vertx/ext/mongo/MongoClient.html[MongoClient]` 的实例，
+要知道如何创建这个实例可按照文档中的内容实施。
 
-Once you've got one of those you can create a `link:../../apidocs/io/vertx/ext/auth/mongo/MongoAuth.html[MongoAuth]` instance as follows:
+一旦您创建了一个 `link:../../apidocs/io/vertx/ext/mongo/MongoClient.html[MongoClient]` 实例后，就可以按照下边的代码创建 `link:../../apidocs/io/vertx/ext/auth/mongo/MongoAuth.html[MongoAuth]` 实例：
 
 [source,java]
 ----
@@ -37,81 +37,82 @@ MongoAuthentication authenticationProvider =
   MongoAuthentication.create(client, options);
 ----
 
-Once you've got your instance you can authenticate and authorise with it just like any `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]`.
+创建好上边的实例过后，您就可以使用任何 `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` 针对MongoDB执行认证和授权功能了。
 
-The out of the box config assumes the usage of the collection with name "user", the username stored and read in the field "username", and the password
-stored in the field "password".
+Vert.X的默认标准配置（Out Of the Box）中包含了"user"集合（Collection），
+用户名字段使用"username"进行存储和读取。
 
-In order to avoid duplicates of user names your "user" collection should have a unique index on "username". In order
-to do this you should run the following snippet on your mongo server:
+为了避免在"user"集合中出现重复的用户名，应该在"user"集合中给"username"添加唯一索引（Unique Index），
+您可以在MongoDB服务器中运行下边的片段来完成此操作：
 
 ----
 db.user.createIndex( { username: 1 }, { unique: true } )
 ----
 
-The reason you should add the index is that due to the nature of mongo doing a query first to verify if a username is
-already taken and then insert a document cannot be run as an atomic action. Using the index the code will try to
-insert the row and fail if duplicate.
+MongoDB的特性是先查询username字段中的值是否已经存在，然后会插入一个Document，并不能作为一个原子性操作，
+基于这个原因您需要添加上边的唯一索引，
+使用了这个索引过后您的代码会尝试先插入一行数据，如果出现了重复记录则会失败。
 
-You can also change all the defaults for the mongo collection and column names using any of the methods:
+根据您自身需要，您同样可以使用下边的方法改变 MongoDB 中使用的默认集合（Collection）和列（Column）名称等信息：
 
 `link:../../apidocs/io/vertx/ext/auth/mongo/MongoAuthenticationOptions.html#setCollectionName-java.lang.String-[setCollectionName]`
 `link:../../apidocs/io/vertx/ext/auth/mongo/MongoAuthenticationOptions.html#setUsernameField-java.lang.String-[setUsernameField]`
 `link:../../apidocs/io/vertx/ext/auth/mongo/MongoAuthenticationOptions.html#setPasswordField-java.lang.String-[setPasswordField]`
-if you want to adapt that to your needs.
 
-The default implementation assumes that the password is stored in the database according to the generic `link:../../apidocs/io/vertx/ext/auth/HashingStrategy.html[HashingStrategy]` (so the salt is stored in the hash).
+Vert.X默认实现中的密码通过 `link:../../apidocs/io/vertx/ext/auth/HashingStrategy.html[HashingStrategy]` 在数据库中加密后进行存储。(salt值存储在该Hash结果中)
 
-If you want to override this behaviour you can do so by providing an alternative hash strategy and setting it with
-`link:../../apidocs/io/vertx/ext/auth/mongo/MongoAuth.html#setHashStrategy-io.vertx.ext.auth.mongo.HashStrategy-[setHashStrategy]`
+如您想要重写上述行为，则可以调用 `link:../../apidocs/io/vertx/ext/auth/mongo/MongoAuth.html#setHashStrategy-io.vertx.ext.auth.mongo.HashStrategy-[setHashStrategy]`
+方法设置新的Hash策略，并且提供变更过的Hash策略及配置信息。
 
-== Vertx Auth JDBC and GDPR
+[[_vertx_auth_jdbc_and_gdpr]]
+== Vertx Auth JDBC 和 GDPR
 
-GDPR is a regulation from the common European Union law. It overrides/supercedes national data protection laws and
-extents the previously existing directives. This section of the manual is by no means a thorough walkthrough of the
-regulation, it is just a small summary how this component adheres to the requirements. Companies not adhering to the
-equirements can be fined on 4% of the turnover or 20 million euro. Therefore we want to make sure that as a user of
-Vert.x Auth JDBC you're are on the good track to comply.
+GDPR（译者注：一般数据保护条例）是欧盟普通法中的一项法规。它重新定义或凌驾于本国的数据保护法之上，
+并且扩展了先前已存在的法令。本节内容绝不是一个法规的概览，
+而是对组件如何遵循要求做的小总结。
+不遵守法规的公司可以按营业额的4％或2000万欧元处以罚款。
+因此我们想要确保的是，您，作为 Vert.x Auth JDBC 的用户，很好地遵守了该法规。
 
-The law defines certain terminology:
+该法规定义如下术语：
 
-* Data Subject - Person whose personal data is processed (e.g.: User)
-* Personal Data - Any data about an identifiable or identified person
-* Data Processing - Any operation (manual or automated) on personal data
-* Controller - The entity (company) that requests and uses the data
-* Processors - Any entity that processes data on behalf of a controller (e.g.: cloud service provider)
+* Data Subject（数据主体） - 被处理私人数据的人（例如：用户）
+* Personal Data（个人数据） - 任何指向一个已识别或可识别的自然人（即数据主体）相关的的数据
+* Data Processing（数据处理） - 对于个人信息（即个人数据）的任何操作（手动或自动）
+* Controller（控制者） - 请求和使用数据的实体（例如：公司）
+* Processors（处理者） - 代表控制者处理数据的任何实体（例如：云服务供应商）。
 
-GDPR defines the following functionality:
+GDPR 定义如下的功能：
 
-* "Forget me" - Right to erasure
-* Mark profile as restricted - Right to restriction of processing
-* Export data - Right to portability
-* Allow profile editing - Right to rectification
-* See all my data - Right to access
-* Consent checkboxes
-* Age checks
-* Data destruction - Data minimization principle
+* "Forget me" - 清除数据的权利
+* 将 `概览（profile）` 标记为受限资源 - 限制数据处理的权利
+* 导出数据 - 数据的可移植权利
+* 允许编辑 `概览` - 重新授权的权利
+* 查看自己的所有信息 - 访问权利
+* 选中复选框
+* 年龄检查
+* 资料销毁 - 数据最小化原则
 
-This module complies to the GDPR law by not storing any identifiable information about a data subject. The only
-reference is the username which is not linked to any personal data.
+本模块遵循GDPR法律，它不存储任何数据对象的可识别信息。
+唯一的标识就是不关联任何私人信息的用户名（username）。
 
-In order to add personal data to your application you should create your own data schema and use the username column
-as a reference to your data. As a tip you should have a boolean flag to mark the personal data as restricted to
-comply to the right to restriction of processing which means that if you need to handle the data, e.g.: send a bulk
-email from a mailing list you are not allowed to do so if the flag is true.
+为了在您的应用中加入个人信息，您应该创建您自己的数据表，并关联用户名字段。
+这里提示一下，您应该有一个布尔类型的字段来标识个人信息是否访问受限，
+以此来遵循处理数据时的法律限制：例如，向邮件列表中的邮箱批量发送邮件，
+当某个邮箱用户的限制标识为true时，便不允许向他发送邮件。
 
-The right to erasure does not mean that you must wipe all records from your application, e.g.: in a bank this right
-cannot be used to erase a running loan or debt. You are allowed to keep your application data but must erase the
-personal data. In case of Vert.x Auth JDBC you should delete your table but can still use a reference to the
-username as long as is not possible to link the username to the personal data.
+删除数据的权利并不代表您必须清除您应用中所有的数据，例如：在银行当中，这个权利不能用来清除贷款和债务信息。
+您可以保留应用中的数据，但是必须清除个人数据。
+对于 Vert.x Auth JDBC 场景，您应该删除您的表，
+但只要不将用户名和个人信息关联起来，那么您依旧可以保留对用户名的引用。
 
-Important note is that this must survive backups! As a tip backup the data, and data erasure on different archives so
-they can be replayed individually.
+重要说明：这必须在备份中保留下来！作为提示，您应该备份数据，并保证数据备份在不同的数据库当中，
+所以他们才能够独立地回滚。
 
-== Authentication
+[[_authentication]]
+== 认证
 
-When authenticating using this implementation, it assumes `username` and `password` fields are present in the
-authentication info:
+如果认证使用了默认的MongoDB实现，
+认证信息中用了 `username` 和 `password` 字段：
 
 [source,java]
 ----
@@ -125,18 +126,19 @@ authProvider.authenticate(authInfo)
     // Failed!
   });
 ----
-Instead of the `username` and `password` field names used in the previous snippet, you should use:
-`link:../../apidocs/io/vertx/ext/auth/mongo/MongoAuthenticationOptions.html#getUsernameCredentialField--[getUsernameCredentialField]` and
+如果想要替换上边的 `username` 和 `password` 两个默认字段名，您可使用以下两种方法：
+`link:../../apidocs/io/vertx/ext/auth/mongo/MongoAuthenticationOptions.html#getUsernameCredentialField--[getUsernameCredentialField]` 和
 `link:../../apidocs/io/vertx/ext/auth/mongo/MongoAuthenticationOptions.html#getPasswordCredentialField--[getPasswordCredentialField]`
 
-== Authorisation - Permission-Role Model
+[[_authorisation_permission_role_model]]
+== 授权：Permission/Role模型
 
-Although Vert.x auth itself does not mandate any specific model of permissions (they are just opaque strings), this
-implementation assumes a familiar user/role/permission model, where a user can have zero or more roles and a role
-can have zero or more permissions.
+尽管 Vert.X 自身并不要求使用特定的许可模型（它本身只是使用了不透明的字符串），
+但 MongoDB 认证中的实现使用了比较熟悉的：用户/角色/许可模型，这样在应用里您可以使用一个或者多个角色，
+而一个角色也可以拥有一个或者多个许可。
 
-If validating if a user has a particular permission simply pass the permission into.
-`link:../../apidocs/io/vertx/ext/auth/User.html#isAuthorized-io.vertx.ext.auth.authorization.Authorization-io.vertx.core.Handler-[isAuthorized]` as follows:
+如果要验证一个用户是否拥有特定的许可，则要将许可信息传递到
+`link:../../apidocs/io/vertx/ext/auth/User.html#isAuthorized-io.vertx.ext.auth.authorization.Authorization-io.vertx.core.Handler-[isAuthorized]` 中：
 
 [source,java]
 ----
@@ -148,7 +150,7 @@ mongoAuthZ.getAuthorizations(user)
   });
 ----
 
-If validating that a user has a particular _role_ then you simply use the `link:../../apidocs/io/vertx/ext/auth/authorization/RoleBasedAuthorization.html[RoleBasedAuthorization]`.
+如果要验证一个用户是否属于特定角色，则可以使用 `link:../../apidocs/io/vertx/ext/auth/authorization/RoleBasedAuthorization.html[RoleBasedAuthorization]` 。
 
 [source,java]
 ----

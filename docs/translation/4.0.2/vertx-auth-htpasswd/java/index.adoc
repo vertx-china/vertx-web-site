@@ -1,0 +1,74 @@
+= .htpasswd 鉴权与授权的提供程序（.htpasswd鉴授权提供者）
+
+Vert.x提供了 `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` 的实现类， 它使用Apache htpasswd
+的文件格式来执行身份验证。提供程序加载后，将不会监视文件的更新。
+如果您需要动态的用户管理，使用动态提供程序（如jdbc或mongo提供程序）会更加的方便。
+
+要使用此项目，
+在构建描述文件的 _dependencies_ 部分添加以下依赖项：
+
+* Maven (在 `pom.xml` 文件中)：
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+<groupId>io.vertx</groupId>
+<artifactId>vertx-auth-htpasswd</artifactId>
+<version>4.0.2</version>
+</dependency>
+----
+
+* Gradle (在 `build.gradle` 文件中)：
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-auth-htpasswd:4.0.2'
+----
+
+要创建一个实例，您首先需要一份htpasswd文件。htpasswd文件可以使用apache htpasswd工具生成。
+
+若您已拥有一个Vertx实例，那么您可按以下方式创建 `link:../../apidocs/io/vertx/ext/auth/htpasswd/HtpasswdAuth.html[HtpasswdAuth]` 实例：
+
+[source,java]
+----
+HtpasswdAuth authProvider = HtpasswdAuth
+  .create(vertx, new HtpasswdAuthOptions());
+----
+
+获得HtpasswdAuth实例后， 您可以像使用任何的 `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` 实例一样，使用它进行身份验证。
+
+缺省配置默认 .htpasswd 文件存在于项目的根目录中。
+
+[[_provider_internal_behavior]]
+== 提供程序的内部行为
+
+提供程序将在启动时加载指定的htpasswd文件，并且不会监视文件的修改。
+如果需要动态加载, 您需要重新启动程序。
+
+除htpasswd文件本身之外，该实现是无状态的。
+
+[[_authentication]]
+== 鉴权/身份认证
+
+使用此实现进行身份验证时，假定用户名和密码是被解析为JSON对象，
+那么我们将为其验证身份信息：
+
+[source,java]
+----
+JsonObject authInfo = new JsonObject()
+  .put("username", "someUser")
+  .put("password", "somePassword");
+
+authProvider.authenticate(authInfo)
+  .onSuccess(user -> {
+    // OK
+  })
+  .onFailure(err -> {
+    // Failed!
+  });
+----
+
+[[_authorization]]
+== 授权
+
+Apache htpasswd文件是一个纯粹的身份认证机制，并非是授权。这意味着权限检查将始终默认为false。

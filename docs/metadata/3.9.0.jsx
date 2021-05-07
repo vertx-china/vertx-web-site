@@ -4,27 +4,27 @@ import { Box, CheckCircle, Database, Feather, Globe, Grid, Inbox, Key,
 const categories = [
   {
     id: "core",
-    name: "Core",
+    name: "核心",
     icon: <Box />
   },
   {
     id: "web",
-    name: "Web",
+    name: "网络",
     icon: <Globe />
   },
   {
     id: "databases",
-    name: "Databases",
+    name: "数据库",
     icon: <Database />
   },
   {
     id: "reactive",
-    name: "Reactive",
+    name: "响应式",
     icon: <Feather />
   },
   {
     id: "microservices",
-    name: "Microservices",
+    name: "微服务",
     icon: <Search />
   },
   {
@@ -34,22 +34,22 @@ const categories = [
   },
   {
     id: "authentication-and-authorization",
-    name: "Authentication and authorization",
+    name: "认证与授权",
     icon: <Key />
   },
   {
     id: "messaging",
-    name: "Messaging",
+    name: "消息机制",
     icon: <Send />
   },
   {
     id: "integration",
-    name: "Integration",
+    name: "集成",
     icon: <Inbox />
   },
   {
     id: "event-bus-bridges",
-    name: "Event bus bridges",
+    name: "Event bus 桥接",
     icon: <Share2 />
   },
   {
@@ -59,17 +59,17 @@ const categories = [
   },
   {
     id: "testing",
-    name: "Testing",
+    name: "测试",
     icon: <CheckCircle />
   },
   {
     id: "clustering",
-    name: "Clustering",
+    name: "集群",
     icon: <Grid />
   },
   {
     id: "services",
-    name: "Services",
+    name: "服务",
     icon: <PhoneCall />
   }
 ]
@@ -94,8 +94,7 @@ const entries = [
   {
     id: "vertx-web",
     name: "Vert.x Web",
-    description: `A tool-kit for writing sophisticated modern web applications
-      and HTTP microservices.`,
+    description: "一款用于编写复杂的现代Web应用以及和HTTP微服务的工具包。",
     category: "web",
     href: "/vertx-web/java/",
     repository: "https://github.com/vert-x3/vertx-web",
@@ -104,8 +103,8 @@ const entries = [
   },
   {
     id: "vertx-web-client",
-    name: "Web Client",
-    description: "An easy-to-use client for HTTP and HTTP/2 with many advanced features.",
+    name: "Web 客户端",
+    description: "一款具有许多先进功能且易于使用的HTTP和HTTP/2客户端。",
     category: "web",
     href: "/vertx-web-client/java/",
     repository: "https://github.com/vert-x3/vertx-web",
@@ -125,8 +124,8 @@ const entries = [
   },
   {
     id: "vertx-web-api-service",
-    name: "Web API Service",
-    description: "Directly connect your OpenAPI 3 web routers to event-bus services.",
+    name: "Web API 服务",
+    description: "直接连接您的OpenAPI 3的web路由器到事件总线服务。",
     category: "web",
     href: "/vertx-web-api-service/java/",
     repository: "https://github.com/vert-x3/vertx-web",
@@ -149,8 +148,8 @@ const entries = [
   // databases
   {
     id: "vertx-pg-client",
-    name: "PostgreSQL Client",
-    description: "A PostgreSQL client focusing on scalability and low overhead.",
+    name: "PostgreSQL 客户端",
+    description: "一款为可扩展性和低开销而设计的PostgreSQL客户端。",
     category: "databases",
     href: "/vertx-pg-client/java/",
     repository: "https://github.com/eclipse-vertx/vertx-sql-client",
@@ -160,8 +159,8 @@ const entries = [
   },
   {
     id: "vertx-mysql-client",
-    name: "MySQL Client",
-    description: "A lightweight, event-driven client for MySQL.",
+    name: "MySQL 客户端",
+    description: "一款轻量级的事件驱动 MySQL 客户端。",
     category: "databases",
     href: "/vertx-mysql-client/java/",
     repository: "https://github.com/eclipse-vertx/vertx-sql-client",
@@ -171,8 +170,8 @@ const entries = [
   },
   {
     id: "vertx-mongo-client",
-    name: "MongoDB Client",
-    description: "MongoDB client.",
+    name: "MongoDB 客户端",
+    description: "MongoDB 客户端。",
     category: "databases",
     href: "/vertx-mongo-client/java/",
     repository: "https://github.com/vert-x3/vertx-mongo-client",
@@ -181,8 +180,8 @@ const entries = [
   },
   {
     id: "vertx-redis-client",
-    name: "Redis Client",
-    description: "Redis client.",
+    name: "Redis 客户端",
+    description: "Redis 客户端。",
     category: "databases",
     href: "/vertx-redis-client/java/",
     repository: "https://github.com/vert-x3/vertx-redis-client",
@@ -191,8 +190,8 @@ const entries = [
   },
   {
     id: "vertx-cassandra-client",
-    name: "Cassandra Client",
-    description: "Apache Cassandra client.",
+    name: "Cassandra 客户端",
+    description: "Apache Cassandra 客户端。",
     category: "databases",
     href: "/vertx-cassandra-client/java/",
     repository: "https://github.com/vert-x3/vertx-cassandra-client",
@@ -210,8 +209,8 @@ const entries = [
   },
   {
     id: "vertx-jdbc-client",
-    name: "JDBC client",
-    description: "JDBC support for Vert.x.",
+    name: "JDBC 客户端",
+    description: "Vert.x 的 JDBC 支持。",
     category: "databases",
     href: "/vertx-jdbc-client/java/",
     repository: "https://github.com/vert-x3/vertx-jdbc-client",
@@ -253,8 +252,8 @@ const entries = [
   {
     id: "vertx-reactive-streams",
     name: "Reactive Streams",
-    description: `Reactive streams support so your applications can interoperate
-      with other reactive systems such as Akka and Project Reactor.`,
+    description: `Reactive streams的支持，您的应用可用此与其它响应式系统互操作，
+      例如Akka和Project Reactor。`,
     category: "reactive",
     href: "/vertx-reactive-streams/java/",
     repository: "https://github.com/vert-x3/vertx-reactive-streams",
@@ -288,8 +287,8 @@ const entries = [
   // microservices
   {
     id: "vertx-service-discovery",
-    name: "Service Discovery",
-    description: "Publish, lookup and bind any type of service.",
+    name: "服务发现",
+    description: "发布、查找、绑定任何类型的服务。",
     category: "microservices",
     href: "/vertx-service-discovery/java/",
     repository: "https://github.com/vert-x3/vertx-service-discovery",
@@ -297,8 +296,8 @@ const entries = [
   },
   {
     id: "vertx-config",
-    name: "Config",
-    description: "An extensible way to configure Vert.x applications.",
+    name: "配置",
+    description: "为 Vert.x 应用提供了一种可扩展的配置方式。",
     category: "microservices",
     href: "/vertx-config/java/",
     repository: "https://github.com/vert-x3/vertx-config",
@@ -306,8 +305,8 @@ const entries = [
   },
   {
     id: "vertx-circuit-breaker",
-    name: "Circuit Breaker",
-    description: "Implementation of the circuit-breaker pattern to mitigate failures.",
+    name: "断路器（Circuit Breaker）",
+    description: "实现断路器模式以减轻故障。",
     category: "microservices",
     href: "/vertx-circuit-breaker/java/",
     repository: "https://github.com/vert-x3/vertx-circuit-breaker",
@@ -318,7 +317,7 @@ const entries = [
   {
     id: "vertx-mqtt",
     name: "MQTT",
-    description: "A client and server for MQTT, compliant with MQTT 3.1.1.",
+    description: "一款 MQTT 客户端和服务器，兼容 MQTT 3.1.1 。",
     category: "mqtt",
     href: "/vertx-mqtt/java/",
     repository: "https://github.com/vert-x3/vertx-mqtt",
@@ -328,9 +327,8 @@ const entries = [
   // authentication
   {
     id: "vertx-auth-common",
-    name: "Auth common",
-    description: `Common APIs for authentication and authorization for your
-      Vert.x applications, backed by several providers.`,
+    name: "通用认证和授权",
+    description: "为您的 Vert.x 应用程序量身定做，用于身份验证和授权的通用API，由多家供应商提供支持。",
     category: "authentication-and-authorization",
     href: "/vertx-auth-common/java/",
     repository: "https://github.com/vert-x3/vertx-auth/tree/master/vertx-auth-common",
@@ -365,8 +363,8 @@ const entries = [
   },
   {
     id: "vertx-auth-mongo",
-    name: "MongoDB Auth",
-    description: "Authentication and authorization support based on MongoDB.",
+    name: "MongoDB 鉴权与授权",
+    description: "基于 MongoDB 的身份验证和授权支持。",
     category: "authentication-and-authorization",
     href: "/vertx-auth-mongo/java/",
     repository: "https://github.com/vert-x3/vertx-auth/tree/master/vertx-auth-mongo",
@@ -374,8 +372,8 @@ const entries = [
   },
   {
     id: "vertx-auth-oauth2",
-    name: "Oauth2 Auth",
-    description: "OAuth2 (and to some extent OpenID Connect) implementation.",
+    name: "Oauth2 鉴权与授权",
+    description: "OAuth2（以及一定程度上 OpenID 连接）实现。",
     category: "authentication-and-authorization",
     href: "/vertx-auth-oauth2/java/",
     repository: "https://github.com/vert-x3/vertx-auth/tree/master/vertx-auth-oauth2",
@@ -383,8 +381,8 @@ const entries = [
   },
   {
     id: "vertx-auth-htdigest",
-    name: ".htdigest Auth",
-    description: <>Authentication and authorization support based on <code>.htdigest</code> files.</>,
+    name: ".htdigest 鉴权与授权",
+    description: <>基于 <code>.htdigest</code> 文件的鉴权与授权支持。</>,
     category: "authentication-and-authorization",
     href: "/vertx-auth-htdigest/java/",
     repository: "https://github.com/vert-x3/vertx-auth/tree/master/vertx-auth-htdigest",
@@ -394,8 +392,8 @@ const entries = [
   // messaging
   {
     id: "vertx-amqp-client",
-    name: "AMQP Client",
-    description: "A client for AMQP 1.0 brokers and routers.",
+    name: "AMQP 客户端",
+    description: "一款用于支持 AMQP 1.0 brokers 和 routers 的客户端。",
     category: "messaging",
     href: "/vertx-amqp-client/java/",
     repository: "https://github.com/vert-x3/vertx-amqp-client",
@@ -467,8 +465,8 @@ const entries = [
   {
     id: "vertx-tcp-eventbus-bridge",
     name: "TCP Eventbus Bridge",
-    description: `An event-bus bridge that lets you interact with Vert.x from
-      any application over a simple TCP-based protocol.`,
+    description: `基于简化 TCP 协议建立的应用程序与
+      Vert.x 事件总线沟通的桥梁。`,
     category: "event-bus-bridges",
     href: "/vertx-tcp-eventbus-bridge/java/",
     repository: "https://github.com/vert-x3/vertx-tcp-eventbus-bridge",
@@ -477,8 +475,7 @@ const entries = [
   {
     id: "vertx-camel-bridge",
     name: "Camel Bridge",
-    description: `An event-bus bridge that lets you interact with Apache Camel
-      endpoints and routes.`,
+    description: "Apache Camel 端点和路由与事件总线沟通的桥梁。",
     category: "event-bus-bridges",
     href: "/vertx-camel-bridge/java/",
     repository: "https://github.com/vert-x3/vertx-camel-bridge",
@@ -489,8 +486,8 @@ const entries = [
   // devops
   {
     id: "vertx-dropwizard-metrics",
-    name: "Metrics using Dropwizard",
-    description: "Captures metrics from Vert.x core components and exposes them using Dropwizard.",
+    name: "Dropwizard 指标监控",
+    description: "使用 Dropwizard 获取并展示 Vert.x Core 组件的监控指标。",
     category: "devops",
     href: "/vertx-dropwizard-metrics/java/",
     repository: "https://github.com/vert-x3/vertx-dropwizard-metrics",
@@ -499,8 +496,8 @@ const entries = [
   },
   {
     id: "vertx-micrometer-metrics",
-    name: "Metrics using Micrometer",
-    description: "Captures metrics from Vert.x core components and exposes them using Micrometer.",
+    name: "Micrometer 指标监控",
+    description: "使用 Micrometer 获取并展示 Vert.x core 组件的监控指标。",
     category: "devops",
     href: "/vertx-micrometer-metrics/java/",
     repository: "https://github.com/vert-x3/vertx-micrometer-metrics",
@@ -549,7 +546,7 @@ const entries = [
   {
     id: "vertx-junit5",
     name: "Vert.x JUnit 5",
-    description: "Asynchronous testing with Vert.x and JUnit 5.",
+    description: "用 Vert.x 和 JUnit 5 来运行异步测试",
     category: "testing",
     href: "/vertx-junit5/java/",
     repository: "https://github.com/vert-x3/vertx-junit5",
@@ -558,9 +555,8 @@ const entries = [
   },
   {
     id: "vertx-unit",
-    name: "Vert.x Unit",
-    description: `A unit testing tool-kit designed to work with
-      asynchronous code. Includes JUnit 4 support.`,
+    name: "Vert.x 单元测试",
+    description: "一款旨在配合异步代码使用的单元测试工具。包含有JUnit 4的支持。",
     category: "testing",
     href: "/vertx-unit/java/",
     repository: "https://github.com/vert-x3/vertx-unit",
@@ -571,8 +567,8 @@ const entries = [
   // clustering
   {
     id: "vertx-hazelcast",
-    name: "Hazelcast Clustering",
-    description: "Cluster manager implementation that uses Hazelcast.",
+    name: "Hazelcast 集群",
+    description: "基于 Hazelcast 实现的集群管理器。",
     category: "clustering",
     href: "/vertx-hazelcast/java/",
     repository: "https://github.com/vert-x3/vertx-hazelcast",
@@ -580,8 +576,8 @@ const entries = [
   },
   {
     id: "vertx-infinispan",
-    name: "Infinispan Clustering",
-    description: "Cluster manager implementation that uses Infinispan.",
+    name: "Infinispan 集群",
+    description: "基于 Infinispan 实现的集群管理器。",
     category: "clustering",
     href: "/vertx-infinispan/java/",
     repository: "https://github.com/vert-x3/vertx-infinispan",
@@ -589,8 +585,8 @@ const entries = [
   },
   {
     id: "vertx-ignite",
-    name: "Apache Ignite Clustering",
-    description: "Cluster manager implementation that uses Apache Ignite.",
+    name: "Apache Ignite 集群",
+    description: "基于 Apache Ignite 实现的集群管理器。",
     category: "clustering",
     href: "/vertx-ignite/java/",
     repository: "https://github.com/vert-x3/vertx-ignite",
@@ -598,8 +594,8 @@ const entries = [
   },
   {
     id: "vertx-zookeeper",
-    name: "Apache Zookeeper Clustering",
-    description: "Cluster manager implementation that uses Apache Zookeeper.",
+    name: "Apache Zookeeper 集群",
+    description: "基于 Apache Zookeeper 实现的集群管理器。",
     category: "clustering",
     href: "/vertx-zookeeper/java/",
     repository: "https://github.com/vert-x3/vertx-zookeeper",
@@ -610,7 +606,7 @@ const entries = [
   {
     id: "vertx-grpc",
     name: "gRPC",
-    description: "Implement gRPC clients and servers with Vert.x.",
+    description: "使用 Vert.x 实现的 gRPC 客户端和服务器。",
     category: "services",
     href: "/vertx-grpc/java/",
     repository: "https://github.com/vert-x3/vertx-grpc",
@@ -629,8 +625,8 @@ const entries = [
   },
   {
     id: "vertx-sockjs-service-proxy",
-    name: "SockJS Service Proxies",
-    description: "Allow event bus services to be called from JavaScript (web browser or Node.js).",
+    name: "SockJS 服务代理",
+    description: "允许从JavaScript（Web浏览器或Node.js）中调用事件总线服务。",
     category: "services",
     href: "/vertx-sockjs-service-proxy/java/",
     repository: "https://github.com/vert-x3/vertx-sockjs-service-proxy",

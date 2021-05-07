@@ -26,7 +26,7 @@ Vert.x Web Validation可以帮助您解析校验您的参数以及来自请求�
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-web-validation</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
@@ -35,7 +35,7 @@ Vert.x Web Validation可以帮助您解析校验您的参数以及来自请求�
 [source,groovy,subs="+attributes"]
 ----
 dependencies {
- compile 'io.vertx:vertx-web-validation:4.0.0'
+ compile 'io.vertx:vertx-web-validation:4.0.3'
 }
 ----
 

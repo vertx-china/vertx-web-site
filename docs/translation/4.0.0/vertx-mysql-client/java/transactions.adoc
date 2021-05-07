@@ -1,0 +1,106 @@
+[[_using_transactions]]
+== 使用事务
+
+[[_transactions_with_connections]]
+=== 带事务的连接
+
+您可以使用SQL `BEGIN`/`COMMIT`/`ROLLBACK` 执行事务，如果您必须这么做，就必须使用 `link:../../apidocs/io/vertx/sqlclient/SqlConnection.html[SqlConnection]` 自己管理事务。
+
+或者您使用 `link:../../apidocs/io/vertx/sqlclient/SqlConnection.html[SqlConnection]` 的事务API：
+[source,java]
+----
+pool.getConnection(res -> {
+  if (res.succeeded()) {
+
+    // 事务必须使用一个连接
+    SqlConnection conn = res.result();
+
+    // 开始事务
+    conn.begin(ar0 -> {
+      if (ar0.succeeded()) {
+        Transaction tx = ar0.result();
+        // 各种语句
+        conn
+          .query("INSERT INTO Users (first_name,last_name) VALUES ('Julien','Viet')")
+          .execute(ar1 -> {
+            if (ar1.succeeded()) {
+              conn
+                .query("INSERT INTO Users (first_name,last_name) VALUES ('Emad','Alblueshi')")
+                .execute(ar2 -> {
+                  if (ar2.succeeded()) {
+                    // 提交事务
+                    tx.commit(ar3 -> {
+                      if (ar3.succeeded()) {
+                        System.out.println("Transaction succeeded");
+                      } else {
+                        System.out.println("Transaction failed " + ar3.cause().getMessage());
+                      }
+                      // 将连接返回到连接池
+                      conn.close();
+                    });
+                  } else {
+                    // 将连接返回到连接池
+                    conn.close();
+                  }
+                });
+            } else {
+              // 将连接返回到连接池
+              conn.close();
+            }
+          });
+      } else {
+        // 将连接返回到连接池
+        conn.close();
+      }
+    });
+  }
+});
+----
+
+当数据库服务器报告当前事务失败时（例如，臭名昭著的 _current transaction is aborted, commands ignored until end of transaction block_），
+事务被回滚，此时 `link:../../apidocs/io/vertx/sqlclient/Transaction.html#completion--[completion]` Future 会失败，
+并返回 `link:../../apidocs/io/vertx/sqlclient/TransactionRollbackException.html[TransactionRollbackException]` 异常：
+
+[source,java]
+----
+tx.completion().onFailure(err -> {
+  System.out.println("Transaction failed => rollbacked");
+});
+----
+
+[[_simplified_transaction_api_2]]
+=== 简单事务 API
+
+当您创建了一个连接池, 您可以调用 `link:../../apidocs/io/vertx/sqlclient/Pool.html#withConnection-java.util.function.Function-io.vertx.core.Handler-[withConnection]` 并传入一个使用连接进行处理的函数。
+
+它从连接池中借用一个连接，开始事务，并且，在此事务范围内所有执行操作的客户端调用该函数。
+
+该函数必须返回一个任意结果的Future。
+
+- 当Future成功，客户端提交这个事务
+- 当Future失败，客户端回滚这个事务
+
+事务完成后, 连接将返回到连接池中，并提供全部的结果。
+
+[source,java]
+----
+pool.withTransaction(client -> client
+  .query("INSERT INTO Users (first_name,last_name) VALUES ('Julien','Viet')")
+  .execute()
+  .flatMap(res -> client
+    .query("INSERT INTO Users (first_name,last_name) VALUES ('Julien','Viet')")
+    .execute()
+    // 映射一个消息结果
+    .map("Users inserted"))
+).onComplete(ar -> {
+  // 连接已自动返回到连接池中
+  if (ar.succeeded()) {
+    // 事务被提交
+    String message = ar.result();
+    System.out.println("Transaction succeeded: " + message);
+  } else {
+    // 事务被回滚
+    System.out.println("Transaction failed " + ar.cause().getMessage());
+  }
+});
+----

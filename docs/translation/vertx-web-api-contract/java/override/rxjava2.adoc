@@ -1,38 +1,38 @@
 == RxJava 2 API
 
-The Web API Contract provides an rxified version of APIs
+The Web API Contract 提供了RxJava版本的API。
 
-Here is a complete example:
+如下为完整例子：
 
 [source,java]
 ----
 OpenAPI3RouterFactory
   .rxCreate(vertx, "src/main/resources/petstore.yaml")
   .flatMap(routerFactory -> {
-    // Spec loaded with success. router factory contains OpenAPI3RouterFactory
-    // Set router factory options.
+    // 规范加载成功，路由器工厂包含了OpenAPI3RouterFactory
+    // 设置路由器工厂
     RouterFactoryOptions options = new RouterFactoryOptions().setOperationModelKey("openapi_model");
-    // Mount the options
+    // 挂载设置
     routerFactory.setOptions(options);
-    // Add an handler with operationId
+    // 以operationId添加处理器
     routerFactory.addHandlerByOperationId("listPets", routingContext -> {
-      // Handle listPets operation
+      // 处理 listPets 操作
       routingContext.response().setStatusMessage("Called listPets").end();
     });
 
-    // Add a security handler
+    // 添加安全处理器
     routerFactory.addSecurityHandler("api_key", JWTAuthHandler.create(jwtAuth));
 
-    // Now you have to generate the router
+    // 现在您必须生成路由器
     Router router = routerFactory.getRouter();
 
-    // Now you can use your Router instance
+    // 现在 您可以使用路由器对象
     HttpServer server = vertx.createHttpServer(new HttpServerOptions().setPort(8080).setHost("localhost"));
     return server.requestHandler(router).rxListen();
   })
   .subscribe(httpServer -> {
-    // Server up and running
+    // 服务启动运行
   }, throwable -> {
-    // Error during router factory instantiation or http server start
+    // http服务启动失败 或 路由器工厂初始化失败
   });
 ----

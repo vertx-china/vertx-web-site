@@ -1,41 +1,44 @@
-=== Git Configuration Store
+[[_git_configuration_store]]
+=== Git配置中心
 
-The Git Configuration Store is an extension to the Vert.x Configuration Retriever to
-retrieve configuration from a Git repository.
+git配置中心是对 Vert.x Configuration Retriever 的扩展，
+用于从Git仓库获取配置。
 
-==== Using the Git Configuration Store
+[[_using_the_git_configuration_store]]
+==== 使用git配置中心
 
-To use the Git Configuration, add the following dependency to the
-_dependencies_ section of your build descriptor:
+要使用Git配置中心，
+则添加如下依赖：
 
-* Maven (in your `pom.xml`):
+* Maven（在您的 `pom.xml` 文件）：
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-config-git</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-config</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle（在您的 `build.gradle` 文件）：
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-config:4.0.0'
-compile 'io.vertx:vertx-config-git:4.0.0'
+compile 'io.vertx:vertx-config:4.0.3'
+compile 'io.vertx:vertx-config-git:4.0.3'
 ----
 
-==== Configuring the store
+[[_configuring_the_store]]
+==== 设置配置中心
 
-Once added to your classpath or dependencies, you need to configure the
-`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` to use this store:
+将该库加入classpath或者项目依赖后，您需要配置
+`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` 以使用该配置中心：
 
 [source, java]
 ----
@@ -51,25 +54,26 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
     new ConfigRetrieverOptions().addStore(git));
 ----
 
-The configuration requires:
+配置需要如下信息：
 
-* the `url` of the repository
-* the `path` where the repository is cloned (local directory)
-* the `user` for private repository (no authentication by default)
-* the `password` of the user
-* the `idRsaKeyPath` for private repository and requires ssh uri
-* at least `fileset` indicating the set of files to read (same behavior as the
-directory configuration store).
+* `url` ：git仓库的地址
+* `path` ：仓库被clone的路径（本地目录）
+* `user` ：仓库的git用户名（默认不需要认证）
+* `password` ： git用户的密码
+* `idRsaKeyPath` ：私有仓库所需的 ssh rsa 密钥 uri
+* `fileset` ：指定要读取的文件集合
+（与配置中心的目录配置意义相同）
 
-You can also configure the `branch` (`master` by default) to use and the name of the
-`remote` repository (`origin` by default).
+您也可以配置要使用的分支（ `branch` 参数，默认为 `master` ），
+以及远程仓库名（ `remote` 参数，默认为 `origin` ）
 
-==== How does it works
+[[_how_does_it_works]]
+==== 如何工作
 
-If the local `path` does not exist, the configuration store clones the repository into
-this directory. Then it reads the file matching the different file sets.
+如果本地的仓库目录（由 `path` 参数指定）不存在，那么配置中心会 clone 远程仓库到这个本地目录。
+然后它会读取符合 `fileset` 配置的文件。
 
-It the local `path` exist, it tried to update it (it switches branch if needed)). If the
-update failed the configuration retrieval fails.
+如果本地的仓库目录（由 `path` 参数指定）存在，它会尝试更新（按需切换分支）。
+如果更新失败，则视为获取配置失败。
 
-Periodically, the repositories is updated to check if the configuration has been updated.
+配置中心会周期性更新 git 仓库来检查配置是否更新。

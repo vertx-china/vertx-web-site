@@ -1,0 +1,777 @@
+= Metrics
+
+本项目基于 https://github.com/dropwizard/metrics[Dropwizard metrics]
+实现了 Vert.x 指标监控的SPI（Service Provider Interface，服务供应接口）。
+
+[[_features]]
+== 特性
+
+Vert.x 提供了一个相当易用的API接口 `link:../../apidocs/io/vertx/core/metrics/Measured.html[Measured]` 用于查询监控指标，
+很多 Vert.x 组件都实现了这个接口，包括 `link:../../apidocs/io/vertx/core/http/HttpServer.html[HttpServer]`，
+`link:../../apidocs/io/vertx/core/net/NetServer.html[NetServer]`，以及 `link:../../apidocs/io/vertx/core/Vertx.html[Vertx]` 本身等等。
+
+本项目基于 Dropwizard 实现了可配置的 JMX 上报服务，可将 Vert.x 作为 JMX 的 MBean 使用。
+
+[[_getting_started]]
+== 入门
+
+使用 Vert.x 指标监控需要在您项目的构建配置增加以下 _依赖_ ：
+
+* Maven（位于 `pom.xml`）：
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-dropwizard-metrics</artifactId>
+ <version>4.0.2</version>
+</dependency>
+----
+
+* Gradle（位于 `build.gradle`）：
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-dropwizard-metrics:4.0.2'
+----
+
+创建 Vertx 实例时通过 `link:../../apidocs/io/vertx/ext/dropwizard/DropwizardMetricsOptions.html[DropwizardMetricsOptions]` 启用指标监控：
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
+    new DropwizardMetricsOptions().setEnabled(true)
+));
+----
+
+也可以启用 JMX 支持：
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
+    new DropwizardMetricsOptions().setJmxEnabled(true)
+));
+----
+
+更多关于 JMX 的信息请参阅文末的 <<jmx>> 章节。
+
+[[_command_line_activation]]
+== 命令行模式激活指标监控
+
+在命令行模式（Vert.x CLI）启动的 Vert.x 应用可以通过 JVM 系统属性启用指标监控。
+_vertx.metrics.options._ 开头的系统属性会被传递到指标监控的配置。
+
+_vertx.metrics.options.enabled_ 是一个标准 Vert.x Core 配置，用于启用指标监控，
+（欲启用指标监控）此选项必须设置为 `true` ：
+
+----
+java -jar your-fat-jar -Dvertx.metrics.options.enabled=true
+----
+
+`link:../../apidocs/io/vertx/ext/dropwizard/DropwizardMetricsOptions.html#setRegistryName-java.lang.String-[vertx.metrics.options.registryName]`
+配置项用于设置要使用的（现存的） <<dropwizard-registry,Dropwizard Registry>> ：
+
+----
+java -jar your-fat-jar -Dvertx.metrics.options.enabled=true -Dvertx.metrics.options.registryName=my-registry
+----
+
+`link:../../apidocs/io/vertx/ext/dropwizard/DropwizardMetricsOptions.html#setJmxEnabled-boolean-[vertx.metrics.options.jmxEnabled]` 和
+`link:../../apidocs/io/vertx/ext/dropwizard/DropwizardMetricsOptions.html#setJmxDomain-java.lang.String-[vertx.metrics.options.jmxDomain]`
+配置项用于配置 <<jmx,JMX>> 注册信息：
+
+----
+java -jar your-fat-jar -Dvertx.metrics.options.enabled=true -Dvertx.metrics.options.jmxEnabled=true ...
+----
+
+`link:../../apidocs/io/vertx/ext/dropwizard/DropwizardMetricsOptions.html#setConfigPath-java.lang.String-[vertx.metrics.options.configPath]`
+配置项用于指定监控配置文件。
+
+[[_metrics_service]]
+== 指标监控服务
+
+Vert.x core 定了了上报监控指标的 SPI （本项目已实现），
+但并没有定义读取监控指标的 API （因为某些指标监控的实现只上报监控指标，不做其他事情）。
+
+`link:../../apidocs/io/vertx/ext/dropwizard/MetricsService.html[MetricsService]` 封装了 Dropwizard Registry，
+提供了获取监控指标快照（snapshot）的API。
+
+[[_naming]]
+=== 监控指标命名
+
+下面列出的每个可监控组件（Vertx除外）都有与之关联的基本指标名（baseName，译者注：即指标名的前缀）。
+所有监控指标都可以通过 Vertx 对象，使用全限定指标名 <fqn> （`baseName` + `.` + `metricName`）获取。
+
+[source,java]
+----
+JsonObject metrics = metricsService.getMetricsSnapshot(vertx);
+metrics.getJsonObject("vertx.eventbus.handlers");
+----
+
+或者通过要监控的组件对象，使用指标名（`metricName`）获取监控指标：
+
+[source,java]
+----
+EventBus eventBus = vertx.eventBus();
+JsonObject metrics = metricsService.getMetricsSnapshot(eventBus);
+metrics.getJsonObject("handlers");
+----
+
+更多关于从指定组件对象获取/使用监控指标的例子，请参见下文。
+
+您可以可以列出所有监控指标名：
+
+[source,java]
+----
+Set<String> metricsNames = metricsService.metricsNames();
+for (String metricsName : metricsNames) {
+  System.out.println("Known metrics name " + metricsName);
+}
+----
+
+基本指标名（`baseName`） 默认是 `vertx`，但也可以自定义一个基本指标名：
+
+[source,java]
+----
+DropwizardMetricsOptions metricsOptions =
+  new DropwizardMetricsOptions().setBaseName("foo");
+----
+
+[[_retrieving_metrics]]
+=== 获取监控指标
+
+启用指标监控后， `link:../../apidocs/io/vertx/ext/dropwizard/MetricsService.html[MetricsService]` 可以从
+`link:../../apidocs/io/vertx/core/metrics/Measured.html[Measured]` 实例获取监控指标的快照（snapshot）；
+快照是一个键为指标名、值为指标值的 `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` 对象。
+下面的例子打印了 Vertx 实例所有的监控指标（快照）：
+[source,java]
+----
+MetricsService metricsService = MetricsService.create(vertx);
+JsonObject metrics = metricsService.getMetricsSnapshot(vertx);
+System.out.println(metrics);
+----
+
+NOTE: 有关 `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` 快照实例包含的实际内容（实际监控指标）详情，
+请参阅具体指标实现的文档，如 https://github.com/vert-x3/vertx-metrics[vertx-metrics]
+
+通常您只需获取特定组件（例如 http 服务器）的特定指标，
+而不必知道每个指标的命名细节（留给 SPI 的实现处理）。
+
+`link:../../apidocs/io/vertx/core/http/HttpServer.html[HttpServer]` 实现了 `link:../../apidocs/io/vertx/core/metrics/Measured.html[Measured]`，
+因此您可以轻松获取到指定 http 服务器的所有监控指标。
+
+[source,java]
+----
+MetricsService metricsService = MetricsService.create(vertx);
+HttpServer server = vertx.createHttpServer();
+// 设置 HTTP 服务器
+JsonObject metrics = metricsService.getMetricsSnapshot(server);
+----
+
+使用基本指标名（baseName）也可以获取到监控指标：
+
+[source,java]
+----
+MetricsService metricsService = MetricsService.create(vertx);
+JsonObject metrics = metricsService.getMetricsSnapshot("vertx.eventbus.message");
+----
+
+[[_data]]
+== 指标数据
+
+下面是（快照）JSON 中的所有 dropwizard 监控指标。
+每个监控指标的详情请参阅 https://github.com/dropwizard/metrics[Dropwizard metrics] 文档。
+
+[[gauge]]
+=== 测量值
+
+[source,javascript]
+----
+{
+ "type"  : "gauge",
+ "value" : value // 任一json值（译者注：数字、字符串、数组、对象等）
+}
+----
+
+[[counter]]
+=== 计数器
+
+[source,java]
+----
+{
+ "type"  : "counter",
+ "count" : 1 // 数字
+}
+----
+
+[[histogram]]
+=== 柱状图
+
+[source,javascript]
+----
+{
+ "type"   : "histogram",
+ "count"  : 1 // long
+ "min"    : 1 // long
+ "max"    : 1 // long
+ "mean"   : 1.0 // double
+ "stddev" : 1.0 // double
+ "median" : 1.0 // double
+ "75%"    : 1.0 // double
+ "95%"    : 1.0 // double
+ "98%"    : 1.0 // double
+ "99%"    : 1.0 // double
+ "99.9%"  : 1.0 // double
+}
+----
+
+[[meter]]
+=== 仪表（Meter）
+
+[source,java]
+----
+{
+ "type"              : "meter",
+ "count"             : 1 // long
+ "meanRate"          : 1.0 // double
+ "oneMinuteRate"     : 1.0 // double
+ "fiveMinuteRate"    : 1.0 // double
+ "fifteenMinuteRate" : 1.0 // double
+ "rate"              : "events/second" // 速率，字符串
+}
+----
+
+[[throughput_meter]]
+=== 吞吐量统计
+
+即时吞吐量统计，扩展自 <<meter,仪表>> 。
+
+[source,java]
+----
+{
+ "type"              : "meter",
+ "count"             : 40 // long
+ "meanRate"          : 2.0 // double
+ "oneSecondRate"     : 3 // long - 最近一秒的取值
+ "oneMinuteRate"     : 1.0 // double
+ "fiveMinuteRate"    : 1.0 // double
+ "fifteenMinuteRate" : 1.0 // double
+ "rate"              : "events/second" // 速率，字符串
+}
+----
+
+[[timer]]
+=== 计时器
+
+A timer is basically a combination of Histogram + Meter.
+
+[source,java]
+----
+{
+ "type": "timer",
+
+ // 柱状图数据
+ "count"  : 1 // long
+ "min"    : 1 // long
+ "max"    : 1 // long
+ "mean"   : 1.0 // double
+ "stddev" : 1.0 // double
+ "median" : 1.0 // double
+ "75%"    : 1.0 // double
+ "95%"    : 1.0 // double
+ "98%"    : 1.0 // double
+ "99%"    : 1.0 // double
+ "99.9%"  : 1.0 // double
+
+ // 仪表（meter）数据
+ "meanRate"          : 1.0 // double
+ "oneMinuteRate"     : 1.0 // double
+ "fiveMinuteRate"    : 1.0 // double
+ "fifteenMinuteRate" : 1.0 // double
+ "rate"              : "events/second" // 速率，字符串
+}
+----
+
+[[throughput_timer]]
+=== 吞吐量计时器
+
+扩展了 <<timer,计时器>> ，可提供即时吞吐量指标。
+
+[source,java]
+----
+{
+ "type": "timer",
+
+ // 柱状图数据
+ "count"      : 1 // long
+ "min"        : 1 // long
+ "max"        : 1 // long
+ "mean"       : 1.0 // double
+ "stddev"     : 1.0 // double
+ "median"     : 1.0 // double
+ "75%"        : 1.0 // double
+ "95%"        : 1.0 // double
+ "98%"        : 1.0 // double
+ "99%"        : 1.0 // double
+ "99.9%"      : 1.0 // double
+
+ // 仪表（meter）数据
+ "meanRate"          : 1.0 // double
+ "oneSecondRate"     : 3 // long - 最近一秒的取值
+ "oneMinuteRate"     : 1.0 // double
+ "fiveMinuteRate"    : 1.0 // double
+ "fifteenMinuteRate" : 1.0 // double
+ "rate"              : "events/second" // 速率，字符串
+}
+----
+
+[[_the_metrics]]
+== 监控指标
+
+Vert.x 目前提供以下指标。
+
+[[_vertx_metrics]]
+=== Vert.x 指标
+
+目前提供以下指标：
+
+* `vertx.event-loop-size` - 类型：<<gauge,测量值>>，含义：event-loop 线程池的线程数量
+* `vertx.worker-pool-size` - 类型：<<gauge,测量值>>，含义：worker-pool 线程池的线程数量
+* `vertx.cluster-host` - 类型：<<gauge,测量值>>，含义：cluster-host 配置值
+* `vertx.cluster-port` - 类型：<<gauge,测量值>>，含义：cluster-port 配置值
+
+[[_event_bus_metrics]]
+=== Event bus 指标
+
+基本指标名（baseName）： `vertx.eventbus`
+
+* `handlers` - 类型：<<counter,计数器>>，含义：eventbus 中已注册的处理器数量
+* `handlers.myaddress` - 类型：<<timer>>，含义：名为 _myaddress_ 的处理器处理消息的速率
+* `messages.bytes-read` - 类型：<<meter>>，含义：接收到的远程消息总字节量
+* `messages.bytes-written` - 类型：<<meter>>，含义：发送到远程地址的消息总字节量
+* `messages.pending` - 类型：<<counter>>，含义：已经被 eventbus 接收，但是还未被处理器所处理的消息数。
+* `messages.pending-local` - 类型：<<counter>>，含义：已经被本地 eventbus 接收，但是还未被处理器所处理的消息数。
+* `messages.pending-remote` - 类型：<<counter>>，含义：已经被远程 eventbus 接收，但是还未被处理器所处理的消息数。
+* `messages.discarded` - 类型：<<counter>>，含义：已被处理器丢弃的消息数
+* `messages.discarded-local` - 类型：<<counter>>，含义：已被本地处理器丢弃的消息数
+* `messages.discarded-remote` - 类型：<<counter>>，含义：已被远程处理器丢弃的消息数
+* `messages.received` - 类型：<<throughput_meter>>，含义：接受消息的速率
+* `messages.received-local` - 类型：<<throughput_meter>>，含义：接受本地消息的速率
+* `messages.received-remote` - 类型：<<throughput_meter>>，含义：接受远程消息的速率
+* `messages.delivered` - 类型：<<throughput_meter>>，含义：消息被传递到处理器的速率
+* `messages.delivered-local` - 类型：<<throughput_meter>>，含义：本地消息被传递到处理器的速率
+* `messages.delivered-remote` - 类型：<<throughput_meter>>，含义：远程消息被传递到处理器的速率
+* `messages.sent` - 类型：<<throughput_metert>>，含义：发送消息的速率
+* `messages.sent-local` - 类型：<<throughput_meter>>，含义：本地发送消息的速率
+* `messages.sent-remote` - 类型：<<throughput_meter>>，含义：远程发送消息的速率
+* `messages.published` - 类型：<<throughput_meter>>，含义：发布消息的速率
+* `messages.published-local` - 类型：<<throughput_meter>>，含义：本地发布消息的速率
+* `messages.published-remote` - 类型：<<throughput_meter>>，含义：远程发布消息的速率
+* `messages.reply-failures` - 类型：<<meter>>，含义：回复消息失败的速率
+
+可以通过 Event Bus 订阅地址的字符串匹配设置需要监控的 Event Bus 处理器。
+Vert.x 可能注册了大量的 Event Bus ，
+因此最佳的监控默认配置是不监控任何 Event Bus 处理器。
+
+使用 `link:../../apidocs/io/vertx/ext/dropwizard/DropwizardMetricsOptions.html[DropwizardMetricsOptions]`
+可以通过字符串匹配或正则匹配设置需要监控的 Event Bus 处理器。
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
+    new DropwizardMetricsOptions().
+        setEnabled(true).
+        addMonitoredEventBusHandler(
+            new Match().setValue("some-address")).
+        addMonitoredEventBusHandler(
+            new Match().setValue("business-.*").setType(MatchType.REGEX))
+));
+----
+
+WARNING: 使用正则匹配时，错误的正则表达式可能会匹配上很多处理器。
+
+[[http-server-metrics]]
+=== Http server 指标
+
+基本指标名（baseName）： `vertx.http.servers.<host>:<port>`
+
+Http 服务器的指标包括 <<net-server-metrics,Net 服务>> 的所有指标以及以下内容：
+
+* `requests` - 类型：<<throughput_timer>>，含义：单个请求及其出现的频率
+* `<http-method>-requests` - 类型：<<throughput_timer>>，含义：指定 HTTP 方法（译者注：由 <http-method> 指定）的请求及其频率。
+** 例如： `get-requests`， `post-requests`
+* `<http-method>-requests./<uri>` - 类型：<<throughput_timer>>，含义：指定 HTTP 方法和 URI 的请求及其频率。
+** 例如： `get-requests./some/uri`， `post-requests./some/uri?foo=bar`
+* `<http-method>-requests./<route>` - 类型：<<throughput_timer>>，含义：指定 HTTP 方法和路由的请求及其频率。
+** 例如： `get-requests./route1`, `post-requests./resource/:id`
+* `responses-1xx` - 类型：<<throughput_meter>>，含义：1xx响应的频次
+* `responses-2xx` - 类型：<<throughput_meter>>，含义：2xx响应的频次
+* `responses-3xx` - 类型：<<throughput_meter>>，含义：3xx响应的频次
+* `responses-4xx` - 类型：<<throughput_meter>>，含义：4xx响应的频次
+* `responses-5xx` - 类型：<<throughput_meter>>，含义：5xx响应的频次
+* `open-websockets` - 类型：<<counter>>，含义：打开的网络套接字连接数量
+* `open-websockets.<remote-host>` - 类型：<<counter>>，含义：连接到指定远程主机（译者注：由 <remote-host> 指定）所打开网络套接字的连接数量
+
+Http URI 指标必须在 MetricsOptions 中显式配置，可以使用完全匹配或正则表达式匹配：
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
+    new DropwizardMetricsOptions().
+        setEnabled(true).
+        addMonitoredHttpServerUri(
+            new Match().setValue("/")).
+        addMonitoredHttpServerUri(
+            new Match().setValue("/foo/.*").setType(MatchType.REGEX))
+));
+----
+
+对于带路径参数的 uri，如 `/users/:userId`，每个用户ID对应的入口 uri 分别注册监控指标没有意义
+（比如 `get-requests./users/1` ， `get-requests./users/2` 等等），应该统一注册一个监控 uri。
+为此，可以为 Match 实例设置别名，该别名将作为注册指标名的一部分，如： `<http-method>-requests.<别名>` 。
+此外，对于已定义别名的监控 uri，每个响应组有单独的监控指标（计数器），如： `responses-<code>.<别名>` 。
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
+    new DropwizardMetricsOptions().
+        setEnabled(true).
+        addMonitoredHttpServerUri(new Match().setValue("/users/.*").setAlias("users").setType(MatchType.REGEX))
+));
+----
+
+每个 HTTP 请求的请求路由可以由 HTTP 框架（如 vertx-web）上报，换而言之 Vert.x core 本身不会上报任何路由信息。
+与 URI 监控指标一样，路由监控指标必须在以下选项中显式配置： 
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
+  new DropwizardMetricsOptions().
+    setEnabled(true).
+    addMonitoredHttpServerRoute(new Match().setValue("/users/.*").setType(MatchType.REGEX))
+));
+----
+
+与 URI 监控指标类似，请求路由监控也可以提供监控指标别名，但通常请求路由本身已经提供了足够和适当的 URI 语义分组。
+请注意，单个 HTTP 请求可以多次路由（例如由于 vertx-web 子路由器的作用），
+而每个请求的所有路由在监控中将用 `>` 拼接在一起（例如 `/internal_api>/resource/:id` ）。
+
+*`bytes-read` 和 `bytes-written` 监控指标只统计了请求体/响应体的字节数，不包括 header 等。*
+
+[[_http_client_metrics]]
+=== Http 客户端指标
+
+基本指标名（baseName）： `vertx.http.clients` （默认），或 `vertx.http.clients.<id>` ，其中 `<id>` 是由
+`link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setMetricsName-java.lang.String-[setMetricsName]` 设置的非空字符串。
+
+HTTP 客户端的指标包括 <<http-server-metrics,Http 服务>> 的所有指标以及下述指标：
+
+* `connections.max-pool-size` - 类型：<<gauge>>，含义：连接池规模
+* `connections.pool-ratio` - 类型：ratio <<gauge>>，含义：已打开的连接与连接池规模的比率
+* `responses-1xx` - 类型：<<meter>>，含义：1xx响应码
+* `responses-2xx` - 类型：<<meter>>，含义：2xx响应码
+* `responses-3xx` - 类型：<<meter>>，含义：3xx响应码
+* `responses-4xx` - 类型：<<meter>>，含义：4xx响应码
+* `responses-5xx` - 类型：<<meter>>，含义：5xx响应码
+
+HTTP 客户端使用延迟请求队列管理每个远程 HTTP 服务节点的连接池。
+
+远程HTTP服务节点的可用监控指标如下：
+
+* `endpoint.<host:port>.queue-delay` - 类型：<<timer>>，含义：队列中延迟请求的等待时间
+* `endpoint.<host:port>.queue-size` - 类型：<<counter>>，含义：队列实际大小
+* `endpoint.<host:port>.open-netsockets` - 类型：<<counter>>，含义：连接到HTTP服务节点所开启的套接字数量
+* `endpoint.<host:port>.usage` - 类型：<<timer>>，含义：请求开始到响应结束的耗时
+* `endpoint.<host:port>.in-use` - 类型：<<counter>>，含义：实际请求/响应数
+* `endpoint.<host:port>.ttfb` - 类型：<<timer>>，含义：请求结束到响应开始之间的等待时间
+
+其中 <host> 是HTTP服务节点的主机名（可能未解析），而 <port> 是 TCP 端口。
+
+可以通过 HTTP 服务的 `$主机:$端口` 的文本匹配来配置 HTTP 服务节点监控。
+默认没有配置 HTTP 服务节点的监控。
+
+使用 `link:../../apidocs/io/vertx/ext/dropwizard/DropwizardMetricsOptions.html[DropwizardMetricsOptions]`
+可以通过字符串匹配或正则匹配设置需要监控的 HTTP 服务节点：
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
+    new DropwizardMetricsOptions().
+        setEnabled(true).
+        addMonitoredHttpClientEndpoint(
+            new Match().setValue("some-host:80")).
+        addMonitoredHttpClientEndpoint(
+            new Match().setValue("another-host:.*").setType(MatchType.REGEX))
+));
+----
+
+[[net-server-metrics]]
+=== Net 服务指标
+
+基本指标名（baseName）： `vertx.net.servers.<host>:<port>`
+
+* `open-netsockets` - 类型：<<counter>>，含义：打开 net 套接字的连接数
+* `open-netsockets.<remote-host>` - 类型：<<counter>>，含义：连接到指定远程主机所打开的 net 套接字连接数
+* `connections` - 类型：<<timer>>，含义：连接及其创建频率
+* `exceptions` - 类型：<<counter>>，含义：出现异常的次数
+* `bytes-read` - 类型：<<counter>>，含义：读取的字节数
+* `bytes-written` - 类型：<<counter>>，含义：写入的字节数
+
+[[_net_client_metrics]]
+=== Net 客户端指标
+
+基本指标名（baseName）： `vertx.net.clients`（默认）， 或 `vertx.net.clients.<id>` ，其中 `<id>` 是
+`link:../../apidocs/io/vertx/core/net/NetClientOptions.html#setMetricsName-java.lang.String-[setMetricsName]` 配置的非空字符串。
+
+Net 客户端的指标包括 <<net-server-metrics,Net 服务>> 的所有指标。
+
+[[_client_metrics]]
+=== 客户端指标
+
+基本指标名（baseName）： `vertx.<type>.clients` （默认）或 `vertx.<type>.clients.<id>` ，其中 `<id>`
+是客户端指标的标识符，而 `<type>` 是指标的类型。
+
+SQL 客户端的 `<type>` 为 `sql`， `<id>` 为客户端选项所配置的 `metricsName` 。
+
+客户指标包括以下内容：
+
+* `endpoint.<host:port>.requests` - 类型：<<timer>>，含义：请求等待时间
+* `endpoint.<host:port>.queue-delay` - 类型：<<timer>>，含义：队列中待处理请求的等待时间
+* `endpoint.<host:port>.queue-size` - 类型：<<counter>>，含义：队列实际大小
+* `endpoint.<host:port>.in-use` - 类型：<<counter>>，含义：实际请求/响应数
+* `endpoint.<host:port>.ttfb` - 类型：<<timer>>，含义：请求结束到响应开始之间的等待时间
+
+[[_datagram_socket_metrics]]
+=== 数据报套接字指标
+
+基本指标名（baseName）： `vertx.datagram`
+
+* `sockets` - 类型：<<counter>>，含义：数据报套接字数量
+* `exceptions` - 类型：<<counter>>，含义：异常数量
+* `bytes-written` - 类型：<<counter>>，含义：已写入字节数
+* `<host>:<port>.bytes-read` - 类型：<<counter>>，含义：已读取字节数
+** 此指标仅当数据报套接字正在监听时可用
+
+[[_pool_metrics]]
+=== 池的指标
+
+基本指标名（baseName）： `vertx.pools.<type>.<name>` 。其中 `type` 是池类型（如 _worker_， _datasource_），
+`name` 是池的名字（如 `vert.x-worker-thread` ）。
+
+用于运行阻塞任务的工作线程池类型为 _worker_ 。Vert.x将其用于 _vert.x-worker-thread_ 线程和
+_vert.x-internal-blocking_ 线程。名为 worker 的执行线程都是由 `link:../../apidocs/io/vertx/core/WorkerExecutor.html[WorkerExecutor]` 创建的。
+
+Vert.x JDBC客户端创建的数据源使用的池名为 _datasource_。
+
+* `queue-delay` - 类型：<<timer>>，含义：获取某个资源的等待时间，例如在队列中的等待时间。
+* `queue-size` - 类型：<<counter>>，含义：在队列中等待的资源数
+* `usage` - 类型：<<timer>>，含义：某个资源被持续使用的时间
+* `in-use` - 类型：<<count>>，含义：使用资源的实际数量
+* `pool-ratio` - A ratio <<gauge>>，含义：已使用的资源和池规模的比率
+* `max-pool-size` - 类型：<<gauge>>，含义：池的最大规模
+
+当池没有声明最大规模时，`pool-ratio` 和 `max_pool_size`
+将没有任何数据。
+
+[[jmx]]
+== JMX
+
+默认禁用 JMX。
+
+使用 JMX 需要手动启用，如下：
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
+    new DropwizardMetricsOptions().setJmxEnabled(true)
+));
+----
+
+如果从命令行运行 Vert.x，可以通过取消注释 `vertx` 或 `vertx.bat`
+脚本中的 JMX_OPTS 行来启用指标监控和 JMX：
+
+----
+JMX_OPTS="-Dcom.sun.management.jmxremote -Dvertx.metrics.options.jmxEnabled=true"
+----
+
+您可以配置创建 MBean 时使用的域：
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
+    new DropwizardMetricsOptions().
+        setJmxEnabled(true).
+        setJmxDomain("mydomain")
+));
+----
+
+在命令行中，只需将以下系统属性添加到您的应用程序即可（适用于 `vertx` 命令行和
+fat-jar ）：
+
+[source]
+----
+-Dvertx.metrics.options.jmxEnabled=true -Dvertx.metrics.options.jmxDomain=vertx
+----
+
+[[_enabling_remote_jmx]]
+== 启用远程 JMX
+
+如果希望通过 JMX 开放监控指标的远程访问，则至少需要设置以下系统属性：
+
+`com.sun.management.jmxremote`
+
+如果从命令行运行 Vert.x，可以通过取消注释 `vertx` 或 `vertx.bat`
+脚本中的 `JMX_OPTS` 行来启用远程 JMX。
+
+关于配置 JMX 的更多信息请参阅 http://docs.oracle.com/javase/8/docs/technotes/guides/management/agent.html[Oracle JMX 文档] 。
+
+*如果在公共服务器上运行 Vert.x，请谨慎开放远程 JMX 访问*
+
+[[dropwizard-registry]]
+== 访问 Dropwizard Registry
+
+配置指标服务时，可以指定一个可选的注册名（Registry Name），
+用于在 https://dropwizard.github.io/metrics/3.1.0/apidocs/com/codahale/metrics/SharedMetricRegistries.html[Dropwizard Shared Registry]
+中注册底层的 https://dropwizard.github.io/metrics/3.1.0/getting-started/#the-registry[Dropwizard Registry] 对象。
+可以使用这个注册名获取 MetricRegistry 对象并按需使用。
+
+[source,java]
+----
+VertxOptions options = new VertxOptions().setMetricsOptions(
+    new DropwizardMetricsOptions().setEnabled(true).setRegistryName("my-registry")
+);
+Vertx vertx = Vertx.vertx(options);
+// 获取 MetricRegistry 对象
+MetricRegistry registry = SharedMetricRegistries.getOrCreate("my-registry");}
+----
+
+[[_using_already_existing_dropwizard_registry]]
+== 使用已有的 Dropwizard Registry
+您也可以利用已有的 https://dropwizard.github.io/metrics/3.1.0/getting-started/#the-registry[Dropwizard Registry] 对象。
+只需在 `VertxOptions` 对象上调用 `setMetricRegistry` 方法，并传入 `MetricRegistry` 实例。
+
+[source,java]
+----
+MetricRegistry metricRegistry = new MetricRegistry();
+VertxOptions options = new VertxOptions().setMetricsOptions(
+   new DropwizardMetricsOptions().setEnabled(true).setMetricRegistry(metricRegistry)
+);
+Vertx vertx = Vertx.vertx(options);
+----
+
+[[_using_jolokia_and_hawtio]]
+== 使用 Jolokia 和 Hawtio
+
+https://jolokia.org/[Jolokia] 是 JMX-HTTP 的桥接，为 JSR-160 连接器提供了替代方案。
+Jolokia 基于代理实现，支持许多平台。 除了基本的 JMX 操作外，它还有一些增强了 JMX 远程处理能力的特性，
+如批量请求等。
+
+http://hawt.io/[Hawtio] 是一个模块化的Web控制台，使用了 Jolokia 开放的数据。
+您可以使用它创建仪表板并从 JMX 检索数据，例如内存，cpu 或任意 vert.x 指标。
+
+本节介绍了如何配置 vert.x 应用程序，以便 Hawtio 获取监控指标。
+
+首先，您需要使用以下选项来配置 vert.x 实例：
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
+    new DropwizardMetricsOptions()
+        .setEnabled(true)
+        .setJmxEnabled(true)
+        .setJmxDomain("vertx-metrics")));
+----
+
+您可以将 JMX 域更改为任意值。 Vert.x 集群的实例可以使用相同的配置。
+此配置可以让 vertx-dropwizard-metrics 将监控指标开放给本地 MBean 服务，
+由此，Jolokia 可以获取这些监控指标。
+
+然后需要 _引入_ Jolokia 以开放监控数据。 有多种 _引入_ Jolokia 的方法。
+请参考 https://jolokia.org/reference/html/architecture.html[详情文档]。
+这里介绍如何以默认配置使用 Jolokia Agent（译者注：代理，指JMX 的 Agent）。
+可以参考 https://jolokia.org/reference/html/[Jolokia 文档] 进行配置。
+
+Jolokia Agent 既可以在启动应用程序时配置，也可以附加在正在运行的 JVM 上（需要特殊权限才能访问该进程）。
+对于第一种情况，请使用以下命令启动应用程序：
+
+[source]
+----
+java -javaagent:/.../agents/jolokia-jvm.jar=port=7777,host=localhost -jar ...
+----
+
+`-javaagent` 参数指定了 Jolokia Agent 的 jar 包路径。 您可以在命令行中指定主机地址和端口。
+在上面的例子里，配置了 REST 服务地址为 `http://localhost:7777` 。
+
+您也可以将 Jolokia Agent 注册到运行中的 JVM 上：
+
+[source]
+----
+java -jar jolokia-jvm.jar start PID
+----
+
+其中 `PID` 请替换为 JVM 的进程ID。
+
+Jolokia 配置好并启动后，就可以用 Hawtio 消费监控数据。
+
+在 Hawtio 可以进入连接详情：
+
+image::../../images/hawtio-connect.png[]
+
+然后打开 _JMX_ 标签页，可以看到一个 _目录_，
+其名为您在 Vert.x 配置中设定的 JMX 域：
+
+image::../../images/hawtio-jmx.png[]
+
+由此，您可以配置仪表板，并获取 Vert.x 开放的所有监控指标。
+
+[[_using_jolokia_and_jmx4perl_to_expose_metrics_to_nagios]]
+== 使用 Jolokia 和 JMX4Perl 向 Nagios 开放监控指标
+
+http://search.cpan.org/~roland/jmx4perl/scripts/check_jmx4perl[Check_jmx4perl] 是 Nagios 的一款插件，基于 jmx4perl 实现，可以访问远程 JMX 数据。
+通过这款插件可以将 Vert.x 的监控指标开放给 Nagios。
+
+首先需要在启动您的应用程序时配置 Jolokia Agent。
+配置附加 Jolokia Agent 有多种方法。查阅 https://jolokia.org/reference/html/architecture.html[获得更多详情]。
+本文介绍如何用默认配置启用 Jolokia Agent 。
+详细配置可参考 https://jolokia.org/reference/html/[Jolokia 文档]。
+
+Jolokia Agent 既可以在启动应用程序时配置，也可以附加在正在运行的 JVM 上（需要特殊权限才能访问该进程）。
+对于第一种情况，请使用以下命令启动应用程序：
+
+[source]
+----
+java -javaagent:/.../agents/jolokia-jvm.jar=port=7777,host=localhost -jar ...
+----
+
+`-javaagent` 参数指定了 Jolokia Agent 的 jar 包路径。 您可以在命令行中指定主机地址和端口。
+在上面的例子里，配置了 REST 服务地址为 `http://localhost:7777` 。
+
+您也可以将 Jolokia Agent 注册到运行中的 JVM 上：
+
+[source]
+----
+java -jar jolokia-jvm.jar start PID
+----
+
+其中 `PID` 请替换为 JVM 的进程ID。
+
+Jolokia 配置好并启动后，可以参考下面命令配置 Nagios：
+
+[source]
+----
+check_jmx4perl --url http://10.0.2.2:8778/jolokia --name eventloops --mbean vertx:name=vertx.event-loop-size
+--attribute Value --warning 4
+----
+
+请参阅 http://search.cpan.org/~roland/jmx4perl/scripts/check_jmx4perl[check_jmx4perl 文档]
+获取更多关于检查配置的详情。
+
+[[_metrics_commands_via_telnet_or_ssh_in_vert_x_shell_service]]
+== 在 Vert.x Shell 服务中通过 Telnet 或 SSH 执行的监控指标命令
+Metrics commands via Telnet or SSH in Vert.x Shell service
+
+可以使用内置的 _help_ 命令查找可用的监控指标命令：
+
+* 可用的命令
+.. metrics-ls ：列出当前 Vert.x 实例的已知监控指标
+.. metrics-info ：以 JSON 格式显示当前 Vert.x 实例的监控指标信息
+.. metrics-histogram ：实时显示当前 Vert.x 实例的监控指标柱状图

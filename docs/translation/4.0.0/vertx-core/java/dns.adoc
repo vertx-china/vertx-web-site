@@ -1,0 +1,327 @@
+[[_dns_client]]
+== DNS 客户端
+
+通常情况下，您需要以异步方式来获取DNS信息。
+但不幸的是，Java 虚拟机本身附带的API是不可能的，
+因此Vert.x提供了它自己的完全异步解析DNS的API。
+
+若要获取DnsClient实例，您可以通过Vertx实例来创建一个。
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+----
+
+创建DnsClient时亦可通过传入配置设定查询的过期时间。
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(new DnsClientOptions()
+  .setPort(53)
+  .setHost("10.0.0.1")
+  .setQueryTimeout(10000)
+);
+----
+
+创建DnsClient的时候，不指定参数或者不指定服务器地址的话，DnsClient则会使用服务器内部地址，
+来进行非阻塞的域名解析。
+
+[source,java]
+----
+DnsClient client1 = vertx.createDnsClient();
+
+// 指定超时时间
+DnsClient client2 = vertx.createDnsClient(new DnsClientOptions().setQueryTimeout(10000));
+----
+
+[[_lookup]]
+=== lookup
+
+尝试为一个指定名称元素获取A（ipv4）或 AAAA（ipv6）记录时，第一条被返回的（记录）将会被使用。
+它的操作方式和操作系统上使用 "nslookup" 类似。
+
+要为 `vertx.io` 获取 A/AAAA 记录，您需要像下面那样做：
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
+client.lookup("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    System.out.println(ar.result());
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+[[_lookup4]]
+=== lookup4
+
+尝试查找给定名称的A（ipv4）记录。第一个返回的（记录）将会被使用，
+因此它的操作方式与操作系统上使用 "nslookup" 类似。
+
+要查找 "vertx.io" 的A记录，您需要像下面那样做：
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
+client.lookup4("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    System.out.println(ar.result());
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+[[_lookup6]]
+=== lookup6
+
+尝试查找给定名称的 AAAA（ipv6）记录。第一个返回的（记录）将会被使用，
+因此它的操作方式与在操作系统上使用 "nslookup" 类似。
+
+要查找 "vertx.io" 的 AAAA记录，您需要像下面那样做：
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
+client.lookup6("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    System.out.println(ar.result());
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+[[_resolvea]]
+=== resolveA
+
+尝试解析给定名称的所有A（ipv4）记录，
+这与在类unix操作系统上使用 "dig" 类似。
+
+要查找 "vertx.io" 的所有A记录，您通常会执行以下操作：
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
+client.resolveA("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    List<String> records = ar.result();
+    for (String record : records) {
+      System.out.println(record);
+    }
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+[[_resolveaaaa]]
+=== resolveAAAA
+
+尝试解析给定名称的所有AAAA（ipv6）记录，
+这与在类unix操作系统上使用 "dig" 类似。
+
+要查找 "vertx.io" 的所有AAAA记录，您通常会执行以下操作：
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
+client.resolveAAAA("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    List<String> records = ar.result();
+    for (String record : records) {
+      System.out.println(record);
+    }
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+[[_resolvecname]]
+=== resolveCNAME
+
+尝试解析给定名称的所有CNAME记录，
+这与在类unix操作系统上使用 "dig" 类似。
+
+要查找 "vertx.io" 的所有CNAME记录，您通常会执行以下操作：
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
+client.resolveCNAME("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    List<String> records = ar.result();
+    for (String record : records) {
+      System.out.println(record);
+    }
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+[[_resolvemx]]
+=== resolveMX
+
+尝试解析给定名称的所有MX记录，
+MX记录用于定义哪个邮件服务器去接受指定域的电子邮件。
+
+要查找 "vertx.io" 的所有MX记录，您通常会执行以下操作：
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
+client.resolveMX("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    List<MxRecord> records = ar.result();
+    for (MxRecord record: records) {
+      System.out.println(record);
+    }
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+请注意，列表将包含按照它们优先级排序的 `link:../../apidocs/io/vertx/core/dns/MxRecord.html[MxRecord]`
+，这意味着列表中优先级低的MX记录会第一个优先出现在列表中。
+
+`link:../../apidocs/io/vertx/core/dns/MxRecord.html[MxRecord]` 允许您通过下边提供的方法访问MX记录的优先级和名称：
+
+[source,java]
+----
+record.priority();
+record.name();
+----
+
+[[_resolvetxt]]
+=== resolveTXT
+
+尝试解析给定名称的所有TXT记录，TXT记录通常用于定义域的额外信息。
+
+要解析 "vertx.io" 的所有TXT记录，您可以使用下边几行代码：
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
+client.resolveTXT("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    List<String> records = ar.result();
+    for (String record: records) {
+      System.out.println(record);
+    }
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+[[_resolvens]]
+=== resolveNS
+
+尝试解析给定名称的所有NS记录，NS记录指定一个DNS服务器，
+这个服务器管理指定域的DNS信息。
+
+要解析 "vertx.io" 的所有NS记录，您可以使用下边几行：
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
+client.resolveNS("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    List<String> records = ar.result();
+    for (String record: records) {
+      System.out.println(record);
+    }
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+[[_resolvesrv]]
+=== resolveSRV
+
+尝试解析给定名称的所有SRV记录，SRV记录用于定义服务端口和主机名等额外信息。
+一些协议需要这些额外信息。
+
+要查找 "vertx.io" 的所有SRV记录，您通常会执行以下操作：
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
+client.resolveSRV("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    List<SrvRecord> records = ar.result();
+    for (SrvRecord record: records) {
+      System.out.println(record);
+    }
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+请注意，列表将包含按照它们优先级排序的 `SrvRecord`
+，这意味着优先级低的记录会第一个优先出现在列表中。
+
+`link:../../apidocs/io/vertx/core/dns/SrvRecord.html[SrvRecord]` 允许您访问SRV记录本身中包含的所有信息：
+
+[source,java]
+----
+record.priority();
+record.name();
+record.weight();
+record.port();
+record.protocol();
+record.service();
+record.target();
+----
+
+详细信息请参阅API文档
+
+[[_resolveptr]]
+=== resolvePTR
+
+尝试解析给定名称的PTR记录，PTR记录将ip地址映射到名称。
+
+要解析IP地址 10.0.0.1 的PTR记录，您将使用 "1.0.0.10.in-addr.arpa"¸的PTR概念。
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
+client.resolvePTR("1.0.0.10.in-addr.arpa", ar -> {
+  if (ar.succeeded()) {
+    String record = ar.result();
+    System.out.println(record);
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+[[_reverselookup]]
+=== reverseLookup
+
+尝试对ipaddress进行反向查找，这与解析PTR记录类似。
+但是允许您传递非有效PTR查询字符串的ip地址。
+
+按照类似于下面这种方式来进行ip地址 10.0.0.1 的反向查找：
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "9.9.9.9");
+client.reverseLookup("10.0.0.1", ar -> {
+  if (ar.succeeded()) {
+    String record = ar.result();
+    System.out.println(record);
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+include::override/dns.adoc[]

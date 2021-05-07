@@ -1,0 +1,1195 @@
+[[_writing_tcp_servers_and_clients]]
+== 编写 TCP 服务端和客户端
+
+Vert.x让您轻松编写非阻塞的TCP客户端和服务器。
+
+[[_creating_a_tcp_server]]
+=== 创建 TCP 服务端
+
+最简单地使用所有默认配置项创建 TCP 服务端的方式如下：
+
+[source,java]
+----
+NetServer server = vertx.createNetServer();
+----
+
+[[_configuring_a_tcp_server]]
+=== 配置 TCP 服务端
+
+若您不想使用默认配置，可以在创建时通过传入一个 `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]`
+实例来配置服务器：
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().setPort(4321);
+NetServer server = vertx.createNetServer(options);
+----
+
+[[_start_the_server_listening]]
+=== 启动服务端监听
+
+要告诉服务端监听传入的请求，您可以使用其中一个 `link:../../apidocs/io/vertx/core/net/NetServer.html#listen--[listen]`
+方法。
+
+让服务器监听配置项指定的主机和端口：
+
+[source,java]
+----
+NetServer server = vertx.createNetServer();
+server.listen();
+----
+
+或在调用 `listen` 方法时指定主机和端口号，忽略配置项中的配置：
+
+[source,java]
+----
+NetServer server = vertx.createNetServer();
+server.listen(1234, "localhost");
+----
+
+默认主机名是 `0.0.0.0`，它表示：监听所有可用地址。默认端口号是 `0`，
+这也是一个特殊值，它告诉服务器随机选择并监听一个本地没有被占用的端口。
+
+实际的绑定也是异步的，因此服务器在调用了 `listen` 方法的一段时间 *之后*
+才会实际开始监听。
+
+若您希望在服务器实际监听时收到通知，您可以在调用 `listen` 方法时提供一个处理器。
+例如：
+
+[source,java]
+----
+NetServer server = vertx.createNetServer();
+server.listen(1234, "localhost", res -> {
+  if (res.succeeded()) {
+    System.out.println("Server is now listening!");
+  } else {
+    System.out.println("Failed to bind!");
+  }
+});
+----
+
+[[_listening_on_a_random_port]]
+=== 监听随机端口
+
+若设置监听端口为 `0`，服务器将随机寻找一个没有使用的端口来监听。
+
+可以调用 `link:../../apidocs/io/vertx/core/net/NetServer.html#actualPort--[actualPort]` 方法来获得服务器实际监听的端口：
+
+[source,java]
+----
+NetServer server = vertx.createNetServer();
+server.listen(0, "localhost", res -> {
+  if (res.succeeded()) {
+    System.out.println("Server is now listening on actual port: " + server.actualPort());
+  } else {
+    System.out.println("Failed to bind!");
+  }
+});
+----
+
+[[_getting_notified_of_incoming_connections]]
+=== 接收传入连接的通知
+
+若您想要在连接创建完时收到通知，则需要设置一个 `link:../../apidocs/io/vertx/core/net/NetServer.html#connectHandler-io.vertx.core.Handler-[connectHandler]` ：
+
+[source,java]
+----
+NetServer server = vertx.createNetServer();
+server.connectHandler(socket -> {
+  // Handle the connection in here
+});
+----
+
+当连接成功时，您可以在回调函数中处理得到的 `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` 实例。
+
+这是一个代表了实际连接的套接字接口，它允许您读取和写入数据、以及执行各种其他操作，
+如关闭 Socket。
+
+[[_reading_data_from_the_socket]]
+=== 从Socket读取数据
+
+您可以在Socket上调用 `link:../../apidocs/io/vertx/core/net/NetSocket.html#handler-io.vertx.core.Handler-[handler]`
+方法来设置用于读取数据的处理器。
+
+每次 Socket 接收到数据时，会以 `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]`
+对象为参数调用处理器。
+
+[source,java]
+----
+NetServer server = vertx.createNetServer();
+server.connectHandler(socket -> {
+  socket.handler(buffer -> {
+    System.out.println("I received some bytes: " + buffer.length());
+  });
+});
+----
+
+[[_writing_data_to_a_socket]]
+=== 向Socket中写入数据
+
+您可使用 `link:../../apidocs/io/vertx/core/streams/WriteStream.html#write-java.lang.Object-[write]` 方法写入数据到Socket：
+
+[source,java]
+----
+Buffer buffer = Buffer.buffer().appendFloat(12.34f).appendInt(123);
+socket.write(buffer);
+
+// 以UTF-8的编码方式写入一个字符串
+socket.write("some data");
+
+// 以指定的编码方式写入一个字符串
+socket.write("some data", "UTF-16");
+----
+
+写入操作是异步的，可能调用 `write` 方法返回过后一段时间才会执行。
+
+[[_closed_handler]]
+=== 关闭处理器
+
+若您想要在 Socket 关闭时收到通知，可以设置一个 `link:../../apidocs/io/vertx/core/net/NetSocket.html#closeHandler-io.vertx.core.Handler-[closeHandler]`
+处理器：
+
+[source,java]
+----
+socket.closeHandler(v -> {
+  System.out.println("The socket has been closed");
+});
+----
+
+[[_handling_exceptions]]
+=== 处理异常
+
+您可以设置一个 `link:../../apidocs/io/vertx/core/net/NetSocket.html#exceptionHandler-io.vertx.core.Handler-[exceptionHandler]`
+来接收所有socket上发生的异常。
+
+`link:../../apidocs/io/vertx/core/net/NetServer.html#exceptionHandler-io.vertx.core.Handler-[exceptionHandler]` 所设置的异常处理器还可以接收在
+`link:../../apidocs/io/vertx/core/net/NetServer.html#connectHandler-io.vertx.core.Handler-[connectHandler]` 接受到连接对象前发生的所有异常，
+比如在TLS握手期间。
+
+[[_event_bus_write_handler]]
+===  Event Bus 写处理器
+
+每个 Socket 会自动在Event Bus中注册一个处理器，当这个处理器中收到任意Buffer时，
+它会将数据写入到 Socket。
+
+这意味着您可以通过向这个地址发送Buffer的方式，从不同的 Verticle 甚至是不同的 Vert.x 实例中向指定的 Socket 发送数据。
+
+处理器的地址由 `link:../../apidocs/io/vertx/core/net/NetSocket.html#writeHandlerID--[writeHandlerID]` 方法提供。
+
+[[_local_and_remote_addresses]]
+=== 本地和远程地址
+
+您可以通过 `link:../../apidocs/io/vertx/core/net/NetSocket.html#localAddress--[localAddress]` 方法获取 `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` 的本地地址。
+
+通过 `link:../../apidocs/io/vertx/core/net/NetSocket.html#remoteAddress--[remoteAddress]` 方法获取
+`link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` 的远程地址（即连接的另一端的地址）。
+
+[[_sending_files_or_resources_from_the_classpath]]
+=== 发送文件或 Classpath 中的资源
+
+您可以直接通过 `link:../../apidocs/io/vertx/core/net/NetSocket.html#sendFile-java.lang.String-[sendFile]` 方法将文件和 classpath 中的资源写入Socket。
+这种做法是非常高效的，它可以被操作系统内核直接处理。
+
+请阅读 <<classpath, 从 Classpath 访问文件>>
+章节了解类路径的限制或禁用它。
+
+[source,java]
+----
+socket.sendFile("myfile.dat");
+----
+
+[[_streaming_sockets]]
+=== 流式的Socket
+
+`link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` 接口继承了 `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` 和
+`link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` 接口，因此您可以将它套用（pipe）到其他的
+读写流上。
+
+有关更多信息，请参阅  <<streams, 流 >> 章节。
+
+[[_upgrading_connections_to_ssltls]]
+===  升级到 SSL/TLS 连接
+
+一个非SSL/TLS连接可以通过 `link:../../apidocs/io/vertx/core/net/NetSocket.html#upgradeToSsl-io.vertx.core.Handler-[upgradeToSsl]` 方法升级到SSL/TLS连接。
+
+必须为服务器或客户端配置SSL/TLS才能正常工作。请参阅 <<ssl, chapter on SSL/TLS>>
+章节获取详细信息。
+
+[[_closing_a_tcp_server]]
+=== 关闭 TCP 服务端
+
+您可以调用 `link:../../apidocs/io/vertx/core/net/NetServer.html#close--[close]` 方法关闭服务端。
+关闭操作将关闭所有打开的连接并释放所有服务端资源。
+
+关闭操作也是异步的，可能直到方法调用返回过后一段时间才会实际关闭。
+若您想在实际关闭完成时收到通知，那么您可以传递一个处理器。
+
+当关闭操作完成后，绑定的处理器将被调用：
+
+[source,java]
+----
+server.close(res -> {
+  if (res.succeeded()) {
+    System.out.println("Server is now closed");
+  } else {
+    System.out.println("close failed");
+  }
+});
+----
+
+[[_automatic_clean_up_in_verticles_3]]
+=== Verticle中的自动清理
+
+若您在Verticle内创建了 TCP 服务端和客户端，
+它们将会在Verticle撤销时自动被关闭。
+
+[[_scaling_sharing_tcp_servers]]
+=== 扩展 - 共享 TCP 服务端
+
+任意一个TCP服务端中的处理器总是在相同的Event-Loop线程上执行。
+
+这意味着如果您在多核的服务器上运行，并且只部署了一个实例，
+那么您的服务器上最多只能使用一个核。
+
+为了利用更多的服务器核，您将需要部署更多的服务器实例。
+
+您可以在代码中以编程方式实例化更多（Server的）实例：
+
+[source,java]
+----
+for (int i = 0; i < 10; i++) {
+  NetServer server = vertx.createNetServer();
+  server.connectHandler(socket -> {
+    socket.handler(buffer -> {
+      // Just echo back the data
+      socket.write(buffer);
+    });
+  });
+  server.listen(1234, "localhost");
+}
+----
+
+如果您使用的是 Verticle，您可以通过在命令行上使用 `-instances`
+选项来简单部署更多的服务器实例：
+
+vertx run com.mycompany.MyVerticle -instances 10
+
+或者使用编程方式部署您的 Verticle 时：
+
+[source,java]
+----
+DeploymentOptions options = new DeploymentOptions().setInstances(10);
+vertx.deployVerticle("com.mycompany.MyVerticle", options);
+----
+
+一旦您这样做，您将发现echo服务器在功能上与之前相同，
+但是服务器上的所有核都可以被利用，并且可以处理更多的工作。
+
+在这一点上，您可能会问自己：*”如何让多台服务器在同一主机和端口上侦听？
+尝试部署一个以上的实例时真的不会遇到端口冲突吗？“*
+
+_Vert.x施加了一点魔法。_
+
+当您在与现有服务器相同的主机和端口上部署另一个服务器实例时，
+实际上它并不会尝试创建在同一主机/端口上侦听的新服务器实例。
+
+相反，它内部仅仅维护一个服务器实例。当传入新的连接时，
+它以轮询的方式将其分发给任意一个连接处理器处理。
+
+因此，Vert.x TCP 服务端可以水平扩展到多个核，并且每个实例保持单线程环境不变。
+
+[[_creating_a_tcp_client]]
+=== 创建 TCP 客户端
+
+使用所有默认选项创建 TCP 客户端的最简单方法如下：
+
+[source,java]
+----
+NetClient client = vertx.createNetClient();
+----
+
+[[_configuring_a_tcp_client]]
+=== 配置 TCP 客户端
+
+如果您不想使用默认值，则可以在创建实例时传入 `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]`
+给客户端：
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().setConnectTimeout(10000);
+NetClient client = vertx.createNetClient(options);
+----
+
+[[_making_connections]]
+=== 创建连接
+
+您可以使用 `link:../../apidocs/io/vertx/core/net/NetClient.html#connect-int-java.lang.String-io.vertx.core.Handler-[connect]` 方法创建到服务器的连接。
+请指定服务器的端口和主机，以及用于处理
+`link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` 的处理器。当连接成功或失败时处理器会被调用。
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().setConnectTimeout(10000);
+NetClient client = vertx.createNetClient(options);
+client.connect(4321, "localhost", res -> {
+  if (res.succeeded()) {
+    System.out.println("Connected!");
+    NetSocket socket = res.result();
+  } else {
+    System.out.println("Failed to connect: " + res.cause().getMessage());
+  }
+});
+----
+
+[[_configuring_connection_attempts]]
+=== 配置连接重试
+
+可以将客户端配置为在无法连接的情况下自动重试。
+这是通过 `link:../../apidocs/io/vertx/core/net/NetClientOptions.html#setReconnectInterval-long-[setReconnectInterval]` 和
+`link:../../apidocs/io/vertx/core/net/NetClientOptions.html#setReconnectAttempts-int-[setReconnectAttempts]` 方法配置的。
+
+NOTE: 目前如果连接失效，Vert.x将不尝试重新连接。
+重新连接尝试和时间间隔仅适用于创建初始连接。
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().
+  setReconnectAttempts(10).
+  setReconnectInterval(500);
+
+NetClient client = vertx.createNetClient(options);
+----
+
+默认情况下，多个连接尝试是被禁用的。
+
+[[logging_network_activity]]
+=== 记录网络活动
+
+网络活动可以被记录下来，用于调试：
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().setLogActivity(true);
+
+NetServer server = vertx.createNetServer(options);
+----
+
+对于客户端：
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().setLogActivity(true);
+
+NetClient client = vertx.createNetClient(options);
+----
+
+Netty 使用 `DEBUG` 级别和 `io.netty.handler.logging.LoggingHandler` 名称来记录网络活动。
+使用网络活动记录时，需要注意以下几点：
+
+- 日志的记录是由Netty而不是Vert.x的日志来执行
+- 这个功能 *不能* 用于生产环境
+
+您应该阅读 <<netty-logging, Netty 日志记录>> 章节来了解详细信息。
+
+[[ssl]]
+=== 配置服务端和客户端以使用SSL/TLS
+
+TCP 客户端和服务端可以通过配置来使用 [TLS（传输层安全性协议）]http://en.wikipedia.org/wiki/Transport_Layer_Security[Transport Layer Security]
+——早期版本的TLS被称为SSL。
+
+无论是否使用SSL/TLS，服务器和客户端的API都是相同的。通过创建客户端/服务器时使用的
+`link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` 或 / `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]`
+来启用TLS/SSL。
+
+[[_enabling_ssltls_on_the_server]]
+==== 在服务端启用SSL/TLS
+
+您需要设置 `link:../../apidocs/io/vertx/core/net/NetServerOptions.html#setSsl-boolean-[ssl]` 配置项来启用 SSL/TLS。
+
+默认是禁用的。
+
+[[_specifying_keycertificate_for_the_server]]
+==== 指定服务端的密钥/证书
+
+SSL/TLS 服务端通常向客户端提供证书，以便验证服务端的身份。
+
+可以通过以下几种方式为服务端配置证书/密钥：
+
+第一种方法是指定包含证书和私钥的Java密钥库位置。
+
+可以使用 JDK 附带的 http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html[keytool]
+实用程序来管理Java密钥存储。
+
+还应提供密钥存储的密码：
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().setSsl(true).setKeyStoreOptions(
+  new JksOptions().
+    setPath("/path/to/your/server-keystore.jks").
+    setPassword("password-of-your-keystore")
+);
+NetServer server = vertx.createNetServer(options);
+----
+
+或者，您可以自己读取密钥库到一个Buffer，并将它直接提供给 `JksOptions`：
+
+[source,java]
+----
+Buffer myKeyStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-keystore.jks");
+JksOptions jksOptions = new JksOptions().
+  setValue(myKeyStoreAsABuffer).
+  setPassword("password-of-your-keystore");
+NetServerOptions options = new NetServerOptions().
+  setSsl(true).
+  setKeyStoreOptions(jksOptions);
+NetServer server = vertx.createNetServer(options);
+----
+
+PKCS＃12格式的密钥/证书（ http://en.wikipedia.org/wiki/PKCS_12 ，通常为 `.pfx` 或 `.p12` 扩展名），
+也可以用与JKS密钥存储相似的方式加载：
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().setSsl(true).setPfxKeyCertOptions(
+  new PfxOptions().
+    setPath("/path/to/your/server-keystore.pfx").
+    setPassword("password-of-your-keystore")
+);
+NetServer server = vertx.createNetServer(options);
+----
+
+也支持通过Buffer来配置：
+
+[source,java]
+----
+Buffer myKeyStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-keystore.pfx");
+PfxOptions pfxOptions = new PfxOptions().
+  setValue(myKeyStoreAsABuffer).
+  setPassword("password-of-your-keystore");
+NetServerOptions options = new NetServerOptions().
+  setSsl(true).
+  setPfxKeyCertOptions(pfxOptions);
+NetServer server = vertx.createNetServer(options);
+----
+
+另外一种分别提供服务器私钥和证书的方法是使用 `.pem` 文件。
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().setSsl(true).setPemKeyCertOptions(
+  new PemKeyCertOptions().
+    setKeyPath("/path/to/your/server-key.pem").
+    setCertPath("/path/to/your/server-cert.pem")
+);
+NetServer server = vertx.createNetServer(options);
+----
+
+也支持通过 `Buffer` 来配置：
+
+[source,java]
+----
+Buffer myKeyAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-key.pem");
+Buffer myCertAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-cert.pem");
+PemKeyCertOptions pemOptions = new PemKeyCertOptions().
+  setKeyValue(myKeyAsABuffer).
+  setCertValue(myCertAsABuffer);
+NetServerOptions options = new NetServerOptions().
+  setSsl(true).
+  setPemKeyCertOptions(pemOptions);
+NetServer server = vertx.createNetServer(options);
+----
+
+Vert.x支持从PKCS8 PEM文件中读取未加密的基于RSA和/或ECC的私钥。
+也可以从PKCS1 PEM文件中读取基于RSA的私钥。
+若PEM文件包含由 https://tools.ietf.org/html/rfc7468#section-5[RFC 7468, Section 5] 定义的文本编码证书，
+可以从该PEM文件中读取X.509证书。
+
+WARNING: 请记住，未加密的PKCS8或PKCS1 PEM文件中包含的密钥，
+可以被有这些文件读取权限的人提取出来。因此，请确保对此类PEM文件设置适当的访问限制，
+以防止滥用。
+
+最后，您还可以加载通用Java密钥库，使用其他密钥库实现时非常有用，
+比如使用Bouncy Castle时：
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().setSsl(true).setKeyCertOptions(
+  new KeyStoreOptions().
+    setType("BKS").
+    setPath("/path/to/your/server-keystore.bks").
+    setPassword("password-of-your-keystore")
+);
+NetServer server = vertx.createNetServer(options);
+----
+
+[[_specifying_trust_for_the_server]]
+==== 指定服务器信任
+
+SSL/TLS 服务端可以使用证书颁发机构来验证客户端的身份。
+
+证书颁发机构可通过多种方式为服务端配置。
+
+可使用JDK随附的 http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html[keytool]
+实用程序来管理Java 受信存储。
+
+还应提供受信存储的密码：
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().
+  setSsl(true).
+  setClientAuth(ClientAuth.REQUIRED).
+  setTrustStoreOptions(
+    new JksOptions().
+      setPath("/path/to/your/truststore.jks").
+      setPassword("password-of-your-truststore")
+  );
+NetServer server = vertx.createNetServer(options);
+----
+
+或者您可以自己读取受信存储到Buffer，并将它直接提供：
+
+[source,java]
+----
+Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.jks");
+NetServerOptions options = new NetServerOptions().
+  setSsl(true).
+  setClientAuth(ClientAuth.REQUIRED).
+  setTrustStoreOptions(
+    new JksOptions().
+      setValue(myTrustStoreAsABuffer).
+      setPassword("password-of-your-truststore")
+  );
+NetServer server = vertx.createNetServer(options);
+----
+
+PKCS＃12格式的密钥/证书（ http://en.wikipedia.org/wiki/PKCS_12 ，通常为 `.pfx` 或 `.p12` 扩展名），
+也可以用与JKS密钥存储相似的方式加载：
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().
+  setSsl(true).
+  setClientAuth(ClientAuth.REQUIRED).
+  setPfxTrustOptions(
+    new PfxOptions().
+      setPath("/path/to/your/truststore.pfx").
+      setPassword("password-of-your-truststore")
+  );
+NetServer server = vertx.createNetServer(options);
+----
+
+也支持通过 `Buffer` 来配置：
+
+[source,java]
+----
+Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.pfx");
+NetServerOptions options = new NetServerOptions().
+  setSsl(true).
+  setClientAuth(ClientAuth.REQUIRED).
+  setPfxTrustOptions(
+    new PfxOptions().
+      setValue(myTrustStoreAsABuffer).
+      setPassword("password-of-your-truststore")
+  );
+NetServer server = vertx.createNetServer(options);
+----
+
+另一种提供服务器证书颁发机构的方法是使用一个 `.pem` 文件列表。
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().
+  setSsl(true).
+  setClientAuth(ClientAuth.REQUIRED).
+  setPemTrustOptions(
+    new PemTrustOptions().
+      addCertPath("/path/to/your/server-ca.pem")
+  );
+NetServer server = vertx.createNetServer(options);
+----
+
+也支持通过 `Buffer` 来配置：
+
+[source,java]
+----
+Buffer myCaAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-ca.pfx");
+NetServerOptions options = new NetServerOptions().
+  setSsl(true).
+  setClientAuth(ClientAuth.REQUIRED).
+  setPemTrustOptions(
+    new PemTrustOptions().
+      addCertValue(myCaAsABuffer)
+  );
+NetServer server = vertx.createNetServer(options);
+----
+
+[[_enabling_ssltls_on_the_client]]
+==== 客户端启用SSL/TLS
+
+客户端也可以轻松地配置为SSL。使用SSL和使用标准套接字具有完全相同的API。
+
+若要启用 `NetClient` 上的SSL，可调用函数 `setSSL(true)`。
+
+[[_client_trust_configuration]]
+==== 客户端受信配置
+
+若客户端将 `link:../../apidocs/io/vertx/core/net/ClientOptionsBase.html#setTrustAll-boolean-[trustALl]`  设置为 `true`，
+则客户端将信任所有服务端证书。连接仍然会被加密，但这种模式很容易受到中间人攻击。
+即您无法确定您正连接到谁，请谨慎使用。默认值为 `false` 。
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().
+  setSsl(true).
+  setTrustAll(true);
+NetClient client = vertx.createNetClient(options);
+----
+
+若客户端没有设置 `link:../../apidocs/io/vertx/core/net/ClientOptionsBase.html#setTrustAll-boolean-[trustAll]` ，则必须配置客户端受信存储，
+并且受信客户端应该包含服务器的证书。
+
+默认情况下，客户端禁用主机验证。
+要启用主机验证，请在客户端上设置使用的算法（目前仅支持HTTPS和LDAPS）：
+
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().
+  setSsl(true).
+  setHostnameVerificationAlgorithm("HTTPS");
+NetClient client = vertx.createNetClient(options);
+----
+
+和服务器配置相同，也可通过以下几种方式配置受信客户端：
+
+第一种方法是指定包含证书颁发机构的Java受信库的位置。
+
+它只是一个标准的Java密钥存储，与服务器端的密钥存储相同。
+通过在 `link:../../apidocs/io/vertx/core/net/JksOptions.html[jks options]` 上使用 `link:../../apidocs/io/vertx/core/net/JksOptions.html#setPath-java.lang.String-[path]`
+设置客户端受信存储位置。
+如果服务器在连接期间提供不在客户端受信存储中的证书，则尝试连接将不会成功。
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().
+  setSsl(true).
+  setTrustStoreOptions(
+    new JksOptions().
+      setPath("/path/to/your/truststore.jks").
+      setPassword("password-of-your-truststore")
+  );
+NetClient client = vertx.createNetClient(options);
+----
+
+它也支持 `Buffer` 的配置：
+
+[source,java]
+----
+Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.jks");
+NetClientOptions options = new NetClientOptions().
+  setSsl(true).
+  setTrustStoreOptions(
+    new JksOptions().
+      setValue(myTrustStoreAsABuffer).
+      setPassword("password-of-your-truststore")
+  );
+NetClient client = vertx.createNetClient(options);
+----
+
+PKCS＃12格式的密钥/证书（ http://en.wikipedia.org/wiki/PKCS_12 ，通常为 `.pfx` 或 `.p12` 扩展名），
+也可以用与JKS密钥存储相似的方式加载：
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().
+  setSsl(true).
+  setPfxTrustOptions(
+    new PfxOptions().
+      setPath("/path/to/your/truststore.pfx").
+      setPassword("password-of-your-truststore")
+  );
+NetClient client = vertx.createNetClient(options);
+----
+
+它也支持 `Buffer` 的配置：
+
+[source,java]
+----
+Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.pfx");
+NetClientOptions options = new NetClientOptions().
+  setSsl(true).
+  setPfxTrustOptions(
+    new PfxOptions().
+      setValue(myTrustStoreAsABuffer).
+      setPassword("password-of-your-truststore")
+  );
+NetClient client = vertx.createNetClient(options);
+----
+
+另一种提供服务器证书颁发机构的方法是使用一个 `.pem` 文件列表。
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().
+  setSsl(true).
+  setPemTrustOptions(
+    new PemTrustOptions().
+      addCertPath("/path/to/your/ca-cert.pem")
+  );
+NetClient client = vertx.createNetClient(options);
+----
+
+它也支持 `Buffer` 的配置：
+
+[source,java]
+----
+Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/ca-cert.pem");
+NetClientOptions options = new NetClientOptions().
+  setSsl(true).
+  setPemTrustOptions(
+    new PemTrustOptions().
+      addCertValue(myTrustStoreAsABuffer)
+  );
+NetClient client = vertx.createNetClient(options);
+----
+
+[[_specifying_keycertificate_for_the_client]]
+==== 指定客户端的密钥/证书
+
+如果服务器需要客户端认证，那么当连接时，客户端必须向服务器提供自己的证书。
+可通过以下几种方式配置客户端：
+
+第一种方法是指定包含密钥和证书的Java密钥库的位置，它只是一个常规的Java密钥存储。
+使用 `link:../../apidocs/io/vertx/core/net/JksOptions.html[jks options]` 上的
+`link:../../apidocs/io/vertx/core/net/JksOptions.html#setPath-java.lang.String-[path]`
+方法设置客户端密钥库位置。
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().setSsl(true).setKeyStoreOptions(
+  new JksOptions().
+    setPath("/path/to/your/client-keystore.jks").
+    setPassword("password-of-your-keystore")
+);
+NetClient client = vertx.createNetClient(options);
+----
+
+也支持通过 `Buffer` 来配置：
+
+[source,java]
+----
+Buffer myKeyStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/client-keystore.jks");
+JksOptions jksOptions = new JksOptions().
+  setValue(myKeyStoreAsABuffer).
+  setPassword("password-of-your-keystore");
+NetClientOptions options = new NetClientOptions().
+  setSsl(true).
+  setKeyStoreOptions(jksOptions);
+NetClient client = vertx.createNetClient(options);
+----
+
+PKCS#12格式的密钥/证书（ http://en.wikipedia.org/wiki/PKCS_12 ，通常为 `.pfx` 或 `.p12` 扩展名），
+也可以用与JKS密钥存储相似的方式加载：
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().setSsl(true).setPfxKeyCertOptions(
+  new PfxOptions().
+    setPath("/path/to/your/client-keystore.pfx").
+    setPassword("password-of-your-keystore")
+);
+NetClient client = vertx.createNetClient(options);
+----
+
+也支持通过 `Buffer` 来配置：
+
+[source,java]
+----
+Buffer myKeyStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/client-keystore.pfx");
+PfxOptions pfxOptions = new PfxOptions().
+  setValue(myKeyStoreAsABuffer).
+  setPassword("password-of-your-keystore");
+NetClientOptions options = new NetClientOptions().
+  setSsl(true).
+  setPfxKeyCertOptions(pfxOptions);
+NetClient client = vertx.createNetClient(options);
+----
+
+另一种单独提供服务器私钥和证书的方法是使用 `.pem` 文件。
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().setSsl(true).setPemKeyCertOptions(
+  new PemKeyCertOptions().
+    setKeyPath("/path/to/your/client-key.pem").
+    setCertPath("/path/to/your/client-cert.pem")
+);
+NetClient client = vertx.createNetClient(options);
+----
+
+也支持通过 `Buffer` 来配置：
+
+[source,java]
+----
+Buffer myKeyAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/client-key.pem");
+Buffer myCertAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/client-cert.pem");
+PemKeyCertOptions pemOptions = new PemKeyCertOptions().
+  setKeyValue(myKeyAsABuffer).
+  setCertValue(myCertAsABuffer);
+NetClientOptions options = new NetClientOptions().
+  setSsl(true).
+  setPemKeyCertOptions(pemOptions);
+NetClient client = vertx.createNetClient(options);
+----
+
+请记住 `pem` 的配置中，私钥是不加密的。
+
+[[_self_signed_certificates_for_testing_and_development_purposes]]
+==== 用于测试和开发目的的自签名证书
+
+CAUTION: 不要在生产设置中使用，这里生成的密钥非常不安全。
+
+在运行单元/集成测试或是运行开发版的应用程序时，
+都经常需要自签名证书。
+
+`link:../../apidocs/io/vertx/core/net/SelfSignedCertificate.html[SelfSignedCertificate]` 可用于提供自签名PEM证书，并可以提供
+`link:../../apidocs/io/vertx/core/net/KeyCertOptions.html[KeyCertOptions]` 和 `link:../../apidocs/io/vertx/core/net/TrustOptions.html[TrustOptions]` 配置：
+
+[source,java]
+----
+SelfSignedCertificate certificate = SelfSignedCertificate.create();
+
+NetServerOptions serverOptions = new NetServerOptions()
+  .setSsl(true)
+  .setKeyCertOptions(certificate.keyCertOptions())
+  .setTrustOptions(certificate.trustOptions());
+
+vertx.createNetServer(serverOptions)
+  .connectHandler(socket -> socket.end(Buffer.buffer("Hello!")))
+  .listen(1234, "localhost");
+
+NetClientOptions clientOptions = new NetClientOptions()
+  .setSsl(true)
+  .setKeyCertOptions(certificate.keyCertOptions())
+  .setTrustOptions(certificate.trustOptions());
+
+NetClient client = vertx.createNetClient(clientOptions);
+client.connect(1234, "localhost", ar -> {
+  if (ar.succeeded()) {
+    ar.result().handler(buffer -> System.out.println(buffer));
+  } else {
+    System.err.println("Woops: " + ar.cause().getMessage());
+  }
+});
+----
+
+客户端也可配置为信任所有证书：
+
+[source,java]
+----
+NetClientOptions clientOptions = new NetClientOptions()
+  .setSsl(true)
+  .setTrustAll(true);
+----
+
+自签名证书也适用于其他基于TCP的协议，如HTTPS：
+
+[source,java]
+----
+SelfSignedCertificate certificate = SelfSignedCertificate.create();
+
+vertx.createHttpServer(new HttpServerOptions()
+  .setSsl(true)
+  .setKeyCertOptions(certificate.keyCertOptions())
+  .setTrustOptions(certificate.trustOptions()))
+  .requestHandler(req -> req.response().end("Hello!"))
+  .listen(8080);
+----
+
+[[_revoking_certificate_authorities]]
+==== 待撤销证书颁发机构
+
+可以通过配置证书吊销列表（CRL）来吊销不再被信任的证书机构。
+`link:../../apidocs/io/vertx/core/net/NetClientOptions.html#addCrlPath-java.lang.String-[crlPath]`
+配置了使用的CRL：
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().
+  setSsl(true).
+  setTrustStoreOptions(trustOptions).
+  addCrlPath("/path/to/your/crl.pem");
+NetClient client = vertx.createNetClient(options);
+----
+
+也支持通过 `Buffer` 来配置：
+
+[source,java]
+----
+Buffer myCrlAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/crl.pem");
+NetClientOptions options = new NetClientOptions().
+  setSsl(true).
+  setTrustStoreOptions(trustOptions).
+  addCrlValue(myCrlAsABuffer);
+NetClient client = vertx.createNetClient(options);
+----
+
+[[_configuring_the_cipher_suite]]
+==== 配置密码套件
+
+默认情况下，TLS配置将使用运行Vert.x的JVM 密码套件，该密码套件可以
+配置一套启用的密码：
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().
+  setSsl(true).
+  setKeyStoreOptions(keyStoreOptions).
+  addEnabledCipherSuite("ECDHE-RSA-AES128-GCM-SHA256").
+  addEnabledCipherSuite("ECDHE-ECDSA-AES128-GCM-SHA256").
+  addEnabledCipherSuite("ECDHE-RSA-AES256-GCM-SHA384").
+  addEnabledCipherSuite("CDHE-ECDSA-AES256-GCM-SHA384");
+NetServer server = vertx.createNetServer(options);
+----
+
+密码套件可在 `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]` 或 `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` 配置项中指定。
+
+[[_configuring_tls_protocol_versions]]
+==== 配置TLS协议版本
+
+默认情况下，TLS配置将使用以下协议版本：SSLv2Hello、TLSv1、TLSv1.1 和 TLSv1.2。
+协议版本可以通过显式添加启用协议进行配置：
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().
+  setSsl(true).
+  setKeyStoreOptions(keyStoreOptions).
+  removeEnabledSecureTransportProtocol("TLSv1").
+  addEnabledSecureTransportProtocol("TLSv1.3");
+NetServer server = vertx.createNetServer(options);
+----
+
+协议版本可在 `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]` 或 `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` 配置项中指定。
+
+[[_ssl_engine]]
+==== SSL引擎
+
+引擎实现可以配置为使用 https://www.openssl.org[OpenSSL] 而不是JDK实现（来支持SSL）。
+OpenSSL提供比JDK引擎更好的性能和CPU使用率、以及JDK版本独立性。
+
+引擎选项可使用：
+
+- 设置了 `link:../../apidocs/io/vertx/core/net/TCPSSLOptions.html#getSslEngineOptions--[getSslEngineOptions]` 时，使用该选项
+- 否则使用 `link:../../apidocs/io/vertx/core/net/JdkSSLEngineOptions.html[JdkSSLEngineOptions]`
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().
+  setSsl(true).
+  setKeyStoreOptions(keyStoreOptions);
+
+// Use JDK SSL engine explicitly
+options = new NetServerOptions().
+  setSsl(true).
+  setKeyStoreOptions(keyStoreOptions).
+  setJdkSslEngineOptions(new JdkSSLEngineOptions());
+
+// Use OpenSSL engine
+options = new NetServerOptions().
+  setSsl(true).
+  setKeyStoreOptions(keyStoreOptions).
+  setOpenSslEngineOptions(new OpenSSLEngineOptions());
+----
+
+[[_server_name_indication_sni]]
+==== 服务器名称指示（SNI）
+
+服务器名称指示（英語：Server Name Indication，缩写：SNI）是TLS的一个扩展协议，需要指定尝试连接的主机名：
+TLS握手开始时客户端提供要连接的服务器名称，服务端根据该服务器名称，返回主机名对应的证书，
+而非默认部署的证书。
+如果服务器要求客户端身份验证，则服务器可以根据指定的服务器名称，
+使用特定的受信任CA证书。
+
+当SNI可用时，服务器使用以下规则匹配证书：
+
+* 服务器名称完全匹配的证书CN（Common Name，通用名称）或SAN DNS（带有DNS的主题备用名称），例如 `www.example.com`
+* 带匹配通配符的服务器名称匹配的证书CN或SAN DNS证书，例如 `* .example.com`
+* 否则，当客户端不提供服务器名称或提供的服务器名称无法匹配时，返回第一个证书
+
+当服务器另外要求客户端身份验证时：
+
+*如果使用 `link:../../apidocs/io/vertx/core/net/JksOptions.html[JksOptions]` 设置信任选项
+（ `link:../../apidocs/io/vertx/core/net/NetServerOptions.html#setTrustOptions-io.vertx.core.net.TrustOptions-[options]` ），
+则将与信任库别名完全匹配
+*否则，将使用无SNI的方式处理可用的CA证书
+
+通过设置 `link:../../apidocs/io/vertx/core/net/NetServerOptions.html#setSni-boolean-[setSni]` 为 `true`，可以在服务器上启用SNI，
+并为服务器配置多个密钥/证书对。
+
+Java KeyStore文件，或PKCS12文件可以开箱即用地存储多个密钥/证书对。
+
+[source,java]
+----
+JksOptions keyCertOptions = new JksOptions().setPath("keystore.jks").setPassword("wibble");
+
+NetServer netServer = vertx.createNetServer(new NetServerOptions()
+    .setKeyStoreOptions(keyCertOptions)
+    .setSsl(true)
+    .setSni(true)
+);
+----
+
+`link:../../apidocs/io/vertx/core/net/PemKeyCertOptions.html[PemKeyCertOptions]` can be configured to hold multiple entries:
+
+[source,java]
+----
+PemKeyCertOptions keyCertOptions = new PemKeyCertOptions()
+    .setKeyPaths(Arrays.asList("default-key.pem", "host1-key.pem", "etc..."))
+    .setCertPaths(Arrays.asList("default-cert.pem", "host2-key.pem", "etc...")
+    );
+
+NetServer netServer = vertx.createNetServer(new NetServerOptions()
+    .setPemKeyCertOptions(keyCertOptions)
+    .setSsl(true)
+    .setSni(true)
+);
+----
+
+客户端默认使用连接的主机名的完全限定域名（Fully Qualified Domain Name，缩写：FQDN）作为SNI服务器名称。
+
+您可以在连接socket时，提供明确的服务器名称。
+
+[source,java]
+----
+NetClient client = vertx.createNetClient(new NetClientOptions()
+    .setTrustStoreOptions(trustOptions)
+    .setSsl(true)
+);
+
+// 连接到 'localhost'，并以 'server.name'为服务器名
+client.connect(1234, "localhost", "server.name", res -> {
+  if (res.succeeded()) {
+    System.out.println("Connected!");
+    NetSocket socket = res.result();
+  } else {
+    System.out.println("Failed to connect: " + res.cause().getMessage());
+  }
+});
+----
+
+可以用于以下目的：
+
+* 指定与服务器主机不一样的服务器名称
+* 使用IP进行连接时，指定服务器名称
+* 使用短名称进行连接时，强制指定服务器名称
+
+[[_application_layer_protocol_negotiation_alpn]]
+==== 应用层协议协商
+
+ALPN(Application-Layer Protocol Negotiation)是应用层协议协商的TLS扩展，它被HTTP/2使用：
+在TLS握手期时，客户端给出其接受的应用协议列表，
+之后服务器使用它所支持的协议响应。
+
+Java 9 支持HTTP/2，可以开箱即用，无需其他步骤。
+
+标准的Java 8不支持ALPN，所以ALPN应该通过其他方式启用：
+
+- _OpenSSL_ 支持
+- _Jetty-ALPN_ 支持
+
+引擎选项可使用:
+
+- 设置了 `link:../../apidocs/io/vertx/core/net/TCPSSLOptions.html#getSslEngineOptions--[getSslEngineOptions]` 时，使用该选项
+- JDK中ALPN可用时，使用 `link:../../apidocs/io/vertx/core/net/JdkSSLEngineOptions.html[JdkSSLEngineOptions]`
+- OpenSSL中ALPN可用时，使用 `link:../../apidocs/io/vertx/core/net/OpenSSLEngineOptions.html[OpenSSLEngineOptions]`
+- 否则失败
+
+[[_openssl_alpn_support]]
+===== OpenSSL ALPN支持
+
+OpenSSL提供了原生的ALPN支持。
+
+OpenSSL需要配置 `link:../../apidocs/io/vertx/core/net/TCPSSLOptions.html#setOpenSslEngineOptions-io.vertx.core.net.OpenSSLEngineOptions-[setOpenSslEngineOptions]`
+并在类路径上使用 http://netty.io/wiki/forked-tomcat-native.html[netty-tcnative] 的jar库。
+依赖于tcnative的实现，需要OpenSSL安装在您的操作系统中。
+
+[[_jetty_alpn_support]]
+===== Jetty-ALPN支持
+
+Jetty-ALPN是一个小型的jar，它覆盖了几种Java 8发行版用以支持ALPN。
+
+JVM必须将 _alpn-boot-${version}.jar_ 放在它的 `bootclasspath` 中启动：
+
+----
+-Xbootclasspath/p:/path/to/alpn-boot${version}.jar
+----
+
+其中 ${version} 取决于JVM的版本，如 _OpenJDK 1.8.0u74_ 中的 _8.1.7.v20160121_。
+这个完整列表可以在 http://www.eclipse.org/jetty/documentation/current/alpn-chapter.html[Jetty-ALPN page] 页面上找到。
+
+这种方法主要缺点是ALPN的实现版本依赖于JVM的版本。
+
+为了解决这个问题，可以使用 _https://github.com/jetty-project/jetty-alpn-agent[Jetty ALPN agent]_ 。agent是一个JVM代理，
+它会为运行它的JVM选择正确的ALPN版本：
+
+----
+-javaagent:/path/to/alpn/agent
+----
+
+[[_using_a_proxy_for_client_connections]]
+=== 客户端连接使用代理
+
+`link:../../apidocs/io/vertx/core/net/NetClient.html[NetClient]` 支持HTTP/1.x _CONNECT_、_SOCKS4a_ 或 _SOCKS5_ 代理。
+
+代理可以在 `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` 内设置
+`link:../../apidocs/io/vertx/core/net/ProxyOptions.html[ProxyOptions]` 来配置代理类型、主机名、端口、可选的用户名和密码。
+
+以下是一个例子：
+
+[source,java]
+
+----
+NetClientOptions options = new NetClientOptions()
+  .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5)
+    .setHost("localhost").setPort(1080)
+    .setUsername("username").setPassword("secret"));
+NetClient client = vertx.createNetClient(options);
+----
+
+DNS 解析总是在代理服务器上完成解析，为了实现 SOCKS4 客户端的功能，
+需要先在本地解析 DNS 地址。
+
+[[_using_ha_proxy_protocol]]
+=== 使用HA PROXY协议
+
+https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt[HA PROXY 协议] 提供了一种便捷的安全传输连接信息
+（例如客户端的地址）的方式，
+可以跨多层NAT或TCP代理传输。
+
+HA PROXY 协议通过 `link:../../apidocs/io/vertx/core/net/NetServerOptions.html#setUseProxyProtocol-boolean-[setUseProxyProtocol]` 方法设置启用，
+同时需要在classpath中增加以下依赖：
+
+[source,xml]
+----
+<dependency>
+ <groupId>io.netty</groupId>
+ <artifactId>netty-codec-haproxy</artifactId>
+ <!--<version>该版本号需要和Vert.x使用的netty版本对齐</version>-->
+</dependency>
+----
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().setUseProxyProtocol(true);
+NetServer server = vertx.createNetServer(options);
+server.connectHandler(so -> {
+  // 打印HA Proxy协议提供的真实客户端地址，而非代理的地址
+  System.out.println(so.remoteAddress());
+
+  // 打印代理的地址
+  System.out.println(so.localAddress());
+});
+----

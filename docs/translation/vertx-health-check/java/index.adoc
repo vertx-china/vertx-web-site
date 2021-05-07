@@ -19,7 +19,7 @@ Notice that you generally need Vert.x Web to use this component. In addition add
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-health-check</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
@@ -27,7 +27,7 @@ Notice that you generally need Vert.x Web to use this component. In addition add
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-health-check:4.0.0'
+compile 'io.vertx:vertx-health-check:4.0.3'
 ----
 
 === Creating the health check object.

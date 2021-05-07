@@ -1,0 +1,336 @@
+= Vert.x 的 Apache Ignite 集群管理器
+
+本项目基于 http://ignite.apache.org/index.html[Apache Ignite] 实现了 Vert.x 的集群管理器。
+
+Vert.x 集群管理器包含以下几项功能：
+
+* 发现并管理集群中的节点
+* 管理集群的 EventBus 地址订阅清单（这样就可以轻松得知集群中的哪些节点订阅了哪些
+EventBus 地址）
+* 分布式 Map 支持
+* 分布式锁
+* 分布式计数器
+
+Vert.x 集群器 *并不* 处理节点之间的通信。在 Vert.x 中，集群节点间通信是直接由
+TCP 连接处理的。
+
+Vert.x 集群管理器是可插拔的组件，您可以选择您想用的或最适用于您的环境的集群管理器。
+因此可以用本项目的实现替代 Vert.x 的默认集群管理器（译者注：指 Hazelcast）。
+
+[[_using_ignite_cluster_manager]]
+== 使用 Ignite 集群管理器
+
+如果（集群管理器的）jar 包在 classpath 中，Vert.x将自动检测到并将其作为集群管理器。
+需要注意的是，要确保 Vert.x 的 classpath 中没有其它的集群管理器实现，否则会使用错误的集群管理器。
+
+还可以通过配置以下系统属性来指定 Vert.x 集群管理器 为 Ignite：
+`-Dvertx.clusterManagerFactory=io.vertx.spi.cluster.ignite.IgniteClusterManager`
+
+[[_using_vertx_from_command_line]]
+=== Vert.x 命令行模式
+
+请将 `vertx-ignite-4.0.2.jar` 放入 Vert.x 中安装路径的 `lib` 目录中。
+
+[[_using_vertx_in_maven_or_gradle_project]]
+=== 在 Maven 或 Gradle 项目中使用 Vert.x
+
+在项目配置文件中增加以下依赖：
+
+* Maven （位于 `pom.xml` ）：
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-ignite</artifactId>
+ <version>4.0.2</version>
+</dependency>
+----
+
+* Gradle （位于 `build.gradle` ）：
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-ignite:4.0.2'
+----
+
+[[_programmatically_specifying_cluster_manager]]
+=== 通过编程配置集群管理器
+
+您也可以通过编程的形式配置集群管理器。
+在构建 Vert.x 实例时，可以通过配置（VertxOptions）指定集群管理器，如：
+
+[source,java]
+----
+ClusterManager clusterManager = new IgniteClusterManager();
+
+VertxOptions options = new VertxOptions().setClusterManager(clusterManager);
+Vertx.clusteredVertx(options, res -> {
+ if (res.succeeded()) {
+   Vertx vertx = res.result();
+ } else {
+   // 失败！
+ }
+});
+----
+
+[[_configuring_cluster_manager]]
+== 配置集群管理器
+
+请注意：Apache Ignite 从2.0版本开始引入了新的堆外内存机制。
+所有缓存默认使用堆外内存。
+新的内存机制详情请参阅 https://apacheignite.readme.io/docs/page-memory[Ignite 虚拟内存]。
+
+[[_using_configuration_file]]
+=== 使用配置文件
+
+Ignite 集群管理器通过 `default-ignite.json` 文件配置，该文件已经打包在依赖jar包中。
+
+如果要覆盖此配置，可以在 classpath 中添加一个 `ignite.json` 文件。
+这个配置文件会被解析映射为 `link:../../apidocs/io/vertx/spi/cluster/ignite/IgniteOptions.html[IgniteOptions]` 实例，
+在这个类里可以找到每个配置项的详细信息。
+
+下面的例子在默认配置的基础上，启用了集群通信 TLS。
+[source,json]
+----
+{
+ "cacheConfiguration": [{
+   "name": "__vertx.*",
+   "cacheMode": "REPLICATED",
+   "readFromBackup": false,
+   "atomicityMode": "ATOMIC",
+   "writeSynchronizationMode": "FULL_SYNC"
+ }, {
+   "name": "*",
+   "cacheMode": "PARTITIONED",
+   "backups": 1,
+   "readFromBackup": false,
+   "atomicityMode": "ATOMIC",
+   "writeSynchronizationMode": "FULL_SYNC"
+ }],
+ "sslContextFactory": {
+   "protocol": "TLSv1.2",
+   "jksKeyCertOptions": {
+     "path": "server.jks",
+     "password": "changeme",
+   },
+   "jksTrustOptions": {
+     "path": "server.jks",
+     "password": "changeme",
+   },
+   "trustAll": false
+ },
+ "includeEventTypes": ["EVT_CACHE_OBJECT_PUT", "EVT_CACHE_OBJECT_REMOVED"],
+ "metricsLogFrequency": 0,
+ "shutdownOnSegmentation": true
+}
+----
+
+Ignite 的配置除了上述的 json 格式，也可以选用 XML 格式。
+在 classpath 中添加 `ignite.xml` 文件，Ignite 将使用它作为配置文件。
+
+首先，增加 `ignite-spring` 依赖。
+
+* Maven （位于 `pom.xml` ）：
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>org.apache.ignite</groupId>
+ <artifactId>ignite-spring</artifactId>
+ <version>${ignite.version}</version>
+</dependency>
+----
+
+* Gradle （位于 `build.gradle` ）：
+
+[source,groovy,subs="+attributes"]
+----
+compile 'org.apache.ignite:ignite-spring:${ignite.version}'
+----
+
+然后新增一个 `ignite.xml` 文件，像这样：
+
+[source,xml,subs="+attributes"]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:util="http://www.springframework.org/schema/util"
+      xsi:schemaLocation="http://www.springframework.org/schema/beans
+                          http://www.springframework.org/schema/beans/spring-beans.xsd
+                          http://www.springframework.org/schema/util
+                          http://www.springframework.org/schema/util/spring-util.xsd">
+
+ <bean class="org.apache.ignite.configuration.IgniteConfiguration">
+
+   <property name="discoverySpi">
+     <bean class="org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi">
+       <property name="ipFinder">
+         <bean class="org.apache.ignite.spi.discovery.tcp.ipfinder.multicast.TcpDiscoveryMulticastIpFinder"/>
+       </property>
+     </bean>
+   </property>
+
+   <property name="cacheConfiguration">
+     <list>
+       <bean class="org.apache.ignite.configuration.CacheConfiguration">
+         <property name="name" value="__vertx.*"/>
+         <property name="cacheMode" value="REPLICATED"/>
+         <property name="readFromBackup" value="false"/>
+         <property name="atomicityMode" value="ATOMIC"/>
+         <property name="writeSynchronizationMode" value="FULL_SYNC"/>
+       </bean>
+       <bean class="org.apache.ignite.configuration.CacheConfiguration">
+         <property name="name" value="*"/>
+         <property name="cacheMode" value="PARTITIONED"/>
+         <property name="backups" value="1"/>
+         <property name="readFromBackup" value="false"/>
+         <property name="atomicityMode" value="ATOMIC"/>
+         <property name="affinity">
+           <bean class="org.apache.ignite.cache.affinity.rendezvous.RendezvousAffinityFunction">
+             <property name="partitions" value="128"/>
+           </bean>
+         </property>
+         <property name="writeSynchronizationMode" value="FULL_SYNC"/>
+       </bean>
+     </list>
+   </property>
+
+   <property name="includeEventTypes">
+     <list>
+       <util:constant static-field="org.apache.ignite.events.EventType.EVT_CACHE_OBJECT_PUT"/>
+       <util:constant static-field="org.apache.ignite.events.EventType.EVT_CACHE_OBJECT_REMOVED"/>
+     </list>
+   </property>
+
+   <property name="gridLogger">
+     <bean class="io.vertx.spi.cluster.ignite.impl.VertxLogger"/>
+   </property>
+
+   <property name="metricsLogFrequency" value="0"/>
+ </bean>
+</beans>
+----
+
+json 格式的配置文件是 xml 配置文件的简化版，
+更多详情请参阅 https://apacheignite.readme.io/docs[Apache Ignite 文档]。
+
+[[_configuring_programmatically]]
+=== 通过编程配置
+
+您也可以通过编程的形式配置集群管理器：
+
+[source,java]
+----
+IgniteConfiguration cfg = new IgniteConfiguration();
+// 配置的代码（省略）
+
+ClusterManager clusterManager = new IgniteClusterManager(cfg);
+
+VertxOptions options = new VertxOptions().setClusterManager(clusterManager);
+Vertx.clusteredVertx(options, res -> {
+ if (res.succeeded()) {
+   Vertx vertx = res.result();
+ } else {
+   // 失败！
+ }
+});
+----
+
+[[_discovery_and_network_transport_configuration]]
+=== 服务发现与网络传输配置
+
+Ignite 默认配置使用 `TcpDiscoveryMulticastIpFinder` ，因此您的网络必须保证组播可用。
+对于禁用组播的情况，应将 `TcpDiscoveryVmIpFinder` 与预先配置的IP地址列表一起使用。
+更多详细信息请参阅 Apache Ignite 文档的
+http://apacheignite.readme.io/docs/cluster-config[集群配置] 章节。
+
+[[_trouble_shooting_clustering]]
+== 集群故障排除
+
+如果默认的组播配置不能正常运行，通常有以下原因：
+
+[[_multicast_not_enabled_on_the_machine]]
+=== 机器禁用组播
+
+Ignite 集群管理器默认使用 `TcpDiscoveryMulticastIpFinder` ，因此需要IP组播。
+对于某些操作系统，需要将组播路由增加到路由表，否则会使用默认路由。
+
+请注意，某些操作系统只为单播路由查询路由表，而不为IP组播路由查询路由表。
+
+MacOS 可参考：
+
+----
+# 为 224.0.0.1-231.255.255.254 增加组播路由
+sudo route add -net 224.0.0.0/5 127.0.0.1
+
+# 为 232.0.0.1-239.255.255.254 增加组播路由
+sudo route add -net 232.0.0.0/5 192.168.1.3
+----
+
+请自行Google搜索更多相关信息。
+
+[[_using_wrong_network_interface]]
+=== 使用了错误的网络接口
+
+如果机器上有多个网络接口（也有可能是在运行 VPN 的情况下），
+那么 Apache Ignite 很有可能使用错误的网络接口。
+
+为了确保 Ignite 使用正确的网络接口，
+可以在 `IgniteConfiguration` bean对象中将 `localHost` 属性设置为正确的网络接口IP地址，如：
+
+----
+{
+ "localHost": "192.168.1.20"
+}
+----
+
+Vert.x 运行在集群模式时，必须确保 Vert.x 获取到正确的网络接口。
+在 Vert.x 命令行模式下，可以通过 `cluster-host` 选项指定集群的网络接口：
+
+----
+vertx run myverticle.js -cluster -cluster-host your-ip-address
+----
+
+其中 `your-ip-address` 与 Apache Ignite 配置中指定的IP地址一致。
+
+若使用编码的方式启动 Vert.x，可以通过 `link:../../apidocs/io/vertx/core/VertxOptions.html#getEventBusOptions--[.setHost(java.lang.String)]` 设置集群的网络接口。
+
+[[_using_a_vpn]]
+=== 使用VPN
+
+使用VPN是上述问题的变种。
+VPN 软件工作时通常会创建虚拟网络接口，但往往不支持组播。
+在 VPN 环境中，如果 Ignite 与 Vert.x 没有配置正确的话，将会选择 VPN 创建的网络接口，而不是正确的网络接口。
+
+所以，如果您的应用运行在 VPN 环境中，请参考上述章节，为 Ignite 和 Vert.x 设置正确的网络接口。
+
+[[_when_multicast_is_not_available]]
+=== 组播不可用
+
+在某些情况下，由于特殊的运行环境，可能无法使用组播。
+在这种情况下，应该配置 IP finder 以使用其他传输方式，例如配置 `TcpDiscoveryVmIpFinder` 以使用 TCP 套接字，或配置 `TcpDiscoveryS3IpFinder` 以使用亚马逊 S3。
+
+有关可用的 Ignite 传输方式、以及如何配置启用传输方式的更多信息，
+请查阅 https://apacheignite.readme.io/docs/clustering[Ignite集群] 文档。
+
+[[_enabling_logging]]
+=== 开启日志
+
+在排除故障时，开启 Ignite 日志很有帮助，可以观察是否组成了集群。
+使用默认的 JUL 日志时，在 classpath 中添加 `vertx-default-jul-logging.properties` 文件可开启 Ignite 日志。
+这是一个标准 java.util.logging（JUL） 配置文件。
+具体配置如下：
+
+----
+org.apache.ignite.level=INFO
+----
+
+以及
+
+----
+java.util.logging.ConsoleHandler.level=INFO
+java.util.logging.FileHandler.level=INFO
+----

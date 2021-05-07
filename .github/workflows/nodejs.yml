@@ -49,6 +49,7 @@ jobs:
       - run: npm run build
         env:
           GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CONTRIBUTE_FETCH_TOKEN: ${{ secrets.CONTRIBUTE_FETCH_TOKEN }}
           VERTX_WEBSITE_BASEPATH: ${{ steps.basePath.outputs.basePath }}
 
       - name: Clone current GitHub Pages repo
@@ -88,4 +89,52 @@ jobs:
           external_repository: vertx-china/vertx-china.github.io
           publish_branch: master
           publish_dir: vertx-china.github.io
-#          cname: vertx.io
+    #          cname: vertx.io
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/master' }}
+    strategy:
+      matrix:
+        include:
+          - step: Gitee Pages
+            repo-url: git@gitee.com:vertx-china/vertx-china.git
+          - step: Coding.net
+            repo-url: git@e.coding.net:lippen/cn.vertx.tk.git
+    name: Deploy to ${{ matrix.step }}
+    needs: build
+    steps:
+      - name: Clone current GitHub Pages repo
+        run: git clone --depth 1 https://github.com/vertx-china/vertx-china.github.io.git
+
+      - name: Clean output directory
+        run: |
+          rm -rf vertx-china.github.io/.git
+          rm vertx-china.github.io/.nojekyll
+
+      - name: Deploy to ${{ matrix.step }}
+        uses: actionhub/workflows/git-deploy@v1
+        with:
+          ssh-key: ${{ secrets.GITEE_TOKEN }}
+          src-dir: vertx-china.github.io
+          branch: master
+          repo-url: ${{ matrix.repo-url }}
+          user-name: okou19900722
+          user-email: 512058895@qq.com
+          commit-message: publish
+          force-orphan: true
+
+  refresh:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Refresh Gitee Pages
+        uses: actionhub/gitee-pages@v1
+        with:
+          username: "okou19900722"
+          password: ${{ secrets.GITEE_PASSWORD }}
+          repository: "https://gitee.com/vertx-china/vertx-china"
+          branch: "master"
+          directory: ""
+          https: 'true'
+#         env:
+#           RUNNER_DEBUG: 1

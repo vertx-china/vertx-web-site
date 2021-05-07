@@ -1,0 +1,272 @@
+= Vert.x OpenAPI
+:toc: left
+
+Vert.x OpenAPI 继承了 Vert.x Web 用以支持 https://www.openapis.org/[OpenAPI 3] ，同时为您提供了简便的接口来构建一个符合您接口协议的Vert.x Web 路由器。
+
+Vert.x OpenAPI 可以做到如下事情：
+
+* 解析并校验您的 OpenAPI 3 协议
+* 根据您的约束来生成路由器（带有正确的路径以及方法）
+* 提供基于您接口协议的请求解析和校验的功能，该功能用 https://vertx.io/docs/vertx-web-validation/java/[Vert.x Web Validation] 实现。
+* 挂载必要的安全处理器
+* 在 OpenAPI 风格和 Vert.x 风格之间转换路径
+* 用 https://vertx.io/docs/vertx-web-api-service/java/[Vert.x Web API Service] 来将请求路由到事件总线
+
+[[_using_vert_x_openapi]]
+== 使用 Vert.x OpenAPI
+
+要使用Vert.x OpenAPI，您需要添加如下依赖：
+
+* Maven (在您的 `pom.xml` 文件)：
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-web-openapi</artifactId>
+ <version>4.0.2</version>
+</dependency>
+----
+
+* Gradle (在您的 `build.gradle` 文件)：
+
+[source,groovy,subs="+attributes"]
+----
+dependencies {
+ compile 'io.vertx:vertx-web-openapi:4.0.2'
+}
+----
+
+== `RouterBuilder`
+
+`link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html[RouterBuilder]` 是这个模块的主要元素，它提供了用来挂载请求处理器的接口，并且生成最终的 `link:../../apidocs/io/vertx/ext/web/Router.html[Router]`
+
+要使用 Vert.x Web OpenAPI ，您必须用 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html#create-io.vertx.core.Vertx-java.lang.String-io.vertx.core.Handler-[RouterBuilder.create]` 方法并传入您的接口协议来实例化 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html[RouterBuilder]`
+
+例如从本地文件系统来加载一个约束：
+
+[source,java]
+----
+RouterBuilder.create(vertx, "src/main/resources/petstore.yaml").onComplete(ar -> {
+  if (ar.succeeded()) {
+    // 约束加载成功
+    RouterBuilder routerBuilder = ar.result();
+  } else {
+    // router builder 初始化失败
+    Throwable exception = ar.cause();
+  }
+});
+----
+
+您可以从一个远程约束构建一个 router builder ：
+
+[source,java]
+----
+RouterBuilder.create(
+  vertx,
+  "https://raw.githubusercontent" +
+    ".com/OAI/OpenAPI-Specification/master/examples/v3.0/petstore.yaml"
+).onComplete(ar -> {
+  if (ar.succeeded()) {
+    // 约束加载成功
+    RouterBuilder routerBuilder = ar.result();
+  } else {
+    // router builder 初始化失败
+    Throwable exception = ar.cause();
+  }
+});
+----
+
+您可以通过配置 `link:../../apidocs/io/vertx/ext/web/openapi/OpenAPILoaderOptions.html[OpenAPILoaderOptions]` 以获取私有的远程约束：
+
+[source,java]
+----
+OpenAPILoaderOptions loaderOptions = new OpenAPILoaderOptions()
+  .putAuthHeader("Authorization", "Bearer xx.yy.zz");
+RouterBuilder.create(
+  vertx,
+  "https://raw.githubusercontent" +
+    ".com/OAI/OpenAPI-Specification/master/examples/v3.0/petstore.yaml",
+  loaderOptions
+).onComplete(ar -> {
+  if (ar.succeeded()) {
+    // 约束加载成功
+    RouterBuilder routerBuilder = ar.result();
+  } else {
+    // router builder 初始化失败
+    Throwable exception = ar.cause();
+  }
+});
+----
+
+您可以用 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilderOptions.html[RouterBuilderOptions]` 来修改 router builder 的各种行为：
+
+[source,java]
+----
+routerBuilder.setOptions(new RouterBuilderOptions());
+----
+
+[[_access_to_operations]]
+== 获取operation
+
+为了获取协议中定义的 https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#operationObject[Operation] ，您需要用 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html#operation-java.lang.String-[operation]` 方法。
+这个方法返回了一个 `link:../../apidocs/io/vertx/ext/web/openapi/Operation.html[Operation]` 对象，您可以既可以用它来获取模型，又可以用来注册处理器。
+
+使用 `link:../../apidocs/io/vertx/ext/web/openapi/Operation.html#handler-io.vertx.core.Handler-[handler]` 为一个operation来挂载处理器，
+使用 `link:../../apidocs/io/vertx/ext/web/openapi/Operation.html#failureHandler-io.vertx.core.Handler-[failureHandler]` 来挂载失败处理器。
+
+您可以 **在一个 operation 当中添加多个处理器** ，而不覆盖已经存在的处理器。
+
+例如：
+
+[source,java]
+----
+routerBuilder
+  .operation("awesomeOperation")
+  .handler(routingContext -> {
+    RequestParameters params =
+      routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+    RequestParameter body = params.body();
+    JsonObject jsonBody = body.getJsonObject();
+    // 处理请求体
+  }).failureHandler(routingContext -> {
+  // 处理失败
+});
+----
+
+[IMPORTANT]
+====
+没有 `operationId` 的话，那么您不能获取到这个operation。 没有 `operationId` 的operation，会被 `RouterBuilder` 忽略。
+====
+
+Vert.x OpenAPI 为您挂载了正确的 `link:../../apidocs/io/vertx/ext/web/validation/ValidationHandler.html[ValidationHandler]` ，所以您才可以获取到请求参数和请求体。
+请参考 https://vertx.io/docs/vertx-web-validation/java/[Vert.x Web 校验文档] 来学习如何获取请求参数以及请求体，并学习如何管理校验失败的处理方式。
+
+[[_map_authenticationhandler_to_openapi_security_schemes]]
+== 将 `AuthenticationHandler` 映射到 OpenAPI 安全约束
+
+您可以将一个 `link:../../apidocs/io/vertx/ext/web/handler/AuthenticationHandler.html[AuthenticationHandler]` 映射到一个接口协议当中定义的安全约束。
+
+例如，给出一个名为 `security_scheme_name` 接口约束：
+
+[source,java]
+----
+routerBuilder.securityHandler("security_scheme_name", authenticationHandler);
+----
+
+您可以挂载包含在Vert.x Web中模块中的 `link:../../apidocs/io/vertx/ext/web/handler/AuthenticationHandler.html[AuthenticationHandler]` ，例如：
+
+[source,java]
+----
+routerBuilder.securityHandler("jwt_auth",
+  JWTAuthHandler.create(jwtAuthProvider));
+----
+
+当您生成 `link:../../apidocs/io/vertx/ext/web/Router.html[Router]` 之后，router builder会解析operation所必须的安全约束。
+如果一个operation所必须的 `AuthenticationHandler` 缺失，则这个过程会失败。
+
+调试/测试时，您可以用 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilderOptions.html#setRequireSecurityHandlers-boolean-[setRequireSecurityHandlers]` 来禁用这个检验。
+
+[[_not_implemented_error]]
+== 未实现的错误
+
+如果未指定处理器，那么Router builder会为一个operation自动挂载一个默认的处理器。
+这个默认的处理器会让 routing context 处于  405 `Method Not Allowed` 或者 501 `Not Implemented` 错误状态。
+您可以用 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilderOptions.html#setMountNotImplementedHandler-boolean-[setMountNotImplementedHandler]` 启用/禁用它，并且您可以用 `link:../../apidocs/io/vertx/ext/web/Router.html#errorHandler-int-io.vertx.core.Handler-[errorHandler]` 自定义这个错误的处理方式。
+
+[[_response_content_type_handler]]
+== 响应内容类型处理器
+
+当接口协议需要的时候，Router builder 自动挂载一个 `link:../../apidocs/io/vertx/ext/web/handler/ResponseContentTypeHandler.html[ResponseContentTypeHandler]` 处理器。
+您可以用 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilderOptions.html#setMountResponseContentTypeHandler-boolean-[setMountResponseContentTypeHandler]` 禁用这个特性。
+
+[[_operation_model]]
+== operation 模型
+
+如果您在处理请求的时候需要获取到operation模型，那么您可以配置router builder，从而用 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilderOptions.html#setOperationModelKey-java.lang.String-[setOperationModelKey]` 将其放入 `RoutingContext` 。
+
+[source,java]
+----
+options.setOperationModelKey("operationModel");
+routerBuilder.setOptions(options);
+
+// 添加一个用这个operation模型的处理器
+routerBuilder
+  .operation("listPets")
+  .handler(
+    routingContext -> {
+      JsonObject operation = routingContext.get("operationModel");
+
+      routingContext
+        .response()
+        .setStatusCode(200)
+        .setStatusMessage("OK")
+        // 以"listPets"为 operation id 回写响应
+        .end(operation.getString("operationId"));
+    });
+----
+
+[[_body_handler]]
+== 请求体处理器
+
+Router builder自动挂载一个 `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]` 用以管理请求体。
+您可以用 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html#bodyHandler-io.vertx.ext.web.handler.BodyHandler-[bodyHandler]` 来配置 `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]` 对象（例如，更换上传目录）
+
+[[_multipart_form_data_validation]]
+== `multipart/form-data` 校验
+
+校验处理器像如下描述来区分文件上传和表单属性：
+
+* 如果参数中没有编码相关的字段：
+- 如果参数存在 `type: string` 和 `format: base64` ，或者存在 `format: binary` ，那么它就是 content-type请求头为 `application/octet-stream` 的一个请求。
+- 否则是一个表单请求
+* 如果参数存在编码相关字段，则是一个文件上传的请求。
+
+对于表单属性，他们被解析、转换为Json、然后校验，
+然而对于文件上传请求，校验处理器仅仅检查存在性和Content-Type。
+
+[[_custom_global_handlers]]
+== 自定义全局处理器
+
+如果您需要挂载一个处理器，而这个处理器在您路由器中每个operation执行之前都需要执行特定操作，那么您可以用 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilder.html#rootHandler-io.vertx.core.Handler-[rootHandler]`
+
+[[_router_builder_handlers_mount_order]]
+== Router builder 处理器的挂载顺序
+
+router builder以如下顺序加载处理器：
+
+1. 请求体处理器
+2. 自定义全局处理器
+3. 已配置的 `link:../../apidocs/io/vertx/ext/web/handler/AuthenticationHandler.html[AuthenticationHandler]`
+4. 生成的 `link:../../apidocs/io/vertx/ext/web/validation/ValidationHandler.html[ValidationHandler]`
+5. 用户处理器 或者 "未实现的"处理器（如果启用）
+
+[[_generate_the_router]]
+== 生成路由器
+
+万事俱备，生成路由器并使用：
+
+[source,java]
+----
+Router router = routerBuilder.createRouter();
+
+HttpServer server =
+  vertx.createHttpServer(new HttpServerOptions().setPort(8080).setHost(
+    "localhost"));
+server.requestHandler(router).listen();
+----
+
+这个方法可能会失败并抛出 `link:../../apidocs/io/vertx/ext/web/openapi/RouterBuilderException.html[RouterBuilderException]` 。
+
+[TIP]
+====
+如果您需要挂载所有router builder生成的具有相同父级路径的路由器，您可以用 `link:../../apidocs/io/vertx/ext/web/Router.html#mountSubRouter-java.lang.String-io.vertx.ext.web.Router-[mountSubRouter]` ：
+
+[source,java]
+----
+Router global = Router.router(vertx);
+
+Router generated = routerBuilder.createRouter();
+global.mountSubRouter("/v1", generated);
+----
+====

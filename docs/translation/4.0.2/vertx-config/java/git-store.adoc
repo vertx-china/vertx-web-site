@@ -1,0 +1,79 @@
+[[_git_configuration_store]]
+=== Git配置中心
+
+git配置中心是对 Vert.x Configuration Retriever 的扩展，
+用于从Git仓库获取配置。
+
+[[_using_the_git_configuration_store]]
+==== 使用git配置中心
+
+要使用Git配置中心，
+则添加如下依赖：
+
+* Maven（在您的 `pom.xml` 文件）：
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-config-git</artifactId>
+ <version>4.0.2</version>
+</dependency>
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-config</artifactId>
+ <version>4.0.2</version>
+</dependency>
+----
+
+* Gradle（在您的 `build.gradle` 文件）：
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-config:4.0.2'
+compile 'io.vertx:vertx-config-git:4.0.2'
+----
+
+[[_configuring_the_store]]
+==== 设置配置中心
+
+将该库加入classpath或者项目依赖后，您需要配置
+`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` 以使用该配置中心：
+
+[source, java]
+----
+ConfigStoreOptions git = new ConfigStoreOptions()
+    .setType("git")
+    .setConfig(new JsonObject()
+        .put("url", "https://github.com/cescoffier/vertx-config-test.git")
+        .put("path", "local")
+        .put("filesets",
+            new JsonArray().add(new JsonObject().put("pattern", "*.json"))));
+
+ConfigRetriever retriever = ConfigRetriever.create(vertx,
+    new ConfigRetrieverOptions().addStore(git));
+----
+
+配置需要如下信息：
+
+* `url` ：git仓库的地址
+* `path` ：仓库被clone的路径（本地目录）
+* `user` ：仓库的git用户名（默认不需要认证）
+* `password` ： git用户的密码
+* `idRsaKeyPath` ：私有仓库所需的 ssh rsa 密钥 uri
+* `fileset` ：指定要读取的文件集合
+（与配置中心的目录配置意义相同）
+
+您也可以配置要使用的分支（ `branch` 参数，默认为 `master` ），
+以及远程仓库名（ `remote` 参数，默认为 `origin` ）
+
+[[_how_does_it_works]]
+==== 如何工作
+
+如果本地的仓库目录（由 `path` 参数指定）不存在，那么配置中心会 clone 远程仓库到这个本地目录。
+然后它会读取符合 `fileset` 配置的文件。
+
+如果本地的仓库目录（由 `path` 参数指定）存在，它会尝试更新（按需切换分支）。
+如果更新失败，则视为获取配置失败。
+
+配置中心会周期性更新 git 仓库来检查配置是否更新。
