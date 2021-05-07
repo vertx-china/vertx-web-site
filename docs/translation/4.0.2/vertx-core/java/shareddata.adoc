@@ -1,0 +1,269 @@
+[[_using_the_shareddata_api]]
+== 使用共享数据的API
+
+顾名思义，`link:../../apidocs/io/vertx/core/shareddata/SharedData.html[共享数据（SharedData）]` API允许您在如下组件中安全地共享数据：
+
+* 应用程序的不同部分之间，或者
+* 同一 Vert.x 实例中的不同应用程序之间，或者
+* Vert.x 集群中的不同实例之间
+
+在实践中, 它提供了:
+
+- synchronous maps (local-only)
+- asynchronous maps
+- asynchronous locks
+- asynchronous counters
+
+IMPORTANT: 分布式数据结构的行为取决于您使用的集群管理器。
+网络分区面临的备份（复制）以及当出现网络分区时的行为，由集群管理器和其配置来决定。
+请参阅集群管理器文档以及底层框架手册。
+
+[[_local_maps]]
+=== Local maps
+
+`link:../../apidocs/io/vertx/core/shareddata/LocalMap.html[Local maps]` 允许您在同一个 Vert.x 实例中的不同事件循环（如不同的 verticle）之间安全地共享数据。
+
+仅允许将某些数据类型作为键值和值：
+
+- 不可变的类型 （如 String、boolean，等等），或
+- 实现了 `link:../../apidocs/io/vertx/core/shareddata/Shareable.html[Shareable]` 接口的类型 （比如Buffer，JSON数组，JSON对象，或您编写的Shareable实现类）。
+
+在后一种情况中，键/值将被复制，然后再放到Map中。
+
+这样，我们可以确保在Vert.x应用程序不同线程之间没有 _共享访问可变状态_ 。
+因此您不必担心需要通过同步访问来保护该状态。
+
+以下是使用一个共享的 local map 的示例：
+
+[source,java]
+----
+SharedData sharedData = vertx.sharedData();
+
+LocalMap<String, String> map1 = sharedData.getLocalMap("mymap1");
+
+map1.put("foo", "bar"); // String是不可变的，所以不需要复制
+
+LocalMap<String, Buffer> map2 = sharedData.getLocalMap("mymap2");
+
+map2.put("eek", Buffer.buffer().appendInt(123)); // Buffer将会在添加到Map之前拷贝
+
+// 之后... 在您应用的另外一部分
+
+map1 = sharedData.getLocalMap("mymap1");
+
+String val = map1.get("foo");
+
+map2 = sharedData.getLocalMap("mymap2");
+
+Buffer buff = map2.get("eek");
+----
+
+[[_asynchronous_shared_maps]]
+=== 异步共享的 maps
+
+`link:../../apidocs/io/vertx/core/shareddata/AsyncMap.html[异步共享的 maps]` 允许数据被放到 map 中，并从本地或任何其他节点读取。
+
+这使得它们对于托管Vert.x Web应用程序的服务器场中的会话状态存储非常有用。
+
+获取Map的过程是异步的，返回结果可以传递给您指定的处理器。。以下是一个例子：
+
+[source,java]
+----
+SharedData sharedData = vertx.sharedData();
+
+sharedData.<String, String>getAsyncMap("mymap", res -> {
+  if (res.succeeded()) {
+    AsyncMap<String, String> map = res.result();
+  } else {
+    // 发生错误
+  }
+});
+----
+
+当 Vert.x 是集群模式时, 你放进map的数据，从本地以及从集群中的其他成员那里都可以访问到。
+
+IMPORTANT: 在集群模式中, 异步共享的 maps 依靠于集群管理器提供的分布式数据结构。
+请注意，异步共享map操作的延迟，在集群模式下可能比在本地模式下高很多。
+
+如果你的应用不需要和其它任何节点共享数据，那么你可以获取一个仅限本地的 map：
+
+[source,java]
+----
+SharedData sharedData = vertx.sharedData();
+
+sharedData.<String, String>getLocalAsyncMap("mymap", res -> {
+  if (res.succeeded()) {
+    // 仅限本地的异步map
+    AsyncMap<String, String> map = res.result();
+  } else {
+    // 发生错误
+  }
+});
+----
+
+[[_putting_data_in_a_map]]
+==== 将数据放入map
+
+您可以使用 `link:../../apidocs/io/vertx/core/shareddata/AsyncMap.html#put-java.lang.Object-java.lang.Object-io.vertx.core.Handler-[put]` 方法将数据放入map。
+
+put 方法是异步的，一旦完成它会通知处理器：
+
+[source,java]
+----
+map.put("foo", "bar", resPut -> {
+  if (resPut.succeeded()) {
+    // 成功放入值
+  } else {
+    // 发生错误
+  }
+});
+----
+
+[[_getting_data_from_a_map]]
+==== 从map中读取数据
+
+您可以使用  `link:../../apidocs/io/vertx/core/shareddata/AsyncMap.html#get-java.lang.Object-io.vertx.core.Handler-[get]` 方法从Map读取数据。
+
+get 方法是异步的，一段时间过后它会通知处理器并传入结果。
+
+[source,java]
+----
+map.get("foo", resGet -> {
+  if (resGet.succeeded()) {
+    // 成功读取值
+    Object val = resGet.result();
+  } else {
+    // 发生错误
+  }
+});
+----
+
+[[_other_map_operations]]
+===== 其他map操作
+
+您还可以从异步Map中删除条目、清除Map、读取它的大小。
+
+有关更多信息，请参阅  `link:../../apidocs/io/vertx/core/shareddata/AsyncMap.html[API docs]` 。
+
+[[_asynchronous_locks]]
+=== 异步锁
+
+`link:../../apidocs/io/vertx/core/shareddata/Lock.html[异步锁]` 允许您在集群中获取独占锁。
+异步锁适用于：同一时刻仅在一个节点上执行某些操作或访问某个资源。
+
+集群范围锁具有异步API，它和大多数等待锁释放的阻塞调用线程的API锁不相同。
+
+可使用 `link:../../apidocs/io/vertx/core/shareddata/SharedData.html#getLock-java.lang.String-io.vertx.core.Handler-[getLock]` 方法获取锁。
+它不会阻塞，但当锁可用时， `link:../../apidocs/io/vertx/core/shareddata/Lock.html[Lock]` 的实例会被传入处理器，表示您现在拥有该锁。
+
+若您拥有的锁没有其他调用者，集群上的任何地方都可以获得该锁。
+
+当您用完锁后，您可以调用 `link:../../apidocs/io/vertx/core/shareddata/Lock.html#release--[release]` 方法来释放它，以便另一个调用者可获得它。
+
+[source,java]
+----
+SharedData sharedData = vertx.sharedData();
+
+sharedData.getLock("mylock", res -> {
+  if (res.succeeded()) {
+    // 获得锁
+    Lock lock = res.result();
+
+    // 5秒后我们释放该锁以便其他人可以得到它
+
+    vertx.setTimer(5000, tid -> lock.release());
+
+  } else {
+    // 发生错误
+  }
+});
+----
+
+您可以为锁设置一个超时时间，若获取锁超时，则会通知处理器获取锁失败：
+
+[source,java]
+----
+SharedData sharedData = vertx.sharedData();
+
+sharedData.getLockWithTimeout("mylock", 10000, res -> {
+  if (res.succeeded()) {
+    // 获得锁
+    Lock lock = res.result();
+
+  } else {
+    // 获取锁失败
+  }
+});
+----
+
+有更多信息，请参阅  `link:../../apidocs/io/vertx/core/shareddata/Lock.html[API文档]` 。
+
+IMPORTANT: 在集群模式中, 异步锁依靠于集群管理器提供的分布式数据结构。
+请注意，异步共享锁的操作的延迟，在集群模式下可能比在本地模式下高很多。
+
+如果你的应用不需要和其它任何节点共享锁，你可以获取一个仅限本地的锁：
+
+[source,java]
+----
+SharedData sharedData = vertx.sharedData();
+
+sharedData.getLocalLock("mylock", res -> {
+  if (res.succeeded()) {
+    // 仅限本地的计数器
+    Lock lock = res.result();
+
+    // 5秒后我们释放该锁以便其他人可以得到它
+
+    vertx.setTimer(5000, tid -> lock.release());
+
+  } else {
+    // 发生错误
+  }
+});
+----
+
+[[_asynchronous_counters]]
+=== 异步计数器
+
+有时你会需要在本地或者在应用节点之间维护一个原子计数器。
+
+您可以用 `link:../../apidocs/io/vertx/core/shareddata/Counter.html[Counter]` 来做到这一点。
+
+您可以通过 `link:../../apidocs/io/vertx/core/shareddata/SharedData.html#getCounter-java.lang.String-io.vertx.core.Handler-[getCounter]` 方法获取一个实例：
+
+[source,java]
+----
+SharedData sharedData = vertx.sharedData();
+
+sharedData.getCounter("mycounter", res -> {
+  if (res.succeeded()) {
+    Counter counter = res.result();
+  } else {
+    // 发生错误
+  }
+});
+----
+
+在获取了一个实例后，您可以用多种方式获取当前的计数、原子地+1、-1、
+加某个特定值。
+
+有更多信息，请参阅 `link:../../apidocs/io/vertx/core/shareddata/Counter.html[API文档]` 。
+
+IMPORTANT: 在集群模式中, 异步计数器依靠于集群管理器提供的分布式数据结构。
+请注意，异步共享计数器操作的延迟，在集群模式下可能比在本地模式下高很多。
+
+如果你的应用不需要和其它任何节点共享计数器, 你可以获取一个仅限本地的计数器：
+
+[source,java]
+----
+SharedData sharedData = vertx.sharedData();
+
+sharedData.getLocalCounter("mycounter", res -> {
+  if (res.succeeded()) {
+    // 仅限本地的计数器
+    Counter counter = res.result();
+  } else {
+    // 发生错误
+  }
+});
+----

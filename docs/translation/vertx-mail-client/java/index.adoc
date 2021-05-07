@@ -16,7 +16,7 @@ To use this project, add the following dependency to the _dependencies_ section 
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-mail-client</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
@@ -24,7 +24,7 @@ To use this project, add the following dependency to the _dependencies_ section 
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-mail-client:4.0.0'
+compile 'io.vertx:vertx-mail-client:4.0.3'
 ----
 
 == Creating a client
@@ -248,6 +248,7 @@ The configuration has the following properties
 * `enableDKIM` boolean if true, the DKIM signing will be enabled if DKIM configurations are set as well, default is `false`.
 * `dkimSignOptions` List of `DKIMSignOptions` which are used to perform the DKIM sign.
 * `pipelining` enables pipelining if the SMTP server supports it. Default is `true`
+* `multiPartOnly` boolean, if encode mail messages as multipart only or not. Default is `false`
 
 === MailResult object
 The MailResult object has the following members

@@ -1,0 +1,271 @@
+[[_using_the_file_system_with_vert_x]]
+== 使用 Vert.x 访问文件系统
+
+Vert.x的 `link:../../apidocs/io/vertx/core/file/FileSystem.html[FileSystem]` 对象提供了许多操作文件系统的方法。
+
+每个Vert.x 实例有一个文件系统对象，您可以使用 `link:../../apidocs/io/vertx/core/Vertx.html#fileSystem--[fileSystem]` 方法获取它。
+
+每个操作都提供了阻塞和非阻塞版本，其中非阻塞版本接受一个处理器（Handler），
+当操作完成或发生错误时调用该处理器。
+
+以下是文件异步拷贝的示例：
+
+[source,java]
+----
+FileSystem fs = vertx.fileSystem();
+
+// 从foo.txt拷贝到bar.txt
+fs.copy("foo.txt", "bar.txt", res -> {
+  if (res.succeeded()) {
+    // 拷贝完成
+  } else {
+    // 发生错误
+  }
+});
+----
+阻塞版本的方法名为 `xxxBlocking`，它要么返回结果，要么直接抛出异常。
+很多情况下，一些潜在的阻塞操作可以快速返回（这取决于操作系统和文件系统），
+这就是我们为什么提供它。但是强烈建议您在event-loop中使用它之前测试使用它们究竟需要耗费多长时间，
+以避免打破黄金法则。
+
+以下是使用阻塞 API的拷贝示例：
+
+[source,java]
+----
+FileSystem fs = vertx.fileSystem();
+
+// 同步拷贝从foo.txt到bar.txt
+fs.copyBlocking("foo.txt", "bar.txt");
+----
+
+Vert.x 文件系统支持 copy、move、truncate、chmod 等等许多其他文件操作。
+我们不会在这里列出所有内容，请参考 `link:../../apidocs/io/vertx/core/file/FileSystem.html[API文档]` 获取完整列表。
+
+让我们看看使用异步方法的几个例子：
+
+[source,java]
+----
+vertx.fileSystem().readFile("target/classes/readme.txt", result -> {
+  if (result.succeeded()) {
+    System.out.println(result.result());
+  } else {
+    System.err.println("Oh oh ..." + result.cause());
+  }
+});
+
+// 拷贝文件
+vertx.fileSystem().copy("target/classes/readme.txt", "target/classes/readme2.txt", result -> {
+  if (result.succeeded()) {
+    System.out.println("File copied");
+  } else {
+    System.err.println("Oh oh ..." + result.cause());
+  }
+});
+
+// 写文件
+vertx.fileSystem().writeFile("target/classes/hello.txt", Buffer.buffer("Hello"), result -> {
+  if (result.succeeded()) {
+    System.out.println("File written");
+  } else {
+    System.err.println("Oh oh ..." + result.cause());
+  }
+});
+
+// 检测是否已经存在以及删除
+vertx.fileSystem().exists("target/classes/junk.txt", result -> {
+  if (result.succeeded() && result.result()) {
+    vertx.fileSystem().delete("target/classes/junk.txt", r -> {
+      System.out.println("File deleted");
+    });
+  } else {
+    System.err.println("Oh oh ... - cannot delete the file: " + result.cause());
+  }
+});
+----
+
+[[_asynchronous_files]]
+=== 异步文件访问
+
+Vert.x提供了异步文件访问的抽象，允许您操作文件系统上的文件。
+
+您可以像下边代码打开一个 `link:../../apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]` ：
+
+[source,java]
+----
+OpenOptions options = new OpenOptions();
+fileSystem.open("myfile.txt", options, res -> {
+  if (res.succeeded()) {
+    AsyncFile file = res.result();
+  } else {
+    // 发生错误
+  }
+});
+----
+
+`AsyncFile` 实现了 `ReadStream` 和 `WriteStream` 接口，因此您可以将文件和其他流对象配合 _管道_ 工作，
+如NetSocket、HTTP请求和响应和WebSocket等。
+
+它们还允许您直接读写。
+
+[[_random_access_writes]]
+==== 随机访问写
+
+要使用 `AsyncFile` 进行随机访问写，请使用
+`link:../../apidocs/io/vertx/core/file/AsyncFile.html#write-io.vertx.core.buffer.Buffer-long-io.vertx.core.Handler-[write]` 方法。
+
+这个方法的参数有：
+
+* `buffer` ：要写入的缓冲
+* `position` ：一个整数，指定在文件中写入缓冲的位置，若位置大于或等于文件大小，
+文件将被扩展以适应偏移的位置。
+* `handler` ：结果处理器
+
+这是随机访问写的示例：
+
+[source,java]
+----
+vertx.fileSystem().open("target/classes/hello.txt", new OpenOptions(), result -> {
+  if (result.succeeded()) {
+    AsyncFile file = result.result();
+    Buffer buff = Buffer.buffer("foo");
+    for (int i = 0; i < 5; i++) {
+      file.write(buff, buff.length() * i, ar -> {
+        if (ar.succeeded()) {
+          System.out.println("Written ok!");
+          // 等等
+        } else {
+          System.err.println("Failed to write: " + ar.cause());
+        }
+      });
+    }
+  } else {
+    System.err.println("Cannot open file " + result.cause());
+  }
+});
+----
+
+[[_random_access_reads]]
+==== 随机访问读
+
+要使用 `AsyncFile` 进行随机访问读，请使用
+`link:../../apidocs/io/vertx/core/file/AsyncFile.html#read-io.vertx.core.buffer.Buffer-int-long-int-io.vertx.core.Handler-[read]`
+方法。
+
+该方法的参数有：
+
+* `buffer` ：读取数据的 Buffer
+* `offset` ：读取数据将被放到 Buffer 中的偏移量
+* `position` ：从文件中读取数据的位置
+* `length` ：要读取的数据的字节数
+* `handler` ：结果处理器
+
+以下是随机访问读的示例：
+
+[source,java]
+----
+vertx.fileSystem().open("target/classes/les_miserables.txt", new OpenOptions(), result -> {
+  if (result.succeeded()) {
+    AsyncFile file = result.result();
+    Buffer buff = Buffer.buffer(1000);
+    for (int i = 0; i < 10; i++) {
+      file.read(buff, i * 100, i * 100, 100, ar -> {
+        if (ar.succeeded()) {
+          System.out.println("Read ok!");
+        } else {
+          System.err.println("Failed to write: " + ar.cause());
+        }
+      });
+    }
+  } else {
+    System.err.println("Cannot open file " + result.cause());
+  }
+});
+----
+
+[[_opening_options]]
+==== 打开选项
+
+打开 `AsyncFile` 时，您可以传递一个 `link:../../apidocs/io/vertx/core/file/OpenOptions.html[OpenOptions]` 实例，
+这些选项描述了访问文件的行为。例如：您可使用
+`link:../../apidocs/io/vertx/core/file/OpenOptions.html#setRead-boolean-[setRead]`，`link:../../apidocs/io/vertx/core/file/OpenOptions.html#setWrite-boolean-[setWrite]`
+和 `link:../../apidocs/io/vertx/core/file/OpenOptions.html#setPerms-java.lang.String-[setPerms]` 方法配置文件访问权限。
+
+若打开的文件已经存在，则可以使用
+`link:../../apidocs/io/vertx/core/file/OpenOptions.html#setCreateNew-boolean-[setCreateNew]` 和
+`link:../../apidocs/io/vertx/core/file/OpenOptions.html#setTruncateExisting-boolean-[setTruncateExisting]` 配置对应行为。
+
+您可以使用
+`link:../../apidocs/io/vertx/core/file/OpenOptions.html#setDeleteOnClose-boolean-[setDeleteOnClose]` 标记在关闭时或JVM停止时要删除的文件。
+
+[[_flushing_data_to_underlying_storage]]
+==== 将数据刷新到底层存储
+
+在 `OpenOptions` 中，您可以使用
+`link:../../apidocs/io/vertx/core/file/OpenOptions.html#setDsync-boolean-[setDsync]` 方法在每次写入时启用/禁用内容的自动同步。这种情况下，您可以使用
+ `link:../../apidocs/io/vertx/core/file/AsyncFile.html#flush--[flush]` 方法手动将OS缓存中的数据写入存储设备。
+
+该方法也可附带一个处理器来调用，这个处理器在 `flush` 完成时被调用。
+
+[[_using_asyncfile_as_readstream_and_writestream]]
+==== 将 AsyncFile 作为 ReadStream 和 WriteStream
+
+`AsyncFile` 实现了 `ReadStream` 和 `WriteStream` 接口。
+您可以使用 _管道_ 将数据与其他读取和写入流进行数据管送。
+例如，下面的例子会将内容复制到另外一个 `AsyncFile` ：
+
+[source,java]
+----
+final AsyncFile output = vertx.fileSystem().openBlocking("target/classes/plagiary.txt", new OpenOptions());
+
+vertx.fileSystem().open("target/classes/les_miserables.txt", new OpenOptions(), result -> {
+  if (result.succeeded()) {
+    AsyncFile file = result.result();
+    file.pipeTo(output)
+      .onComplete(v -> {
+        System.out.println("Copy done");
+      });
+  } else {
+    System.err.println("Cannot open file " + result.cause());
+  }
+});
+----
+
+您还可以使用 _管道_ 将文件内容写入到HTTP 响应中，或者写入任意
+`WriteStream`。
+
+[[classpath]]
+==== 从 Classpath 访问文件
+
+当Vert.x找不到文件系统上的文件时，它尝试从类路径中解析该文件。
+请注意，类路径的资源路径不以
+`/` 开头。
+
+由于Java不提供对类路径资源的异步方法，
+所以当类路径资源第一次被访问时，
+该文件将复制到工作线程中的文件系统。
+当第二次访问相同资源时，访问的文件直接从
+（工作线程的）文件系统提供。
+即使类路径资源发生变化（例如开发系统中），
+也会提供之前的内容。
+
+此（文件）缓存行为可以通过 `link:../../apidocs/io/vertx/core/file/FileSystemOptions.html#setFileCachingEnabled-boolean-[setFileCachingEnabled]`
+方法进行设定。如果系统属性中没有预先设置 `vertx.disableFileCaching`
+，则其默认值为 `true`。
+
+文件缓存的路径默认为 `.vertx`，它可以通过设置系统属性
+`vertx.cacheDirBase` 进行自定义。
+
+如果想在系统级禁用整个classpath解析功能，可以将系统属性
+`vertx.disableFileCPResolving` 设置为 `true`。
+
+NOTE: 当加载 `io.vertx.core.file.FileSystemOptions` 类时，这些系统属性将被加载一次。
+因此，在加载此类之前应该设置这些属性，或者在启动它时作为JVM系统属性来设置。
+
+如果要禁用特定应用程序的类路径解析，但默认情况下在系统范围内将其保持启用状态，
+则可以通过 `link:../../apidocs/io/vertx/core/file/FileSystemOptions.html#setClassPathResolvingEnabled-boolean-[setClassPathResolvingEnabled]` 选项设置。
+
+[[_closing_an_asyncfile]]
+==== 关闭 AsyncFile
+
+您可调用 `link:../../apidocs/io/vertx/core/file/AsyncFile.html#close--[close]` 方法来关闭 `AsyncFile`。
+关闭是异步的，如果希望在关闭过后收到通知，您可指定一个处理器作为函数 `close` 的参数。。

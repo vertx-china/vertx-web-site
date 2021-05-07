@@ -1,0 +1,303 @@
+[[_common_authentication_and_authorization]]
+= 通用认证和授权
+
+该Vert.x组件提供了用于身份验证和授权的接口，
+这些接口可以从Vert.x应用程序中使用，并且可以由其他提供程序支持。
+
+vertx-web同样也使用了Vert.x auth来处理其身份验证和授权。
+
+要使用这个项目，在构建描述的 _dependencies_ 部分添加以下依赖项：
+
+* Maven (在 `pom.xml` 文件中):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-auth-common</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+* Gradle (在 `build.gradle` 文件中):
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-auth-common:4.0.0'
+----
+
+[[_basic_concepts]]
+== 基本概念
+
+_(Authentication)认证_ 是指验证用户的身份。
+
+_(Authorization)授权_ 是指验证用户是否有权执行特定任务。
+
+为了支持多种授权模型以及保持其灵活性, 所有的授权操作都在
+`link:../../apidocs/io/vertx/ext/auth/authorization/Authorization.html[Authorization]` 上进行。
+
+在某些情况下，一个授权可能代表一种权限，
+比如，访问所有打印机或某个打印机的权限。
+在其他情况下，授权可能是一个角色（Role）（例如：`admin`，`manager` 等）。
+为了提供少量实现，可以使用下面这些工厂方法：
+
+* `link:../../apidocs/io/vertx/ext/auth/authorization/RoleBasedAuthorization.html[RoleBasedAuthorization]` 基于角色（Role）的授权。
+* `link:../../apidocs/io/vertx/ext/auth/authorization/PermissionBasedAuthorization.html[PermissionBasedAuthorization]` 基于权限（Permission）的授权。
+* `link:../../apidocs/io/vertx/ext/auth/authorization/WildcardPermissionBasedAuthorization.html[WildcardPermissionBasedAuthorization]` 以通配符匹配的基于角色的授权。
+* `link:../../apidocs/io/vertx/ext/auth/authorization/AndAuthorization.html[AndAuthorization]` 逻辑授权。
+* `link:../../apidocs/io/vertx/ext/auth/authorization/OrAuthorization.html[OrAuthorization]` 逻辑授权。
+* `link:../../apidocs/io/vertx/ext/auth/authorization/NotAuthorization.html[NotAuthorization]` 逻辑授权。
+
+这组授权代表任何类型的授权，例如：
+
+* 基于角色的授权
+* 基于权限的授权
+* 逻辑授权（与，或，非）
+* 基于时间的授权（即：允许访问该月的最后5天，从上午8点到上午10点，依此类推）
+* 基于上下文的授权（即：如果IP地址为'xxx.xxx.xxx.xxx'，则允许访问）
+* 基于自定义的授权（即：基于特定于应用程序的脚本或硬编码代码）
+* 等等
+
+要找到你期望的特定 `link:../../apidocs/io/vertx/ext/auth/authorization/AuthorizationProvider.html[AuthorizationProvider]` 实现，
+请查阅该身份验证提供程序的文档。
+
+[[_authentication]]
+== 认证（Authentication）
+
+要对用户进行身份认证，请使用 `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html#authenticate-io.vertx.core.json.JsonObject-io.vertx.core.Handler-[authenticate]`.
+
+第一个参数是一个JSON对象，其中包含身份验证信息。实际包含的内容取决于具体的实现方式。
+对于基于用户名/密码的简单身份验证，它可能包含以下内容：
+
+----
+{
+ "username": "tim"
+ "password": "mypassword"
+}
+----
+
+对于基于JWT token或OAuth bearer token的实现，它可能包含token信息。
+
+身份验证是异步进行的，并且结果会通过参数中提供的handler传递给用户。
+异步结果包含一个 `link:../../apidocs/io/vertx/ext/auth/User.html[User]` 实例，
+该实例代表已认证的用户。
+
+上述得到的认证用户对象不包含该对象被授权的授权信息或上下文。
+授权与身份认证分离的原因是，
+身份认证和授权是两个区分的操作，不需要在同一程序上执行。
+一个简单的示例是，使用 `OAuth2.0` 进行身份认证的用户可以使用 `JWT` 授权提供者为给定的权限匹配令牌，
+但其他情况也适用，例如使用 `LDAP` 进行身份认证和使用 `MongoDB` 进行授权。
+
+这是一个使用简单的用户名/密码实现对用户进行身份验证的示例：
+
+[source,java]
+----
+JsonObject authInfo = new JsonObject()
+  .put("username", "tim").put("password", "mypassword");
+
+authProvider.authenticate(authInfo)
+  .onSuccess(user -> {
+    System.out.println("User " + user.principal() + " is now authenticated");
+  })
+  .onFailure(Throwable::printStackTrace);
+----
+
+[[_authorization]]
+== 授权（Authorization）
+
+当你得到一个 `link:../../apidocs/io/vertx/ext/auth/User.html[User]` 实例后，你可以调用其 `link:../../apidocs/io/vertx/ext/auth/User.html#authorizations--[authorizations]` 方法来获取其授权。
+一个新创建的用户不会包含授权。你可以直接在 `link:../../apidocs/io/vertx/ext/auth/User.html[User]` 上添加授权或者通过 `link:../../apidocs/io/vertx/ext/auth/authorization/AuthorizationProvider.html[AuthorizationProvider]` 来添加。
+
+上面所有的结果都是在handler中异步返回的。
+
+这是一个通过 `link:../../apidocs/io/vertx/ext/auth/authorization/AuthorizationProvider.html[AuthorizationProvider]` 添加授权的示例：
+
+[source,java]
+----
+authorizationProvider.getAuthorizations(user)
+  .onSuccess(done -> {
+  // cache is populated, perform query
+  if (PermissionBasedAuthorization.create("printer1234").match(user)) {
+    System.out.println("User has the authority");
+  } else {
+    System.out.println("User does not have the authority");
+  }
+});
+----
+
+以及另一个基于角色的授权示例，
+该模型使用了接口 `link:../../apidocs/io/vertx/ext/auth/authorization/RoleBasedAuthorization.html[RoleBasedAuthorization]` 。
+
+请注意，如上所述，
+授权字符串的解释方式完全由基础实现决定，Vert.x在此不做任何假设。
+
+[[_listing_authorizations]]
+=== 列出授权
+
+用户对象拥有一个授权列表，因此随后的调用应检查它是否具有相同的授权，
+这可以避免对底层授权提供者执行另一次IO操作来加载授权。
+
+要清除授权列表，您可以使用 `link:../../apidocs/io/vertx/ext/auth/authorization/Authorizations.html#clear--[clear]` 。
+
+[[_the_user_principal_and_attributes]]
+=== 用户主体和属性
+
+您可以使用获得与已认证用户相对应的 `link:../../apidocs/io/vertx/ext/auth/User.html#principal--[主体（principal）]` 。
+
+返回的内容取决于具体的底层实现。主体映射是用于创建的源数据用户实例。属性是额外的属性，在实例创建的过程中 **不会** 提供，
+但是它们是以处理用户数据的结果出现的。
+区别就在于有确保处理的主体不会修改或重写现有数据。
+
+为了简化用法，可以使用两种方法在两个源上查找和读取值：
+
+[source,java]
+----
+if (user.containsKey("sub")) {
+  // the check will first assert that the attributes contain
+  // the given key and if not assert that the principal contains
+  // the given key
+
+  // just like the check before the get will follow the same
+  // rules to retrieve the data, first "attributes" then "principal"
+  String sub = user.get("sub");
+}
+----
+
+[[_creating_your_own_authentication_or_authorization_provider_implementation]]
+== 创建自定义的身份认证或授权提供程序
+
+如果希望创建自己的身份验证提供程序，则应实现一个或两个接口：
+
+* `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]`
+* `link:../../apidocs/io/vertx/ext/auth/authorization/AuthorizationProvider.html[AuthorizationProvider]`
+
+用户工厂方法可以使用给定的 `principal` JSON内容创建一个 `link:../../apidocs/io/vertx/ext/auth/User.html[User]` 对象。
+第二个参数 `attributes` 是可选的，它可以提供额外的元数据供以后使用。
+以下属性是一个示例：
+
+* `exp` - Expires at in seconds.
+* `iat` - Issued at in seconds.
+* `nbf` - Not before in seconds.
+* `leeway` - clock drift leeway in seconds.
+
+前3个控制 `link:../../apidocs/io/vertx/ext/auth/User.html#expired--[expired]`
+方法如何计算用户的过期时间，
+最后一个可以用于在计算过期时间时允许事件偏移补偿。
+
+[[_pseudo_random_number_generator]]
+== 伪随机数生成器（PRNG）
+
+由于来自Java的Secure Random会在从系统获取熵的过程中阻塞，
+因此我们提供了它的简单封装，可以使用该封装，而不会阻塞事件循环。
+
+默认情况下，此PRNG使用混合模式，播种（seeding）过程是阻塞的，生成过程是非阻塞的。
+同时，每5分钟PRNG也将重新设置新的64位的熵。但是，所有这些都可以使用系统属性进行配置：
+
+* io.vertx.ext.auth.prng.algorithm 示例: SHA1PRNG
+* io.vertx.ext.auth.prng.seed.interval 示例: 1000 (每秒)
+* io.vertx.ext.auth.prng.seed.bits 示例: 128
+
+除非你注意到应用程序的性能受到PRNG算法的影响，
+否则大多数用户都不需要配置这些值。
+
+[[_sharing_pseudo_random_number_generator]]
+=== 共享伪随机数生成器
+
+由于伪随机数生成器对象的资源昂贵，它们消耗系统熵，这是一种稀缺资源，
+因此明智的做法是在所有处理程序之间共享PRNG。为了做到这一点并使它适用于Vert.x支持的所有语言，您应该查看
+`link:../../apidocs/io/vertx/ext/auth/VertxContextPRNG.html[VertxContextPRNG]` 。
+
+此接口使得用户对PRNG的生命周期管理变得轻松，并确保可以在所有应用程序中复用它，
+例如：
+
+[source,java]
+----
+String token = VertxContextPRNG.current(vertx).nextString(32);
+// Generate a secure random integer
+int randomInt = VertxContextPRNG.current(vertx).nextInt();
+----
+
+[[_working_with_keys]]
+== 使用密钥
+
+在处理安全性时，您需要加载安全密钥。
+安全密钥有多种格式和标准，这使其成为一项非常复杂的任务。
+为了简化开发人员方面的工作，此模块包含2个抽象类：
+
+1. `link:../../apidocs/io/vertx/ext/auth/KeyStoreOptions.html[KeyStoreOptions]` JVM keystore通用格式。
+2. `link:../../apidocs/io/vertx/ext/auth/PubSecKeyOptions.html[PubSecKeyOptions]` PEM通用格式。
+
+要加载本地密钥库模块，应提供一个options对象，例如：
+
+[source,java]
+----
+KeyStoreOptions options = new KeyStoreOptions()
+  .setPath("/path/to/keystore/file")
+  .setType("pkcs8")
+  .setPassword("keystore-password")
+  .putPasswordProtection("key-alias", "alias-password");
+----
+
+该类型非常重要，因为它随所使用的JVM版本而异。
+Java 9之前的默认值是特定于JVM的默认值 `jks` ，而之后 `pkcs12` 是通用标准。
+
+`pkcs12` 即使不需要 `keytool` 命令，也可以将非JVM密钥库密钥导入到文件中，
+例如，可以通过以下方式实现 `OpenSSL`：
+
+----
+openssl pkcs12 -export -in mykeycertificate.pem -out mykeystore.pkcs12 -name myAlias -noiter -nomaciter
+----
+
+上面的命令会将现有的pem文件转换为pkcs12密钥库，并将给定的密钥使用 `myAlias` 命名。
+`-noiter -nomaciter` 为了使文件与JVM加载程序兼容，需要额外的参数。
+
+要加载 `PEM` 文件，您应该注意一些限制。
+默认的JVM类仅支持 `PKCS8` 格式的密钥 ，因此，如果您有其他PEM文件，则需要使用以下方式转换 `OpenSSL` ：
+
+----
+openssl pkcs8 -topk8 -inform PEM -in private.pem -out private_key.pem -nocrypt
+----
+
+在此之后，使用这样的文件很简单：
+
+[source,java]
+----
+PubSecKeyOptions options = new PubSecKeyOptions()
+  .setAlgorithm("RS256")
+  .setBuffer(
+    vertx.fileSystem()
+      .readFileBlocking("/path/to/pem/file")
+      .toString());
+----
+
+PEM文件是常见且易于使用的，但不受密码保护，因此可以轻松嗅探私钥。
+
+[[_json_web_keys]]
+=== JSON Web Keys（JWK）
+
+JWK是OpenID connect和JWT提供程序使用的标准。它们用JSON对象表示密钥。
+通常这些JSON文档由Google，Microsoft等身份提供商服务器提供，
+但是您也可以使用在线应用程序 <a href="https://mkjwk.org/">https://mkjwk.org</a> 来生成自己的密钥。
+要想离线体验，还可以使用该工具： <a href="https://connect2id.com/products/nimbus-jose-jwt/generator">https://connect2id.com/products/nimbus-jose-jwt/generator</a> 。
+
+[[_chaining_authentication_providers]]
+== 链接多个身份验证提供程序
+
+在某些情况下，支持链接多个身份验证提供程序可能会很有意思，例如，在LDAP或属性文件上查找用户。
+这可以用 `link:../../apidocs/io/vertx/ext/auth/ChainAuth.html[ChainAuth]` 来实现。
+
+[source,java]
+----
+ChainAuth.any()
+  .add(ldapAuthProvider)
+  .add(propertiesAuthProvider);
+----
+
+执行 *全部* 匹配也是可以的，例如，必须在LDAP和属性上匹配用户：
+
+[source,java]
+----
+ChainAuth.all()
+  .add(ldapAuthProvider)
+  .add(propertiesAuthProvider);
+----

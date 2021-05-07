@@ -1,7 +1,8 @@
-== Cursors and streaming
+[[_cursors_and_streaming]]
+== 游标和流式操作
 
-By default prepared query execution fetches all rows, you can use a
-`link:../../apidocs/io/vertx/sqlclient/Cursor.html[Cursor]` to control the amount of rows you want to read:
+默认情况下预查询操作会拉去所有的行记录，您可以使用
+`link:../../apidocs/io/vertx/sqlclient/Cursor.html[游标]` 来控制您想要读取的行数：
 
 [source,java]
 ----
@@ -37,7 +38,7 @@ connection.prepare("SELECT * FROM users WHERE first_name LIKE $1", ar0 -> {
 });
 ----
 
-Cursors shall be closed when they are released prematurely:
+游标释放时需要同时执行关闭操作：
 
 [source,java]
 ----
@@ -49,7 +50,7 @@ cursor.read(50, ar2 -> {
 });
 ----
 
-A stream API is also available for cursors, which can be more convenient, specially with the Rxified version.
+stream API也可以用于游标，尤其是在Rx版的客户端，可能更为方便。
 
 [source,java]
 ----
@@ -82,8 +83,8 @@ connection.prepare("SELECT * FROM users WHERE first_name LIKE $1", ar0 -> {
 });
 ----
 
-The stream read the rows by batch of `50` and stream them, when the rows have been passed to the handler,
-a new batch of `50` is read and so on.
+上边的stream会批量读取 `50` 行并同时将其转换为流，当这些行记录被传递给处理器时，
+会以此类推地读取下一批的 `50` 行记录。
 
-The stream can be resumed or paused, the loaded rows will remain in memory until they are delivered and the cursor
-will stop iterating.
+stream支持重启或暂停，已经加载到的行记录将会被保留在内存里直到被传递给处理器，此时
+游标也将终止遍历。

@@ -1,20 +1,22 @@
-== RxJava 2 API
+== RxJava 2 API 
 
-The Mongo client provides an Rxified version of the original API.
+Mongo客户端提供了RX化的原始版本API。
 
-=== Creating an Rxified client
+[[_creating_an_rxified_client]]
+=== 创建一个RX化的客户端
 
-To create an Rxified Mongo client, make sure to import the `link:../../apidocs/io/vertx/reactivex/ext/mongo/MongoClient.html[MongoClient]` class.
-Then use one of the `create` methods to get an instance:
+要想创建一个RX化的Mongo客户端，需要您确保导入了 `link:../../apidocs/io/vertx/reactivex/ext/mongo/MongoClient.html[MongoClient]` 类。
+创建并获取一个客户端实例的方法有很多，例如下面：
 
 [source,java]
 ----
 MongoClient client = MongoClient.createShared(vertx, config);
 ----
 
-=== Finding documents in batches
+[[_finding_documents_in_batches]]
+=== 批量查询文档
 
-A `link:../../apidocs/io/vertx/reactivex/core/streams/ReadStream.html[ReadStream]` can be converted to a `link:../../apidocs/io/reactivex/Flowable.html[Flowable]`, which is handy when you have to deal with large data sets:
+`link:../../apidocs/io/vertx/reactivex/core/streams/ReadStream.html[ReadStream]` 可以被转换成 `link:../../apidocs/io/reactivex/Flowable.html[Flowable]` 。这个功能会方便您处理大型数据集。
 
 [source,java]
 ----

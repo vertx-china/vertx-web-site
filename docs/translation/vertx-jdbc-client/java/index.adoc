@@ -1,52 +1,53 @@
-= Vert.x JDBC client
+= Vert.x JDBC 客户端
 
-This client allows you to interact with any JDBC compliant database using an asynchronous API from your Vert.x
-application.
+Verx.x JDBC 客户端允许您使用 Vert.x 应用程序中的异步API
+与任何符合JDBC协议的数据库进行交互。
 
-The client API is represented with the interface `link:../../apidocs/io/vertx/ext/jdbc/JDBCClient.html[JDBCClient]`.
+JDBC 客户端 API 接口描述请参考 `link:../../apidocs/io/vertx/ext/jdbc/JDBCClient.html[JDBCClient]`。
 
-To use this project, add the following dependency to the _dependencies_ section of your build descriptor:
+如需使用Vert.x JDBC Client，请先将以下依赖添加到您的构建描述中的 _依赖_ 部分 ：
 
-* Maven (in your `pom.xml`):
+* Maven（在您的 `pom.xml` 文件中添加）：
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-jdbc-client</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle（在您的 `build.gradle` 文件中添加）：
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-jdbc-client:4.0.0'
+compile 'io.vertx:vertx-jdbc-client:4.0.3'
 ----
 
-== Using the Sql Client API
+[[_using_the_sql_client_api]]
+== 使用Sql 客户端 API
 
-Sql Client is the vert.x reactive API to communicate with SQL databases. There are already several implementations of the
-API for popular engines such as `MySQL`, `PostgreSQL`, `MSSQL` and `IBM DB2`. However as there are still many other
-engines that have no asynchronous drivers, the JDBC Client also implements the same API to allow the usage of JDBC
-drivers until such asynchronous support is implemented (eventually).
+SQL客户端是使用SQL数据库通信的vert.x响应式API， 
+已经实现了MySQL、PostgreSQL、MSSQL和IBM DB2等多个流行数据的异步驱动程序。
+但是，由于还有许多其他数据库没有异步驱动程序，
+因此JDBC客户端实现了相同的API，直接使用JDBC驱动，以实现数据库的异步支持。
 
-=== Creating a DB Pool
-
-It all starts with a pool. Creating a pool is simple. The shortest example would be:
+[[_creating_a_db_pool]]
+=== 创建一个数据库连接池
+一切始于连接池，创建一个连接池是非常简单的。最简单的例子如下：
 
 [source,java]
 ----
 JDBCPool pool = JDBCPool.pool(vertx, config);
 ----
 
-In this case we are reusing the JDBC client API to create the pool. The configuration is free form and users need to
-look up the properties required for the underlying connection pool of choice.
+在这种情况下，我们将重用JDBC client 的 API 来创建池。
+该配置为自由格式，用户需要查找对应JDBC连接池所需的属性。
 
-For a type safe alternative, a second factory method is present. This second factory method ensures that the config is
-correct (as it's properties and type is validated by the compiler) but currently only works with the `Agroal` connection
-pool.
+对于类型安全的替代方案， 存在第二种工厂方法。
+第二种工厂方法可确保配置正确(因为其属性和类型已由编译器验证)，
+但当前仅适用于Agroal连接池。
 
 [source,java]
 ----
@@ -65,17 +66,17 @@ JDBCPool pool = JDBCPool.pool(
     .setMaxSize(16)
 );
 ----
+[[_using_the_pool]]
+==== 使用连接池
 
-==== Using the Pool
+有了链接池后，就可以开始使用数据库了，连接池以两种模式运行：
 
-Once you have a pool, you can start using your database, the pool operates in 2 modes:
+1. 托管连接模式
+2. 手动连接方式
 
-1. Managed connection mode
-2. Manual connection mode
-
-When working in managed connection mode, as a user, you don't need to worry to fetch and return connections to the pool.
-Queries can be run directly against the pool and the pool ensures that a connection is acquired and returned after the
-query is terminated.
+在托管连接模式下工作时，
+作为用户，您无需关心获取连接和将其返回到池中。
+可以直接对该链接池运行查询，并且该链接池可确保在查询终止后获取并返回连接。
 
 [source,java]
 ----
@@ -92,7 +93,7 @@ pool
   });
 ----
 
-This is also applicable for prepared statements:
+这也适用于准备好的sql语句：
 
 [source,java]
 ----
@@ -110,9 +111,9 @@ pool
   });
 ----
 
-Using this mode is quite convenient as it allows you to focus on the business logic, not on the connection management.
-There are times when order and causality may need to be preserved. In this case we need to execute queries on a manual
-connection mode:
+使用此模式非常方便，因为它使您可以专注于业务逻辑，而不是连接管理。
+有时可能需要保留秩序和因果关系。
+在这种情况下，我们需要在手动连接模式下执行查询：
 
 [source,java]
 ----
@@ -142,7 +143,7 @@ pool
   });
 ----
 
-Of course same is to say that prepared statements are also applicable to this mode:
+当然，预准备的sql语句也适用于此模式：
 
 [source,java]
 ----
@@ -173,19 +174,20 @@ pool
   });
 ----
 
-== Legacy JDBC Client API
+[[_legacy_jdbc_client_api]]
+== 旧版JDBC客户端API
+现在已弃用Vert.x 3中创建的JDBC客户端API，而应使用新的SQL客户端API。
 
-The JDBC Client API created in Vert.x 3 is now deprecated and instead the new SQL Client API should be used.
+在Vert.x 4的生命周期内仍将支持该功能，
+以允许将应用程序迁移到新的SQL Client API。
 
-It will remain supported for the life time of Vert.x 4 to allow applications to be migrated to the new SQL
-Client API.
+[[_getting_a_connection]]
+=== 建立连接
 
-=== Getting a connection
+创建客户端后，您可以通过 `link:../../apidocs/io/vertx/ext/sql/SQLClient.html#getConnection-io.vertx.core.Handler-[getConnection]` 
+以获取一个连接。
 
-Once you've created a client you use `link:../../apidocs/io/vertx/ext/sql/SQLClient.html#getConnection-io.vertx.core.Handler-[getConnection]` to get
-a connection.
-
-This will return the connection in the handler when one is ready from the pool.
+当池中有连接处于准备（ready）状态时，将在处理器（handler）中返回。
 
 [source,java]
 ----
@@ -207,24 +209,25 @@ client.getConnection(res -> {
 });
 ----
 
-The connection is an instance of `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html[SQLConnection]` which is a common interface not only used by
-the Vert.x JDBC Client.
+该连接是 `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html[SQLConnection]` 的一个实例，
+它是一个通用接口，不仅由Vert.x JDBC客户端使用。
 
-You can learn how to use it in the http://vertx.io/docs/vertx-sql-common/java/[common sql interface] documentation.
+您可以在 http://vertx.io/docs/vertx-sql-common/java/[常见的sql接口] 文档中学习如何使用它。
 
-=== Simple SQL Operations
+[[_simple_sql_operations]]
+=== 简单的SQL操作
 
-There are times when you will want to run a single SQL operation, e.g.: a single select of a row, or a update to a
-set of rows which do not require to be part of a transaction or have dependencies on the previous or next operation.
+有时，您将需要运行单个SQL操作，
+例如：单行查询或对一组行的更新，这些操作不需要成为事务的一部分，也不必依赖于上一个或下一个操作。
 
-For these cases, clients provide a boilerplate-less API `link:../../apidocs/io/vertx/ext/sql/SQLOperations.html[SQLOperations]`. This interface will
-perform the following steps for you:
+对于这些情况，客户端提供了无模板的API `link:../../apidocs/io/vertx/ext/sql/SQLOperations.html[SQLOperations]` ，
+该接口将为您执行以下步骤：
 
-1. acquire a connection from the connection pool
-2. perform your action
-3. close and return the connection to the connection pool
+1. 从连接池获取连接
+2. 执行您的动作
+3. 关闭并将连接返回到连接池
 
-An example where users get loaded from the `USERS` table could be:
+从`USERS`表中加载用户的示例如下：
 
 [source,java]
 ----
@@ -241,7 +244,7 @@ client.query("SELECT * FROM USERS", ar -> {
 });
 ----
 
-You can perform the following operations as a simple one "shot" method call:
+您可以通过一个简单的 "shot" 方法调用来执行以下操作：
 
 * `link:../../apidocs/io/vertx/ext/sql/SQLClient.html#query-java.lang.String-io.vertx.core.Handler-[query]`
 * `link:../../apidocs/io/vertx/ext/sql/SQLClient.html#queryWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-[queryWithParams]`
@@ -252,100 +255,109 @@ You can perform the following operations as a simple one "shot" method call:
 * `link:../../apidocs/io/vertx/ext/sql/SQLClient.html#call-java.lang.String-io.vertx.core.Handler-[call]`
 * `link:../../apidocs/io/vertx/ext/sql/SQLClient.html#callWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.json.JsonArray-io.vertx.core.Handler-[callWithParams]`
 
-For further details on these API please refer to the `link:../../apidocs/io/vertx/ext/sql/SQLOperations.html[SQLOperations]` interface.
+有关这些API的更多详细信息，请参阅 `link:../../apidocs/io/vertx/ext/sql/SQLOperations.html[SQLOperations]` 接口。
 
-=== Creating a the client
+[[_creating_a_the_client]]
+=== 创建一个客户端
 
-There are several ways to create a client. Let's go through them all.
+有几种创建客户端的方法。让我们把它们都过一遍。
 
-==== Using default shared data source
+[[_using_default_shared_data_source]]
+==== 使用默认的共享数据源
 
-In most cases you will want to share a data source between different client instances.
+在大多数情况下，您需要在不同的客户端实例之间共享数据源。
 
-E.g. you scale your application by deploying multiple instances of your verticle and you want each verticle instance
-to share the same datasource so you don't end up with multiple pools
+例如，您通过部署多个Verticle实例来扩展应用程序，并且希望每个Verticle实例共享相同的数据源，这样就不会有多个链接池。
 
-You do this as follows:
+您可以按照以下步骤进行操作：
 
 [source,java]
 ----
 SQLClient client = JDBCClient.createShared(vertx, config);
 ----
+第一次调用 `link:../../apidocs/io/vertx/ext/jdbc/JDBCClient.html#createShared-io.vertx.core.Vertx-io.vertx.core.json.JsonObject-[JDBCClient.createShared]` 
+将实际创建数据源，并使用指定的配置。
 
-The first call to `link:../../apidocs/io/vertx/ext/jdbc/JDBCClient.html#createShared-io.vertx.core.Vertx-io.vertx.core.json.JsonObject-[JDBCClient.createShared]`
-will actually create the data source, and the specified config will be used.
+随后的调用将返回使用相同数据源的新客户端实例，因此将不会使用该配置。
 
-Subsequent calls will return a new client instance that uses the same data source, so the configuration won't be used.
+[[_specifying_a_data_source_name]]
+==== 指定数据源名称
 
-==== Specifying a data source name
-
-You can create a client specifying a data source name as follows
+您可以创建一个指定数据源名称的客户端，如下所示：
 
 [source,java]
 ----
 SQLClient client = JDBCClient.createShared(vertx, config, "MyDataSource");
 ----
 
-If different clients are created using the same Vert.x instance and specifying the same data source name, they will
-share the same data source.
+如果使用相同的Vert.x实例并指定相同的数据源名称创建了不同的客户端，
+则它们将共享相同的数据源。
 
-The first call to `link:../../apidocs/io/vertx/ext/jdbc/JDBCClient.html#createShared-io.vertx.core.Vertx-io.vertx.core.json.JsonObject-[JDBCClient.createShared]`
-will actually create the data source, and the specified config will be used.
 
-Subsequent calls will return a new client instance that uses the same data source, so the configuration won't be used.
+第一次调用 `link:../../apidocs/io/vertx/ext/jdbc/JDBCClient.html#createShared-io.vertx.core.Vertx-io.vertx.core.json.JsonObject-[JDBCClient.createShared]` 
+将实际创建数据源，并使用指定的配置。
 
-Use this way of creating if you wish different groups of clients to have different data sources, e.g. they're
-interacting with different databases.
+后续调用将返回使用相同数据源的新客户端实例，因此将不使用该配置。
 
-==== Creating a client with a non shared data source
+如果您希望不同的客户端组具有不同的数据源(例如，它们与不同的数据库进行交互)，请使用这种创建方式。
 
-In most cases you will want to share a data source between different client instances.
-However, it's possible you want to create a client instance that doesn't share its data source with any other client.
+[[_creating_a_client_with_a_non_shared_data_source]]
+==== 使用非共享数据源创建客户端
 
-In that case you can use `link:../../apidocs/io/vertx/ext/jdbc/JDBCClient.html#create-io.vertx.core.Vertx-io.vertx.core.json.JsonObject-[JDBCClient.create]`.
+在大多数情况下，您将需要在不同的客户端实例之间共享数据源。
+但是，您可能想要创建一个不与任何其他客户端共享其数据源的客户端实例。
+
+在这种情况下，
+您可以使用 `link:../../apidocs/io/vertx/ext/jdbc/JDBCClient.html#create-io.vertx.core.Vertx-io.vertx.core.json.JsonObject-[JDBCClient.create]`.
+
 
 [source,java]
 ----
 SQLClient client = JDBCClient.create(vertx, config);
 ----
 
-This is equivalent to calling `link:../../apidocs/io/vertx/ext/jdbc/JDBCClient.html#createShared-io.vertx.core.Vertx-io.vertx.core.json.JsonObject-java.lang.String-[JDBCClient.createShared]`
-with a unique data source name each time.
+这等效于 `link:../../apidocs/io/vertx/ext/jdbc/JDBCClient.html#createShared-io.vertx.core.Vertx-io.vertx.core.json.JsonObject-java.lang.String-[JDBCClient.createShared]` 
+每次使用唯一的数据源名称进行调用。
 
-==== Specifying a data source
+[[_specifying_a_data_source]]
+==== 指定数据源
 
-If you already have a pre-existing data source, you can also create the client directly specifying that:
+如果您已经有一个预先存在的数据源，则还可以直接指定以下内容来创建客户端：
 
 [source,java]
 ----
 SQLClient client = JDBCClient.create(vertx, dataSource);
 ----
 
-=== Closing the client
+[[_closing_the_client]]
+=== 关闭客户端
 
-It's fine to keep hold of the client for a long time (e.g. the lifetime of your verticle), but once you're
-done with it you should close it.
+长时间保持客户端（例如，在您的verticle的生命周期内）是可以的，
+但是一旦完成，就应该关闭它。
 
-Clients that share a data source with other client instances are reference counted. Once the last one that references
-the same data source is closed, the data source will be closed.
+共享同一数据源的客户端将计算引用次数（reference counted）。
+一旦最后一个引用的相同数据源被关闭，该数据源将被关闭。
 
-==== Automatic clean-up in verticles
+[[_automatic_clean_up_in_verticles]]
+==== verticles中自动清理
 
-If you're creating clients from inside verticles, the clients will be automatically closed when the verticle is undeployed.
+如果要从verticle内部创建客户端，则取消部署verticle时将自动关闭客户端。
 
-=== The SQL Connection
+[[_the_sql_connection]]
+=== SQL连接
 
-A connection to the database is represented by `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html[SQLConnection]`.
+与数据库的连接用表示 `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html[SQLConnection]`。
 
-==== Auto-commit
+[[_auto_commit]]
+==== 自动提交
 
-When you obtain a connection auto commit is set to `true`. This means that each operation you perform will effectively
-execute in its own transaction.
+获取连接时，自动提交设置为true。
+这意味着您执行的每个操作将有效地在其自己的事务中执行。
 
-If you wish to perform multiple operations in a single transaction you should set auto commit to false with
-`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#setAutoCommit-boolean-io.vertx.core.Handler-[setAutoCommit]`.
+如果您希望在单个事务中执行多个操作，
+则应使用 `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#setAutoCommit-boolean-io.vertx.core.Handler-[setAutoCommit]` 将自动提交设置为false 
 
-When the operation is complete, the handler will be called:
+操作完成后，将调用处理程序：
 
 [source,java]
 ----
@@ -358,14 +370,16 @@ connection.setAutoCommit(false, res -> {
 });
 ----
 
-==== Executing queries
+[[_executing_queries]]
+==== 执行查询
 
-To execute a query use `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#query-java.lang.String-io.vertx.core.Handler-[query]`
+执行查询使用 `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#query-java.lang.String-io.vertx.core.Handler-[query]`
 
-The query string is raw SQL that is passed through without changes to the actual database.
+查询字符串是传递给实际数据库的原始SQL。
 
-The handler will be called with the results, represented by `link:../../apidocs/io/vertx/ext/sql/ResultSet.html[ResultSet]` when the query has
-been run.
+
+当执行查询时，
+结果通过 `link:../../apidocs/io/vertx/ext/sql/ResultSet.html[ResultSet]` 返回。
 
 [source,java]
 ----
@@ -378,13 +392,12 @@ connection.query("SELECT ID, FNAME, LNAME, SHOE_SIZE from PEOPLE", res -> {
   }
 });
 ----
+`link:../../apidocs/io/vertx/ext/sql/ResultSet.html[ResultSet]` 表示查询的结果。
 
-The `link:../../apidocs/io/vertx/ext/sql/ResultSet.html[ResultSet]` instance represents the results of a query.
+列名称列表可通过 `link:../../apidocs/io/vertx/ext/sql/ResultSet.html#getColumnNames--[getColumnNames]` 获取，
+而实际结果通过 `link:../../apidocs/io/vertx/ext/sql/ResultSet.html#getResults--[getResults]` 获取。
 
-The list of column names are available with `link:../../apidocs/io/vertx/ext/sql/ResultSet.html#getColumnNames--[getColumnNames]`, and the actual results
-available with `link:../../apidocs/io/vertx/ext/sql/ResultSet.html#getResults--[getResults]`
-
-The results are a list of `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` instances, one for each row of the results.
+结果是 `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` 类型，每个元素对应一行查询结果
 
 [source,java]
 ----
@@ -402,11 +415,12 @@ for (JsonArray row : results) {
 }
 ----
 
-You can also retrieve the rows as a list of Json object instances with `link:../../apidocs/io/vertx/ext/sql/ResultSet.html#getRows--[getRows]` -
-this can give you a somewhat simpler API to work with, but please be aware that SQL results can contain duplicate
-column names - if that's the case you should use `link:../../apidocs/io/vertx/ext/sql/ResultSet.html#getResults--[getResults]` instead.
+您还可以使用 `link:../../apidocs/io/vertx/ext/sql/ResultSet.html#getRows--[getRows]` 
+- 作为Json对象实例的列表来检索行 
+- 这可以使您使用的API稍微简单一些，但是请注意，SQL结果可以包含重复的列名 - 如果是这种情况
+则应改用 `link:../../apidocs/io/vertx/ext/sql/ResultSet.html#getResults--[getResults]`
 
-Here's an example of iterating through the results as Json object instances:
+使用Json对象作为返回类型，进行迭代的示例：
 
 [source,java]
 ----
@@ -422,13 +436,14 @@ for (JsonObject row : rows) {
 }
 ----
 
-==== Prepared statement queries
+[[_prepared_statement_queries]]
+==== 预备语句查询
 
-To execute a prepared statement query you can use
-`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#queryWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-[queryWithParams]`.
+要执行准备好的语句查询，
+可以使用 `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#queryWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-[queryWithParams]`。
 
-This takes the query, containing the parameter place holders, and a `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` or parameter
-values.
+这将执行查询，其中包括参数占位符和一个 `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` 
+或参数值。
 
 [source,java]
 ----
@@ -446,17 +461,18 @@ connection.queryWithParams(query, params, res -> {
 });
 ----
 
-==== Executing INSERT, UPDATE or DELETE
+[[_executing_insert_update_or_delete]]
+==== 执行INSERT，UPDATE或DELETE
 
-To execute an operation which updates the database use `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#update-java.lang.String-io.vertx.core.Handler-[update]`.
+要执行更新数据库的操作，请使用 `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#update-java.lang.String-io.vertx.core.Handler-[update]`.
 
-The update string is raw SQL that is passed through without changes to the actual database.
+更新字符串是原始SQL，无需更改实际数据库即可通过。
 
-The handler will be called with the results, represented by `link:../../apidocs/io/vertx/ext/sql/UpdateResult.html[UpdateResult]` when the update has
-been run.
+更新执行完成后，
+通过回调返回 `link:../../apidocs/io/vertx/ext/sql/UpdateResult.html[UpdateResult]` 的结果
 
-The update result holds the number of rows updated with `link:../../apidocs/io/vertx/ext/sql/UpdateResult.html#getUpdated--[getUpdated]`, and
-if the update generated keys, they are available with `link:../../apidocs/io/vertx/ext/sql/UpdateResult.html#getKeys--[getKeys]`.
+更新内容的行数通过 `link:../../apidocs/io/vertx/ext/sql/UpdateResult.html#getUpdated--[getUpdated]` 获取，
+如果更新生成了键，则可以使用 `link:../../apidocs/io/vertx/ext/sql/UpdateResult.html#getKeys--[getKeys]` 获取
 
 [source,java]
 ----
@@ -473,13 +489,14 @@ connection.update("INSERT INTO PEOPLE VALUES (null, 'john', 'smith', 9)", res ->
 });
 ----
 
-==== Prepared statement updates
+[[_prepared_statement_updates]]
+==== 准备的语句更新
 
-To execute a prepared statement update you can use
-`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#updateWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-[updateWithParams]`.
+要执行准备好的语句更新，
+可以使用 `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#updateWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-[updateWithParams]` 。
 
-This takes the update, containing the parameter place holders, and a `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` or parameter
-values.
+这种方式的更新语句包含参数占位符，
+和JsonArray参数列表或参数值进行更新
 
 [source,java]
 ----
@@ -502,20 +519,21 @@ connection.updateWithParams(update, params, res -> {
 });
 ----
 
-==== Callable statements
+[[_callable_statements]]
+==== 可赎回声明
 
-To execute a callable statement (either SQL functions or SQL procedures) you can use
-`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#callWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.json.JsonArray-io.vertx.core.Handler-[callWithParams]`.
+要执行可调用语句(SQL函数或SQL过程)，可以使用 
+`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#callWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.json.JsonArray-io.vertx.core.Handler-[callWithParams]`。
 
-This takes the callable statement using the standard JDBC format `{ call func_proc_name() }`, optionally including
-parameter place holders e.g.: `{ call func_proc_name(?, ?) }`, a `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` containing the
-parameter values and finally a `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` containing the
-output types e.g.: `[null, 'VARCHAR']`.
+这将使用标准JDBC格式 `{call func_proc_name()}` 接受可调用语句，
+还可以选择包含参数占位符，例如：`{call func_proc_name(?,?)}` ，
+`link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` 包含参数值，
+最后是 `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` 包含输出类型，例如： `[null，'VARCHAR']` 。
 
-Note that the index of the output type is as important as the params array. If the return value is the second
-argument then the output array must contain a null value as the first element.
+请注意，输出类型的索引与params数组一样重要。
+如果返回值是第二个参数，则输出数组必须包含一个空值作为第一个元素。
 
-A SQL function returns some output using the `return` keyword, and in this case one can call it like this:
+一个SQL函数使用return关键字返回一些输出，在这种情况下，可以这样调用它：
 
 [source,java]
 ----
@@ -531,8 +549,8 @@ connection.call(func, res -> {
 });
 ----
 
-When working with Procedures you and still return values from your procedures via its arguments, in the case you do
-not return anything the usage is as follows:
+在使用Procedures时，仍然通过其参数从过程中返回值，如果不返回任何内容，
+用法如下：
 
 [source,java]
 ----
@@ -548,7 +566,7 @@ connection.callWithParams(func, new JsonArray().add("John").add("Doe"), null, re
 });
 ----
 
-However you can also return values like this:
+但是，您还可以返回如下值：
 
 [source,java]
 ----
@@ -564,27 +582,28 @@ connection.callWithParams(func, new JsonArray().add("John"), new JsonArray().add
 });
 ----
 
-Note that the index of the arguments matches the index of the `?` and that the output parameters expect to be a
-String describing the type you want to receive.
+请注意，参数的索引与 `?` 的索引匹配，
+并且输出参数期望是描述您要接收的类型的字符串。
 
-To avoid ambiguation the implementations are expected to follow the following rules:
+为避免歧义，实现应遵循以下规则：
 
-* When a place holder in the `IN` array is `NOT NULL` it will be taken
-* When the `IN` value is NULL a check is performed on the OUT
-When the `OUT` value is not null it will be registered as a output parameter
-When the `OUT` is also null it is expected that the IN value is the `NULL` value.
+* 当 `IN` 数组中的占位符为 `NOT NULL` 时，它将被采用
+* 当 `IN` 值为 `NULL` 时，对 `OUT` 进行检查
+当 `OUT` 值不为空时，它将被注册为输出参数
+当 `OUT` 也为空时，预期 `IN` 值为 `NULL` 值。
 
-The registered `OUT` parameters will be available as an array in the result set under the output property.
+已注册的 `OUT` 参数将以数组形式出现在 `output` 属性下的结果集中。
 
-==== Batch operations
+[[_batch_operations]]
+==== 批量操作
 
-The SQL common interface also defines how to execute batch operations. There are 3 types of batch operations:
+SQL通用接口还定义了如何执行批处理操作。批处理操作分为3种类型：
 
-* Batched statements `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#batch-java.util.List-io.vertx.core.Handler-[batch]`
-* Batched prepared statements `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#batchWithParams-java.lang.String-java.util.List-io.vertx.core.Handler-[batchWithParams]`
-* Batched callable statements `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#batchCallableWithParams-java.lang.String-java.util.List-java.util.List-io.vertx.core.Handler-[batchCallableWithParams]`
+* 批量执行sql语句 `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#batch-java.util.List-io.vertx.core.Handler-[batch]`
+* 批量执行预处理sql语句 `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#batchWithParams-java.lang.String-java.util.List-io.vertx.core.Handler-[batchWithParams]`
+* 批量执行可调用语句 `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#batchCallableWithParams-java.lang.String-java.util.List-java.util.List-io.vertx.core.Handler-[batchCallableWithParams]`
 
-A batches statement will exeucte a list of sql statements as for example:
+批量执行sql语句示例如下：
 
 [source,java]
 ----
@@ -601,7 +620,7 @@ connection.batch(batch, res -> {
 });
 ----
 
-While a prepared or callable statement batch will reuse the sql statement and take an list of arguments as for example:
+执行一个预处理sql语句，并且使用一个参数列表，示例如下
 
 [source,java]
 ----
@@ -618,13 +637,13 @@ connection.batchWithParams("INSERT INTO emp (name) VALUES (?)", batch, res -> {
 });
 ----
 
-==== Executing other operations
+[[_executing_other_operations]]
+==== 执行其他操作
 
-To execute any other database operation, e.g. a `CREATE TABLE` you can use
-`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#execute-java.lang.String-io.vertx.core.Handler-[execute]`.
+要执行任何其他数据库操作，例如 `CREATE TABLE` 您可以使用 
+`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#execute-java.lang.String-io.vertx.core.Handler-[execute]` 。
 
-The string is passed through without changes to the actual database. The handler is called when the operation
-is complete
+sql语句将会直接在数据库中执行。操作完成后调用处理程序
 
 [source,java]
 ----
@@ -640,11 +659,12 @@ connection.execute(sql, execute -> {
 });
 ----
 
-==== Multiple ResultSet responses
+[[_multiple_resultset_responses]]
+==== 多个ResultSet响应
 
-In some cases your query might return more than one result set, in this case and to preserve the compatibility when
-the returned result set object is converted to pure json, the next result sets are chained to the current result set
-under the property `next`. A simple walk of all result sets can be achieved like this:
+在某些情况下，您的查询可能返回多个结果集，
+在这种情况下，为了保持兼容性，当返回的结果集对象转换为纯json时，使用当前结果集的 `next` 链接到下一个结果集。
+可以像这样简单地遍历所有结果集：
 
 [source,java]
 ----
@@ -656,10 +676,11 @@ while (rs != null) {
 }
 ----
 
-==== Streaming
+[[_streaming]]
+==== 流式返回
 
-When dealing with large data sets, it is not advised to use API just described but to stream data since it avoids
-inflating the whole response into memory and JSON and data is just processed on a row by row basis, for example:
+在处理大量数据返回时，建议不要使用刚刚描述的API，而是使用流式返回。
+因为这样可以避免将整个响应内容填充到内存和JSON中，而是逐行处理数据，例如：
 
 [source,java]
 ----
@@ -672,9 +693,9 @@ connection.queryStream("SELECT * FROM large_table", stream -> {
 });
 ----
 
-You still have full control on when the stream is pauses, resumed and ended. For cases where your query returns
-multiple result sets you should use the result set ended event to fetch the next one if available. If there is more
-data the stream handler will receive the new data, otherwise the end handler is invoked.
+您可以完全控制流何时暂停，恢复和结束。
+对于查询返回多个结果集的情况，您应该使用结果集结束事件来获取下一个结果(如果有)。
+如果有更多数据，则流处理程序将接收新数据，否则将调用结束处理程序。
 
 [source,java]
 ----
@@ -697,15 +718,17 @@ connection.queryStream("SELECT * FROM large_table; SELECT * FROM other_table", s
 });
 ----
 
-==== Using transactions
+[[_using_transactions]]
+==== 使用事务
 
-To use transactions first set auto-commit to false with `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#setAutoCommit-boolean-io.vertx.core.Handler-[setAutoCommit]`.
+要使用事务，请先使用 `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#setAutoCommit-boolean-io.vertx.core.Handler-[setAutoCommit]` 将自动提交设置为false。
 
-You then do your transactional operations and when you want to commit or rollback use
-`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#commit-io.vertx.core.Handler-[commit]` or
-`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#rollback-io.vertx.core.Handler-[rollback]`.
+然后，您可以进行事务性操作，并在要提交或回滚时使用 
+`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#commit-io.vertx.core.Handler-[commit]`
+或 
+`link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#rollback-io.vertx.core.Handler-[rollback]` 。
 
-Once the commit/rollback is complete the handler will be called and the next transaction will be automatically started.
+提交/回滚完成后，将调用处理程序，并且下一个事务将自动启动。
 
 [source,java]
 ----
@@ -718,52 +741,53 @@ connection.commit(res -> {
 });
 ----
 
-==== Closing connections
+[[_closing_connections]]
+==== 关闭连接
 
-When you've done with the connection you should return it to the pool with `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#close-io.vertx.core.Handler-[close]`.
+完成连接后，应使用 `link:../../apidocs/io/vertx/ext/sql/SQLConnection.html#close-io.vertx.core.Handler-[close]` 将其返回到池中。
 
 ifeval::["java" == "java"]
 include::override/rxjava2.adoc[]
 endif::[]
 
-=== Configuration
+[[_configuration]]
+=== 配置项
 
-Configuration is passed to the client when creating or deploying it.
+在创建或部署配置时，会将配置传递给客户端。
 
-The following configuration properties generally apply:
+以下配置属性通常适用：
 
-`provider_class`:: The class name of the class actually used to manage the database connections. By default this is
-`io.vertx.ext.jdbc.spi.impl.C3P0DataSourceProvider` but if you want to use a different provider you can override
-this property and provide your implementation.
-`row_stream_fetch_size`:: The size of `SQLRowStream` internal cache which used to better performance. By default
-it equals to `128`
+`provider_class`:: 实际用于管理数据库连接的类的类名。
+默认情况下是， `io.vertx.ext.jdbc.spi.impl.C3P0DataSourceProvider` 但是如果您要使用其他提供程序，则可以覆盖此属性并提供您的实现。
+`row_stream_fetch_size`::  `SQLRowStream` 内部缓存的大小，
+曾经用来提高性能。默认情况下等于128
 
-Assuming the C3P0 implementation is being used (the default), the following extra configuration properties apply:
+假设正在使用C3P0实现(默认设置)，则将应用以下额外的配置属性：
 
-`url`:: the JDBC connection URL for the database
-`driver_class`:: the class of the JDBC driver
-`user`:: the username for the database
-`password`:: the password for the database
-`max_pool_size`:: the maximum number of connections to pool - default is `15`
-`initial_pool_size`:: the number of connections to initialise the pool with - default is `3`
-`min_pool_size`:: the minimum number of connections to pool
-`max_statements`:: the maximum number of prepared statements to cache - default is `0`.
-`max_statements_per_connection`:: the maximum number of prepared statements to cache per connection - default is `0`.
-`max_idle_time`:: number of seconds after which an idle connection will be closed - default is `0` (never expire).
+`url`:: 数据库的JDBC连接URL
+`driver_class`:: JDBC驱动程序的类
+`user`:: 数据库的用户名
+`password`:: 数据库的密码
+`max_pool_size`:: 池的最大连接数 ， 默认为 `15`
+`initial_pool_size`:: 用于初始化池的连接数 ， 默认为 `3`
+`min_pool_size`:: 连接池的最小连接数
+`max_statements`::  `PreparedStatement` 缓存的数量，默认值为 `0`。
+`max_statements_per_connection`::  每个链接 `PreparedStatement` 缓存的数量 ， 默认值为 `0`。
+`max_idle_time`:: 空闲连接将关闭之前经过的秒数 ，默认值为 `0` (永不过期)。
 
-Other Connection Pool providers are:
+其他连接池提供程序是：
 
 * Hikari
 * Agroal
 
-Similar to C3P0 they can be configured by passing the configuration values on the JSON config object. For the special
-case where you do not want to deploy your app as a fat jar but run with a vert.x distribution, then it is recommented
-to use Agroal if you have no write permissions to add the JDBC driver to the vert.x lib directory and are passing it
-using the `-cp` command line flag.
+与C3P0类似，它们可以通过在JSON配置对象上传递配置值来进行配置。
+对于特殊情况，您不想将应用程序部署为 _fat jar_ ，而是使用 vert.x 发行版运行，
+如果您没有写权限将JDBC驱动程序添加到vert.x lib目录，
+并使用 `-cp` 命令行标志传递它，则建议使用Agroal。
 
-If you want to configure any other C3P0 properties, you can add a file `c3p0.properties` to the classpath.
+如果要配置任何其他C3P0属性，可以将文件 `c3p0.properties` 添加到类路径。
 
-Here's an example of configuring a service:
+以下是配置服务的示例：
 
 [source,java]
 ----
@@ -775,43 +799,43 @@ JsonObject config = new JsonObject()
 SQLClient client = JDBCClient.createShared(vertx, config);
 ----
 
-Hikari uses a different set of properties:
+Hikari使用一组不同的属性：
 
-* `jdbcUrl` for the JDBC URL
-* `driverClassName` for the JDBC driven class name
-* `maximumPoolSize` for the pool size
-* `username` for the login (`password` for the password)
+* `jdbcUrl` JDBC的URL
+* `driverClassName` JDBC驱动的类名
+* `maximumPoolSize` 连接池的大小
+* `username` 数据库用户名（`password` 数据库密码）
 
-Refer to the https://github.com/brettwooldridge/HikariCP#configuration-knobs-baby[Hikari documentation]
-for further details. Also refer to the https://agroal.github.io/[Agroal documentation]
-to configure Agroal.
+有关更多详细信息，
+请参阅 https://github.com/brettwooldridge/HikariCP#configuration-knobs-baby[Hikari documentation] 。
+另请参阅  https://agroal.github.io/[Agroal documentation] 以配置Agroal。
 
-=== JDBC Drivers
+[[_jdbc_drivers]]
+JDBC驱动程序
 
-If you are using the default `DataSourceProvider` (relying on c3p0), you would need to copy the JDBC driver class
-in your _classpath_.
+如果使用默认值 `DataSourceProvider`(依赖于c3p0)，则需要在类路径中复制JDBC驱动程序类。
+如果您的应用程序打包为  _fat jar_ ，请确保嵌入jdbc驱动程序。如果您的应用程序是通过 `vertx` 命令行启动的，请将JDBC驱动程序复制到 `${VERTX_HOME}/lib` 。
 
-If your application is packaged as a _fat jar_, be sure to embed the jdbc driver. If your application is launched
-with the `vertx` command line, copy the JDBC driver to `${VERTX_HOME}/lib`.
+使用不同的连接池时，行为可能会有所不同。
 
-The behavior may be different when using a different connection pool.
+[[_data_types]]
+=== 数据类型
 
-=== Data types
-
-Due to the fact that Vert.x uses JSON as its standard message format there will be many limitations to the data types
-accepted by the client. You will get out of the box the standard:
+由于Vert.x使用JSON作为其标准消息格式，因此客户端接受的数据类型会有很多限制。
+您可以获取标准的：
 
 * null
 * boolean
 * number
 * string
 
-There is also an optimistic cast for temporal types (TIME, DATE, TIMESTAMP) and optionally disabled for UUID. UUIDs
-are supported by many databases but not all. For example MySQL does not support it so the recommended way is to use
-a VARCHAR(36) column. For other engines UUID optimistic casting can be enabled using the client config json as:
+
+对于时态类型(时间、日期、时间戳)也有一个乐观强制转换，对于UUID也可以选择禁用。许多数据库支持uuid，但并非所有数据库都支持。
+例如MySQL不支持它，所以建议使用VARCHAR(36)列。
+对于其他引擎，可以使用客户端配置json启用UUID乐观强制转换，如下所示：
 
 ----
 { "castUUID": true }
 ----
 
-When this config is present UUIDs will be handled as a native type.
+当此配置存在时，uuid将作为本机类型处理。

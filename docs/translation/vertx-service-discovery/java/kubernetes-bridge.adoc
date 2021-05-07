@@ -1,68 +1,79 @@
-=== Kubernetes bridge
+[[_kubernetes_bridge]]
+=== Kubernetes 桥接器
 
-This discovery bridge imports services from Kubernetes (or Openshift v3) into the Vert.x service discovery.
-Kubernetes services are mapped to `link:../../apidocs/io/vertx/servicediscovery/Record.html[Record]`. This bridge only
-supports the importation of services from kubernetes in vert.x (and not the opposite).
+Kubernetes 桥接器可以从Kubernetes（或者 Openshift v3）中导入服务到Vert.x的服务发现组件中。
+Kubernetes的所有服务，都将映射为一条 `link:../../apidocs/io/vertx/servicediscovery/Record.html[Record]` ，目前桥接器只支持将服务从Kubernetes中导入到Vert.x中（反过来不行）。
 
-`link:../../apidocs/io/vertx/servicediscovery/Record.html[Record]` are created from Kubernetes Service. The service type is deduced from the `service-type` label or from the port exposed by the service.
+Kubernetes中的服务，在导入到Vert.x后都会创建对应的 `link:../../apidocs/io/vertx/servicediscovery/Record.html[Record]` ，服务类型是通过 `service-type` 标签推断出来，或者通过服务暴露的端口推断出来。
 
-==== Using the bridge
+[[_using_the_bridge_2]]
+==== 桥接器的使用
 
-To use this Vert.x discovery bridge, add the following dependency to the _dependencies_ section of your build
-descriptor:
+要使用该服务发现桥接器，需要将如下的依赖包加入到依赖配置文件中：
 
-* Maven (in your `pom.xml`):
+* Maven (`pom.xml` 文件):
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-service-discovery-bridge-kubernetes</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle ( `build.gradle` 文件):
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-service-discovery-bridge-kubernetes:4.0.0'
+compile 'io.vertx:vertx-service-discovery-bridge-kubernetes:4.0.3'
 ----
 
-==== Configuring the bridge
+然后，当创建服务发现时，按如下注册桥接器：
 
-The bridge is configured using:
+[source, java]
+----
+JsonObject defaultConf = new JsonObject();
+serviceDiscovery.registerServiceImporter(new KubernetesServiceImporter(), defaultConf);
+----
 
-* the oauth token (using the content of `/var/run/secrets/kubernetes.io/serviceaccount/token` by default)
-* the namespace in which the service are searched (defaults to `default`).
+[[_configuring_the_bridge]]
+==== 桥接器的配置
 
-Be aware that the application must have access to Kubernetes and must be able to read the chosen namespace.
+桥接器的配置项有：
 
-==== The Service to Record mapping
+* OAuth token（默认是使用 `/var/run/secrets/kubernetes.io/serviceaccount/token` 中的内容）
+* 服务搜索的命名空间（默认是`default`）
 
-The record is created as follows:
+请注意，应用程序必须能够访问 Kubernetes 并且能够读取所选择的命名空间。
 
-* the service type is deduced from the `service.type` label. If this label is not set the service type is set to
-`unknown`
-* the record's name is the service's name
-* the labels of the service are mapped to metadata
-* in addition are added: `kubernetes.uuid`, `kubernetes.namespace`, `kubernetes.name`
-* the location is deduced from the*first** port of the service
+[[_the_service_to_record_mapping]]
+==== 服务记录的映射
 
-For HTTP endpoints, the `ssl` (`https`) attribute is set to `true` if the service has the `ssl` label set to `true`.
+服务记录按照如下的步骤进行创建：
 
-==== Dynamics
+* 从 `service.type` 中推断出服务类型；如果没有设置，那么服务类型被设置为 `unknown`
+* 服务记录的名称就是服务的名称
+* 服务的标签（label）都被映射为服务记录的元数据
+* 此外还会加上：`kubernetes.uuid` , `kubernetes.namespace` , `kubernetes.name`
+* `location` 信息将从服务的第一个端口推断出来
 
-The bridge imports all services on `start` and removes them on `stop`. In between it watches the Kubernetes services and add the new ones and removes the deleted ones.
+对于 HTTP 端点，如果服务带有值为 `true` 的 `ssl` (`https`) 标签的话，那么服务记录的 `ssl` (`https`)属性将被设置为 `true`。
 
-==== Supported types
+[[_dynamics]]
+==== 动态性
 
-The bridge uses the `service-type` label to induce the type. In addition it checks the port of the service. Are supported:
+Kubernetes 桥接器将会在启动(`start`)的时候导入所有的服务，在停止(`stop`)的时候移除所有的服务。在运行期间，它将监听 Kubernetes 的服务，并且动态地导入新加入的服务，移除被删除的服务。
 
-* ports 80, 443 and from 8080 to 9000: HTTP endpoint
-* ports 5432 and 5433: JDBC data source (PostGreSQL)
-* ports 3306 and 13306: JDBC data source (MySQL)
-* port 6379: Redis data source
-* ports 27017, 27018 and 27019: MongoDB data source
+[[_supported_types]]
+==== 支持的类型
 
-If present, the `service-type` overrides the port-based deduction.
+桥接器使用 `service-type` 标签来指定类型。另外，它还检查服务的端口，支持如下：
+
+* 80，443，8080-9000： HTTP端点
+* 5432，5433：JDBC数据源（PostGreSQL）
+* 3306，13306：JDBC数据源（MySql）
+* 6379: Redis 数据源
+* ports 27017, 27018 和 27019: MongoDB 数据源
+
+如果 `service-type` 存在，那么将覆盖端口的默认配置

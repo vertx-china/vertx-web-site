@@ -1,37 +1,34 @@
-=== Docker Links bridge
+[[_docker_links_bridge]]
+=== Docker Links 桥接器
 
-This discovery bridge imports services from Docker Links into the Vert.x service discovery. When you link a Docker
-container to another Docker container, Docker injects a set of environment variables. This bridge analyzes these
-environment variables and imports service record for each link. The service type is deduced from the `service.type`
-label. If not set, the service is imported as `unknown`. Only `http-endpoint` are supported for now.
+Docker Links 桥接器可以从 Docker Links 中导入服务到 Vert.x 的服务发现组件中。当你将一个Docker容器与另外一个Docker容器链接在一起(link)的时候，Docker将会注入一组环境变量。该桥接器将分析这些环境变量，并且针对每个链接(link)，生成一个服务记录。服务记录的类型从 `service.type` 属性中推断；如果没有设置，那么服务类型将被设置为 `unknown` 。目前暂时只支持 `http-endpoint` 服务类型。
 
-As the links are created when the container starts, the imported records are created when the bridge starts and
-do not change afterwards.
+由于Docker容器只在启动的时候创建链接，所以这个桥接器只会在启动的时候导入服务记录，然后此后就都不改变了。
 
-==== Using the bridge
+[[_using_the_bridge_3]]
+==== 桥接器的使用
 
-To use this Vert.x discovery bridge, add the following dependency to the _dependencies_ section of your build
-descriptor:
+要使用该服务发现桥接器，需要将如下的依赖包加入到依赖配置文件中：
 
-* Maven (in your `pom.xml`):
+* Maven (`pom.xml` 文件):
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-service-discovery-bridge-docker</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle ( `build.gradle` 文件):
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-service-discovery-bridge-docker:4.0.0'
+compile 'io.vertx:vertx-service-discovery-bridge-docker:4.0.3'
 ----
 
-Then, when creating the service discovery, registers this bridge as follows:
+创建服务发现对象时，注册桥接器的示例：
 
 [source, java]
 ----
@@ -39,4 +36,4 @@ ServiceDiscovery.create(vertx)
     .registerServiceImporter(new DockerLinksServiceImporter(), new JsonObject());
 ----
 
-The bridge does not need any further configuration.
+这种桥接器不需要进一步的配置。

@@ -1,90 +1,91 @@
 = Vert.x-redis
 :toc: left
 
-Vert.x-redis is redis client to be used with Vert.x.
+Vert.x-redis 是与 Vert.x 一起使用的 Redis 客户端。
 
-This module allows data to be saved, retrieved, searched for, and deleted in a Redis. Redis is an open source, advanced
-key-value store. It is often referred to as a data structure server since keys can contain  strings, hashes, lists, sets
-and sorted sets. To use this module you must have a Redis server instance running on your network.
+该模块允许在 Redis 中保存、查询、搜索和删除数据。Redis 是一个开源的、先进的键值存储数据库。
+它通常被称为数据结构服务器，因为 Redis 的键可以存储字符串、散列、列表、集合和排序集合。
+要使用此模块，您的网络上必须运行一个 Redis 服务器实例。
 
-Redis has a rich API and it can be organized in the following groups:
+Redis 有着丰富的 API，可以分成以下几组：
 
-* Cluster - Commands related to cluster management, note that using most of these commands you will need a redis server with version &gt;=3.0.0
-* Connection - Commands that allow you to switch DBs, connect, disconnect and authenticate to a server.
-* Hashes - Commands that allow operations on hashes.
-* HyperLogLog - Commands to approximating the number of distinct elements in a multiset, a HyperLogLog.
-* Keys - Commands to work with Keys.
-* List - Commands to work with Lists.
-* Pub/Sub - Commands to create queues and pub/sub clients.
-* Scripting - Commands to run Lua Scripts in redis.
-* Server - Commands to manage and get server configurations.
-* Sets - Commands to work with un ordered sets.
-* Sorted Sets - Commands to work with sorted sets.
-* Strings - Commands to work with Strings.
-* Transactions - Commands to handle transaction lifecycle.
-* Streams - Commands to handle streaming.
+* 集群 Cluster - 与集群管理相关的命令, 使用这些命令需要注意 redis server 版本 >=3.0.0 。
+* 连接 Connection - 切换数据库，连接，断开连接以及身份认证的命令。
+* 哈希 Hashes - 对哈希进行操作的命令。
+* 基数统计 HyperLogLog - 对可重复集合中统计不重复元素的命令。
+* 键 Keys - 使用 key 相关的命令。
+* 列表 List - 使用 list 相关的命令。
+* 发布/订阅 Pub/Sub - 创建队列和发布/订阅客户端的命令。
+* 脚本 Scripting - 在 Redis 中运行 Lua 脚本的命令。
+* 服务器 Server - 管理和获取服务器配置的命令。
+* 集合 Sets - 处理无序集合的命令。
+* 有序集合 Sorted Sets - 处理有序集合的命令。
+* 字符串 Strings - 处理字符串的命令。
+* 事务 Transactions - 处理事务生命周期的命令。
+* 流 Streams - 处理流的命令。
 
-== Using Vert.x-Redis
+[[_using_vert_x_redis]]
+== 使用 Vert.x-Redis
 
-To use the Vert.x Redis client, add the following dependency to the _dependencies_ section of your build descriptor:
+要使用 Vert.x Redis 客户端，请将以下依赖项添加到项目的 _dependencies_ 中：
 
-* Maven (in your `pom.xml`):
+* Maven（在您的 `pom.xml` 中）：
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
 <groupId>io.vertx</groupId>
 <artifactId>vertx-redis-client</artifactId>
-<version>4.0.0</version>
+<version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle（在您的 `build.gradle` 文件中）：
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-redis-client:4.0.0'
+compile 'io.vertx:vertx-redis-client:4.0.3'
 ----
 
-== Connecting to Redis
+[[_connecting_to_redis]]
+== 连接到 Redis
 
-The Redis client can operate in 3 distinct modes:
+Redis 客户端可以在三种模式下操作：
 
-* Simple client (probably what most users need).
-* Sentinel (when working with Redis in High Availability mode).
-* Cluster (when working with Redis in Clustered mode).
+* 简易客户端 (大多数用户需要的)。
+* 哨兵 (在高可用模式下使用 Redis)。
+* 集群 (在集群模式下使用 Redis)。
 
-The connection mode is selected by the factory method on the Redis interface. Regardless of the mode the client can be
-configured using a `link:../../apidocs/io/vertx/redis/client/RedisOptions.html[RedisOptions]` data object. By default, some configuration values are
-initialized with the following values:
+连接方式由 Redis 接口的工厂方法决定。无论客户端是哪种模式，
+都可以通过 `link:../../apidocs/io/vertx/redis/client/RedisOptions.html[RedisOptions]` 数据对象来配置。
+默认情况下，一些配置项按下面的值初始化：
 
-* `netClientOptions`: default is `TcpKeepAlive: true`, `TcpNoDelay: true`
-* `endpoint`: default is `redis://localhost:6379`
-* `masterName`: default is `mymaster`
-* `role` default is `MASTER`
-* `useReplicas` default is `NEVER`
+* `netClientOptions`: 默认为 `TcpKeepAlive: true`, `TcpNoDelay: true`
+* `endpoint`: 默认为 `redis://localhost:6379`
+* `masterName`: 默认为 `mymaster`
+* `role`: 默认为 `MASTER`
+* `useReplicas`: 默认为 `NEVER`
 
-In order to obtain a connection use the following code:
+用以下代码获得连接：
 
 [source,java]
 ----
 Redis.createClient(vertx)
   .connect()
   .onSuccess(conn -> {
-    // use the connection
+    // 使用 connection
   });
 ----
 
-In the configuration contains a `password` and/or a `select` database, these 2 commands will be executed automatically
-once a successful connection is established to the server.
+配置中包含 `password` 且/或 `select` 数据库，
+在成功建立连接后，这两个命令会自动执行。
 
 [source,java]
 ----
 Redis.createClient(
   vertx,
-  // The client handles REDIS URLs. The select database as per spec is the
-  // numerical path of the URL and the password is the password field of
-  // the URL authority
+  // 客户端处理 REDIS URLs。
+  // 规范的数据库URL，密码是 URL 授权的密码字段。
   "redis://:abracadabra@localhost:6379/1")
   .connect()
   .onSuccess(conn -> {
@@ -92,28 +93,29 @@ Redis.createClient(
   });
 ----
 
-== Connection String
+[[_connection_string]]
+== 连接字符串
 
-The client will recognize addresses that follow the expression:
+客户端会识别表达式上的地址：
 
 ----
 redis://[:password@]host[:port][/db-number]
 ----
 
-Or
+或
 
 ----
 unix://[:password@]/domain/docker.sock[?select=db-number]
 ----
 
-When specifying a password or a database those commands are always executed on connection start.
+当指定密码或数据库时，这些命令会在连接启动时执行。
 
+[[_running_commands]]
+== 执行命令
 
-== Running commands
-
-Given that the redis client is connected to the server, all commands are now possible to execute using this module.
-The module offers a clean API for executing commands without the need to hand write the command itself, for example
-if one wants to get a value of a key it can be done as:
+Redis 客户端已连接到服务器，现在可以使用此模块执行所有命令。
+例如，该模块提供了一个简洁的 API 来执行命令，而不需要自己手写命令。
+如果想要获取键的值，可以这样做：
 
 [source,java]
 ----
@@ -126,11 +128,10 @@ redis
   });
 ----
 
-The response object is a generic type that allow converting from the basic redis types to your language types. For
-example, if your response is of type `INTEGER` then you can get the value as any numeric primitive type `int`, `long`,
-etc...
+返回的对象是泛型类型，它允许从基本的 redis 类型转换为您的编程语言类型。
+例如，如果返回对象类型为 `INTEGER` ，则可以通过任意数值基本类型获取该值，如 `int`、`long` 等等。
 
-Or you can perform more complex tasks such as handling responses as iterators:
+或者，可以执行更复杂的任务，例如将返回的值作为迭代器处理：
 
 [source,java]
 ----
@@ -141,9 +142,10 @@ if (response.type() == ResponseType.MULTI) {
 }
 ----
 
-== High Availability mode
+[[_high_availability_mode]]
+== 高可用模式
 
-To work with high availability mode the connection creation is quite similar:
+在高可用性模式下使用，创建连接的过程非常相似：
 
 [source,java]
 ----
@@ -165,13 +167,14 @@ Redis.createClient(
   });
 ----
 
-What is important to notice is that in this mode, an extra connection is established to the server(s) and behind the
-scenes the client will listen for events from the sentinel. When the sentinel notifies that we switched masters, then
-an exception is send to the client and you can decide what to do next.
+需要注意的是，在此模式下，将建立额外连接到服务器。
+客户端将在后台监听哨兵的事件。当哨兵通知我们切换了主机时，
+就会向客户端发送一个异常，您可以决定下一步做什么。
 
-== Cluster mode
+[[_cluster_mode]]
+== 集群模式
 
-To work with cluster the connection creation is quite similar:
+在集群模式下使用，创建连接的过程也非常相似：
 
 [source,java]
 ----
@@ -184,21 +187,21 @@ final RedisOptions options = new RedisOptions()
   .addConnectionString("redis://127.0.0.1:7005");
 ----
 
-In this case the configuration requires one of more members of the cluster to be known. This list will be used to ask
-the cluster for the current configuration, which means if any of the listed members is not available it will be skipped.
+在这种情况下，需要配置一个或多个集群成员。
+此成员列表用于向集群请求当前配置，这意味着列表中不可用的成员将被跳过。
 
-In cluster mode a connection is established to each node and special care is needed when executing commands. It is
-recommended to read redis manual in order to understand how clustering works. The client operating in this mode will do
-a best effort to identify which slot is used by the executed command in order to execute it on the right node. There
-could be cases where this isn't possible to identify and in that case as a best effort the command will be run on a
-random node.
+在集群模式下将建立到每个节点的连接。
+在执行命令时需要特别小心，建议阅读Redis手册以了解集群如何工作。
+在此模式下操作的客户端会尽量识别执行的命令使用哪个槽（slot），以便在正确的节点上执行它。
+如果出现无法识别的情况，最好在随机节点上运行该命令。
 
-== Pub/Sub mode
+[[_pubsub_mode]]
+== 发布/订阅模式
 
-Redis supports queues and pub/sub mode, when operated in this mode once a connection invokes a subscriber mode then
-it cannot be used for running other commands than the command to leave that mode.
+Redis 支持队列和发布/订阅模式。
+在此模式下操作时，当一连接调用订阅模式，则它不能用于运行除退出该模式之外的其他命令。
 
-To start a subscriber one would do:
+要启动订阅者，需要执行以下操作：
 
 [source,java]
 ----
@@ -211,7 +214,7 @@ Redis.createClient(vertx, new RedisOptions())
   });
 ----
 
-And from another place in the code publish messages to the queue:
+其他位置的代码将消息发布到队列：
 
 [source,java]
 ----
@@ -221,14 +224,13 @@ redis.send(Request.cmd(Command.PUBLISH).arg("channel1").arg("Hello World!"))
   });
 ----
 
-NOTE: It is important to remember that the commands `SUBSCRIBE`, `UNSUBSCRIBE`, `PSUBSCRIBE` and `PUNSUBSCRIBE` are `void`.
-This means that the result in case of success is `null` not a instance of response. All messages are then routed through
-the handler on the client.
+注意: `SUBSCRIBE`, `UNSUBSCRIBE`, `PSUBSCRIBE`, `PUNSUBSCRIBE` 这些命令返回值是 `void`。
+这意味着成功的结果是 `null`，而不是响应的实例。所有消息都通过客户端上的 handler 进行路由。
 
-== Domain Sockets
+[[_domain_sockets]]
+== 域套接字
 
-Most of the examples shown connecting to a TCP sockets, however it is also possible to use Redis connecting to a UNIX
-domain docket:
+大部分例子展示连接到 TCP 套接字，但也可以用 Redis 连接到 UNIX 域套接字。
 
 [source,java]
 ----
@@ -239,20 +241,20 @@ Redis.createClient(vertx, "unix:///tmp/redis.sock")
   });
 ----
 
-Be aware that HA and cluster modes report server addresses always on TCP addresses not domain sockets. So the
-combination is not possible. Not because of this client but how Redis works.
+请注意，高可用模式和集群模式报告的服务器地址始终位于 TCP 地址上，而不是域套接字上。
+这是 Redis 的原因而不是客户端的原因，因此混合使用是不行的。
 
-== Connection Pooling
+[[_connection_pooling]]
+== 连接池
 
-All client variations are backed by a connection pool. By default the configuration sets the pool size to 1, which means
-that it operates just like a single connection. There are 4 tunnables for the pool:
+所有的客户端都有一个连接池。默认配置连接池大小为 1，这意味着操作和单个连接一样。连接池有四个可调项：
 
-* `maxPoolSize` the max number of connections on the pool (default `6`)
-* `maxPoolWaiting` the max waiting handlers to get a connection on a queue (default `24`)
-* `poolCleanerInterval` the interval when connections will be clean default is `-1` (disabled)
-* `poolRecycleTimeout` the timeout to keep an open connection on the pool waiting and then close (default `15_000`)
+* `maxPoolSize` 最大连接数 (默认为 `6`)
+* `maxPoolWaiting` 在队列上获取连接的最大等待处理程序数 (默认值为 `24`)
+* `poolCleanerInterval` 清除连接的时间间隔 默认为 `-1` (禁用)
+* `poolRecycleTimeout` 连接池中打开的连接保持等待到关闭的超时时间 (默认 `15_000`)
 
-Pooling is quite useful to avoid custom connection management, for example you can just use as:
+连接池非常有用，无需自己管理连接，例如，您只需要：
 
 [source,java]
 ----
@@ -263,10 +265,10 @@ Redis.createClient(vertx, "redis://localhost:7006")
   });
 ----
 
-It is important to observe that no connection was acquired or returned, it's all handled by the pool. However there might
-be some scalability issues when more than 1 concurrent request attempts to get a connection from the pool, in order to
-overcome this we need to tune the pool. A common configuration is to set the maximum size of the pool to the number of
-available CPU cores and allow requests to get a connection from the pool to queue:
+需要注意的是，连接不需要手动获取或者归还，所有连接都由连接池处理。
+但是超过 1 个尝试从连接池中获取连接的并发请求可能会出现一些可伸缩性问题。
+为了克服这个问题，我们需要对连接池进行调优。
+常见的配置是将连接池的最大大小设置为可用CPU核心数，并允许排队从连接池里面获取连接。
 
 [source,java]
 ----
@@ -274,10 +276,9 @@ Redis.createClient(
   vertx,
   new RedisOptions()
     .setConnectionString("redis://localhost:7006")
-    // allow at max 8 connections to redis
+    // 允许最多有 8 个连接到 redis
     .setMaxPoolSize(8)
-    // allow 32 connection requests to queue waiting
-    // for a connection to be available.
+    // 允许 32 个连接请求排队等待连接可用
     .setMaxWaitingHandlers(32))
   .send(Request.cmd(Command.PING))
   .onSuccess(res -> {
@@ -285,25 +286,26 @@ Redis.createClient(
   });
 ----
 
-NOTE: Pooling is not compatible with `SUBSCRIBE`, `UNSUBSCRIBE`, `PSUBSCRIBE` or `PUNSUBSCRIBE` because these commands
-will modify the way the connection operates and the connection cannot be reused.
+注意：连接池不支持 `SUBSCRIBE`, `UNSUBSCRIBE`, `PSUBSCRIBE`, `PUNSUBSCRIBE` 这些命令。
+因为这些命令将修改连接的操作方式，而且连接不能重复使用。
 
-== Implementing Reconnect on Error
+[[_implementing_reconnect_on_error]]
+== 出错时重连
 
-While the connection pool is quite useful, for performance, a connection should not be auto managed but controlled by
-you. In this case you will need to handle connection recovery, error handling and reconnect.
+虽然连接池非常有用，但为了提高性能，连接不应自动管理，而应该由您控制。
+因此您需要处理连接恢复、错误处理和重新连接。
 
-A typical scenario is that a user will want to reconnect to the server whenever an error occurs. The automatic reconnect
-is not part of the redis client as it will force a behaviour that might not match the user expectations, for example:
+典型的情况是，每当发生错误时，用户都希望重新连接到服务器。
+自动重新连接不是 Redis 客户端的一部分，因为它将强制执行可能不符合用户预期的行为，例如：
 
-1. What should happen to current in-flight requests?
-2. Should the exception handler be invoked or not?
-3. What if the retry will also fail?
-4. Should the previous state (db, authentication, subscriptions) be restored?
-5. Etc...
+1. 如何处理当前执行的请求？
+2. 是否调用异常处理程序？
+3. 如果重试也将失败，该怎么办？
+4. 是否应恢复以前的状态（数据库、身份验证、订阅）？
+5. 等等等等。
 
-In order to give the user full flexibility, this decision should not be performed by the client. However a simple
-reconnect with backoff timeout could be implemented as follows:
+为了给用户充分的灵活性，我们决定不应由客户端执行。
+但是，对于超时的简单重新连接可以按如下方式实现：
 
 [source,java]
 ----
@@ -318,13 +320,12 @@ class RedisVerticle extends AbstractVerticle {
   public void start() {
     createRedisClient()
       .onSuccess(conn -> {
-        // connected to redis!
+        // 连接到 redis!
       });
   }
 
   /**
-   * Will create a redis client and setup a reconnect handler when there is
-   * an exception in the connection.
+   * 当连接中出现异常时，将创建一个 Redis客 户端并设置重新连接处理程序。
    */
   private Future<RedisConnection> createRedisClient() {
     Promise<RedisConnection> promise = Promise.promise();
@@ -332,13 +333,12 @@ class RedisVerticle extends AbstractVerticle {
     Redis.createClient(vertx, options)
       .connect()
       .onSuccess(conn -> {
-        // make sure the client is reconnected on error
+        // 确保客户端在报错时重连
         conn.exceptionHandler(e -> {
-          // attempt to reconnect,
-          // if there is an unrecoverable error
+          // 有无法恢复错误时尝试重连
           attemptReconnect(0);
         });
-        // allow further processing
+        // 进一步处理
         promise.complete(conn);
       });
 
@@ -346,13 +346,13 @@ class RedisVerticle extends AbstractVerticle {
   }
 
   /**
-   * Attempt to reconnect up to MAX_RECONNECT_RETRIES
+   * 尝试重新连接次数最多到 MAX_RECONNECT_RETRIES 次
    */
   private void attemptReconnect(int retry) {
     if (retry > MAX_RECONNECT_RETRIES) {
-      // we should stop now, as there's nothing we can do.
+      // 现在应该停下来，因为我们无能为力。
     } else {
-      // retry with backoff up to 10240 ms
+      // 最长回退重试 10240 ms
       long backoff = (long) (Math.pow(2, Math.min(retry, 10)) * 10);
 
       vertx.setTimer(backoff, timer -> {
@@ -364,9 +364,21 @@ class RedisVerticle extends AbstractVerticle {
 }
 ----
 
-In this example the client object will be replaced on reconnect and the application will retry up to 16 times with a
-backoff up to 1280ms. By discarding the client we ensure that all old inflight responses are lost and all new ones
-will be on the new connection.
+在本例中，客户端对象将在重新连接时被替换，应用程序将重试最多 16 次，回退时间最长可达 1280 ms。
+通过弃用旧客户端，我们可以确保所有没有处理的响应都被抛弃。
 
-It is important to note that, the reconnect will create a new connection object, so these object references should not
-be cached and evaluated every time.
+需要注意，重新连接将创建一个新的连接对象，因此不会每次都缓存和执行这些对象的引用。
+
+[[_protocol_parser]]
+== 协议解析器
+
+这个客户端同时支持 `RESP2` 和 `RESP3` 协议，在连接握手阶段，
+客户端会自动检测服务器支持的版本，并使用之。
+
+解析器隐式地为从服务器接收到的数据块创建"无限"可读缓冲区，
+考虑到内存容量，为了避免产生过多的内存垃圾，在JVM启动的时候，可以配置一个可调优的watermark值。
+系统参数 `io.vertx.redis.parser.watermark` 定义了一个缓冲区被废弃之前，可以存储可读数据的数量。
+默认情况下，这个大小是512Kb。这意味着每个服务器的连接都会消耗至少512Kb的内存。
+客户端以 pipeline 模式运行，他会保持较低的连接数同时提供最佳效果，
+这意味着会消耗 `512Kb * n连接数` 大小的内存。
+如果应用需要大量连接，那么我们建议将watermark值调小或者直接禁用之。

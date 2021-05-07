@@ -1,23 +1,22 @@
-= property file Auth provider
+= 基于属性文件的授权与鉴权提供程序
 
-This auth provider implementation reads users, roles and permissions from a property file that is compatible
-with the format used by http://shiro.apache.org/static/1.3.2/apidocs/org/apache/shiro/realm/text/PropertiesRealm.html[Apache Shiro Properties Realm].
+Auth provider 可以从符合 http://shiro.apache.org/static/1.3.2/apidocs/org/apache/shiro/realm/text/PropertiesRealm.html[Apache Shiro Properties Realm] 格式的参数文件中读取用户(users)、角色(roles)和权限(permissions)配置。
 
-Note that there is no dependency on Apache Shiro as this is a new implementation that is simply compatible with the Apache Shiro format
+但需要注意，这是一个简单兼容 Apache Shiro 格式却并不依赖于 Apache Shiro 的新实现。
 
-The properties file should have the following structure:
+参数文件应该具备以下结构：
 
-Each line should either contain the username, password and roles for a user or the permissions in a role.
+每一行都应该包含用户的用户名、密码和角色，或者角色的权限。
 
-For a user line it should be of the form:
+对于一行用户配置而言，应该遵循下面这种形式：
 
-user.{username}={password},{roleName1},{roleName2},...,{roleNameN}
+`user.{username}={password},{roleName1},{roleName2},...,{roleNameN}`
 
-For a role line it should be of the form:
+对于一行角色配置而言，应该遵循下面这种形式：
 
-role.{roleName}={permissionName1},{permissionName2},...,{permissionNameN}
+`role.{roleName}={permissionName1},{permissionName2},...,{permissionNameN}`
 
-Here's an example:
+下方是一个示例:
 ----
 user.tim = mypassword,administrator,developer
 user.bob = hispassword,developer
@@ -27,6 +26,6 @@ role.manager=play_golf,say_buzzwords
 role.developer=do_actual_work
 ----
 
-When describing roles a wildcard `*` can be used to indicate that the role has all permissions.
+在描述角色时，可以使用通配符 `*` 来表示该角色具有所有权限。
 
-The implementation currently assumes that user/password based authentication is used.
+当前的实现假定使用了基于用户/密码的身份验证。

@@ -1,41 +1,44 @@
-=== Kubernetes ConfigMap Store
+[[_kubernetes_configmap_store]]
+=== Kubernetes ConfigMap 配置中心
 
-The Kubernetes ConfigMap Store extends the Vert.x Configuration Retriever and provides support Kubernetes Config Map
-and Secrets. So, configuration is retrieved by reading the config map or the secrets.
+Kubernetes ConfigMap 配置中心扩展了 Vert.x Configuration Retriever 并提供了 对于 Kubernetes 的 ConfigMap 和 Secrets 的支持。
+所以，配置是从 k8s 里的 configMap 或者 secret 对象中读取的。
 
-==== Using the Kubernetes ConfigMap Store
+[[_using_the_kubernetes_configmap_store]]
+==== 使用 Kubernetes ConfigMap 配置中心
 
-To use the Kubernetes ConfigMap Store, add the following dependency to the
-_dependencies_ section of your build descriptor:
+要使用 Kubernetes ConfigMap 配置中心，
+则添加如下依赖：
 
-* Maven (in your `pom.xml`):
+* Maven (在您的 `pom.xml` 文件):
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-config-kubernetes-configmap</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-config</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle (在您的 `build.gradle` 文件):
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-config:4.0.0'
-compile 'io.vertx:vertx-config-kubernetes-configmap:4.0.0'
+compile 'io.vertx:vertx-config:4.0.3'
+compile 'io.vertx:vertx-config-kubernetes-configmap:4.0.3'
 ----
 
-==== Configuring the store
+[[_configuring_the_store]]
+==== 设置配置中心
 
-Once added to your classpath or dependencies, you need to configure the
-`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` to use this store:
+将该库加入classpath或者项目依赖后，您需要配置
+`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` 来使用这个配置中心：
 
 [source, java]
 ----
@@ -50,19 +53,19 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
     new ConfigRetrieverOptions().addStore(store));
 ----
 
-You need to configure the store to find the right configmap. this is done with:
+您需要设置这个配置中心来找到正确的configMap。这通过如下配置项来解决：
 
-* `namespace` - the project namespace, `default` by default. If the `KUBERNETES_NAMESPACE` ENV variable is set, it
-uses this value.
-* `name` - the name of the config map
-* `optional` - whether or not the config map is optional (`true` by default)
+* `namespace` - 项目的namespace，默认值为 `default` 。如果设置了 `KUBERNETES_NAMESPACE` 环境变量，
+则会覆盖其值。
+* `name` - configMap的名称
+* `optional` - configMap是否是可选项（默认为 `true` ）
 
-If the config map is composed by several element, you can use the `key` parameter to tell
-which `key` is read
+如果configMap是由数个元素组成，您可以用 `key` 参数来告诉 Vert.x
+来读取哪一个 `key` 。
 
-The application must have the permissions to read the config map.
+Vert.x应用必须要有读取configMap的权限。
 
-To read data from a secret, just configure the `secret` property to `true`:
+要从secret中读取数据，只需要将 `secret` 属性配置为 `true` ：
 
 [source, java]
 ----
@@ -78,5 +81,5 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
     new ConfigRetrieverOptions().addStore(store));
 ----
 
-If the config map is not available, an empty JSON object is passed as configuration chunk. To disable this
-behavior and explicitly fail, you can set the `optional` configuration to `false`.
+如果configMap访问不到，那么您会得到一个空的JSON object对象作为配置块。
+要禁用这个行为并显式声明失败，您需要设置 `optional` 为 `false` .

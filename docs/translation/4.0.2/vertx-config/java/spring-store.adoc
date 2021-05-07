@@ -1,0 +1,61 @@
+[[_spring_config_server_store]]
+=== Spring配置中心
+
+Spring配置中心扩展了 Vert.x Configuration Retriever 
+并提供了从 Spring服务获取配置的方法。
+
+[[_using_the_spring_config_server_store]]
+==== 使用Spring配置中心
+
+要使用Spring配置中心，
+则添加如下依赖：
+
+* Maven （在您的 `pom.xml` 文件）：
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-config-spring-config-server</artifactId>
+ <version>4.0.2</version>
+</dependency>
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-config</artifactId>
+ <version>4.0.2</version>
+</dependency>
+----
+
+* Gradle （在您的 `build.gradle` 文件）：
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-config:4.0.2'
+compile 'io.vertx:vertx-config-spring-config-server:4.0.2'
+----
+
+==== 设置配置中心
+
+将该库加入classpath或者项目依赖后，您需要配置
+`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` 来使用这个配置中心：
+
+[source, java]
+----
+ConfigStoreOptions store = new ConfigStoreOptions()
+    .setType("spring-config-server")
+    .setConfig(new JsonObject().put("url", "http://localhost:8888/foo/development"));
+
+ConfigRetriever retriever = ConfigRetriever.create(vertx,
+    new ConfigRetrieverOptions().addStore(store));
+----
+
+
+可配置的属性如下：
+
+* `url` - 获取配置的 `url` （强制必填），支持两种格式：
+** `/{application}/{environment}` ，分别用不同的配置源来生成响应
+** `/{application}-{environment}.json` ，以具有唯一字段的JSON生成响应，并解析spring占位符
+* `timeout` - 获取配置超时时间（毫秒），默认3000毫秒。
+* `user` - 用户（默认无需认证）
+* `password` - 密码
+* `httpClientConfiguration` - 底层HTTP客户端的配置

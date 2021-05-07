@@ -1,0 +1,347 @@
+== Event Bus
+:toc: left
+
+`link:../../apidocs/io/vertx/core/eventbus/EventBus.html[event bus]` 是 Vert.x 的 *神经系统* 。
+
+每一个 Vert.x 实例都有一个单独的 Event Bus 实例。您可以通过 `Vertx` 实例的 `link:../../apidocs/io/vertx/core/Vertx.html#eventBus--[eventBus]` 方法来获得对应的 `EventBus` 实例。
+
+应用中的不同组成部分可以通过 Event Bus 相互通信，您无需关心它们由哪一种语言实现，
+也无需关心它们是否在同一个 Vert.x 实例中。
+
+您甚至可以通过桥接的方式让浏览器中运行的多个JavaScript客户端在同一个 Event Bus 上相互通信。
+
+Event Bus构建了一个跨越多个服务器节点和多个浏览器的分布式点对点消息系统。
+
+Event Bus支持发布/订阅、点对点、请求-响应的消息传递方式。
+
+Event Bus的API很简单。基本上只涉及注册处理器、
+注销处理器以及发送和发布(publish)消息。
+
+先来看一些基本概念和理论。
+
+[[_the_theory]]
+=== 基本概念
+
+[[_addressing]]
+==== 寻址
+
+消息的发送目标被称作 *地址(address)* 。
+
+Vert.x的地址格式并不花哨。Vert.x中的地址就是一个简单的字符串，任何字符串都合法。
+不过还是建议使用某种规范来进行地址的命名。 _例如_ 使用点号(`.`)来划分命名空间。
+
+一些合法的地址形如：+europe.news.feed1+、+acme.games.pacman+、+sausages+ 以及 +X+ 。
+
+[[_handlers]]
+==== 处理器
+
+消息需由处理器（`Handler`）来接收。您需要将处理器注册在某个地址上。
+
+同一个地址可以注册许多不同的处理器。
+
+一个处理器也可以注册在多个不同的地址上。
+
+[[_publish_subscribe_messaging]]
+==== 发布/订阅消息
+
+Event Bus支持 *发布(publish)消息* 功能。
+
+消息将被发布到一个地址上。
+发布意味着信息会被传递给所有注册在该地址上的处理器。
+
+即我们熟悉的 *发布/订阅* 消息传递模式。
+
+[[_point_to_point_and_request_response_messaging]]
+==== 点对点消息传递 与 请求-响应消息传递
+
+Event Bus也支持 *点对点* 消息模式。
+
+消息将被发送到一个地址上，Vert.x仅会把消息发给注册在该地址上的处理器中的其中一个。
+
+若这个地址上注册有不止一个处理器，那么Vert.x将使用 *不严格的轮询算法* 选择其中一个。
+
+点对点消息传递模式下，可在消息发送的时候指定一个应答处理器（可选）。
+
+当接收者收到消息并且处理完成时，它可以选择性地回复该消息。
+若回复，则关联的应答处理器将会被调用。
+
+当发送者收到应答消息时，发送者还可以继续回复这个“应答”，这个过程可以 _不断_ 重复。
+通过这种方式可以在两个不同的 Verticle 之间建立一个对话窗口。
+
+这也是一个常见的消息传递模式：*请求-响应* 模式。
+
+[[_best_effort_delivery]]
+==== 尽力传输
+
+Vert.x会尽它最大努力去传递消息，并且不会主动丢弃消息。这种方式称为 *尽力传输(Best-effort delivery)*。
+
+但是，当 Event Bus 发生故障时，消息可能会丢失。
+
+若您的应用关心消息丢失，那么您应当编写具有幂等性的处理器，
+并且您的发送者应当在故障恢复后重试。（译者注：RPC通信通常情况下有三种语义：*at least once*、*at most once* 和 *exactly once*。不同语义情况下要考虑的情况不同。本小节中文档建议开发者通过重试来实现at least once语义，并通过幂等设计来规避重复接收消息的影响。）
+
+[[_types_of_messages]]
+==== 消息类型
+
+Vert.x 默认允许任何基本/简单类型、`String` 类型、 `link:../../apidocs/io/vertx/core/buffer/Buffer.html[buffers]` 类型的值
+作为消息发送。
+
+不过在 Vert.x 中更规范且更通用的做法是使用 http://json.org/[JSON] 格式来发送消息。
+
+对于 Vert.x 支持的所有语言来说，JSON都是非常容易创建、读取和解析的，因此JSON已经成为了Vert.x中的
+_通用语(lingua franca)_ 。
+
+但是若您不想用 JSON，我们也不强制您使用它。
+
+Event Bus 非常灵活，
+您可以通过自定义 `link:../../apidocs/io/vertx/core/eventbus/MessageCodec.html[codec]` 来实现任何类型对象在 Event Bus 上的传输。
+
+[[_the_event_bus_api]]
+=== Event Bus API
+
+下面我们来看一下 API。
+
+[[_getting_the_event_bus]]
+==== 获取Event Bus
+
+您可以通过下面的代码获取 Event Bus 的引用：
+
+[source,java]
+----
+EventBus eb = vertx.eventBus();
+----
+
+每一个 Vertx.x 实例仅有一个 Event Bus 实例。
+
+[[_registering_handlers]]
+==== 注册处理器
+
+最简单的注册处理器的方式是使用 `link:../../apidocs/io/vertx/core/eventbus/EventBus.html#consumer-java.lang.String-io.vertx.core.Handler-[consumer]` 方法，
+这儿有个例子：
+
+[source,java]
+----
+EventBus eb = vertx.eventBus();
+
+eb.consumer("news.uk.sport", message -> {
+  System.out.println("I have received a message: " + message.body());
+});
+----
+
+当消息达到您的处理器时，该消息会被放入 `link:../../apidocs/io/vertx/core/eventbus/Message.html[message]` 参数进行处理器的调用。
+
+调用 +consumer()+ 方法会返回一个 `link:../../apidocs/io/vertx/core/eventbus/MessageConsumer.html[MessageConsumer]` 对象。
+
+该对象后续可用于注销处理器，或者流式地处理该对象。
+
+您也可以使用 `link:../../apidocs/io/vertx/core/eventbus/EventBus.html#consumer-java.lang.String-io.vertx.core.Handler-[consumer]` 方法直接返回一个不带处理器的 +MessageConsumer+，
+之后再在这个返回的对象上设置处理器。如：
+
+[source,java]
+----
+EventBus eb = vertx.eventBus();
+
+MessageConsumer<String> consumer = eb.consumer("news.uk.sport");
+consumer.handler(message -> {
+  System.out.println("I have received a message: " + message.body());
+});
+----
+
+在向集群模式下的 Event Bus 注册处理器时，
+注册信息会花费一些时间才能传播到集群中的所有节点。
+
+若您希望在完成注册后收到通知，您可以在 `MessageConsumer` 对象上注册
+一个 `link:../../apidocs/io/vertx/core/eventbus/MessageConsumer.html#completionHandler-io.vertx.core.Handler-[completion handler]`。
+
+[source,java]
+----
+consumer.completionHandler(res -> {
+  if (res.succeeded()) {
+    System.out.println("The handler registration has reached all nodes");
+  } else {
+    System.out.println("Registration failed!");
+  }
+});
+----
+
+[[_un_registering_handlers]]
+==== 注销处理器
+
+您可以通过 `link:../../apidocs/io/vertx/core/eventbus/MessageConsumer.html#unregister--[unregister]` 方法来注销处理器。
+
+若您在使用集群模式的 Event Bus，注销处理器的动作会花费一些时间在节点中传播。若您想
+在完成后收到通知，可以使用 `link:../../apidocs/io/vertx/core/eventbus/MessageConsumer.html#unregister-io.vertx.core.Handler-[unregister]` 方法注册回调：
+
+[source,java]
+----
+consumer.unregister(res -> {
+  if (res.succeeded()) {
+    System.out.println("The handler un-registration has reached all nodes");
+  } else {
+    System.out.println("Un-registration failed!");
+  }
+});
+----
+
+[[_publishing_messages]]
+==== 发布消息
+
+发布消息很简单，只需使用 `link:../../apidocs/io/vertx/core/eventbus/EventBus.html#publish-java.lang.String-java.lang.Object-[publish]`
+方法指定一个地址去发布即可。
+
+[source,java]
+----
+eventBus.publish("news.uk.sport", "Yay! Someone kicked a ball");
+----
+
+这个消息将会传递给所有在地址 +news.uk.sport+ 上注册过的处理器。
+
+[[_sending_messages]]
+==== 发送消息
+
+在对应地址上注册过的所有处理器中，仅一个处理器能够接收到发送的消息。
+这是一种点对点消息传递模式。Vert.x 使用不严格的轮询算法来选择绑定的处理器。
+
+您可以使用 `link:../../apidocs/io/vertx/core/eventbus/EventBus.html#send-java.lang.String-java.lang.Object-[send]` 方法来发送消息：
+
+[source,java]
+----
+eventBus.send("news.uk.sport", "Yay! Someone kicked a ball");
+----
+
+include::override/eventbus_headers.adoc[]
+
+[[_message_ordering]]
+==== 消息顺序
+
+Vert.x会按照发送者发送消息的顺序，将消息以同样的顺序传递给处理器。
+
+[[_the_message_object]]
+==== 消息对象
+
+您在消息处理器中接收到的对象的类型是 `link:../../apidocs/io/vertx/core/eventbus/Message.html[Message]`。
+
+消息的 `link:../../apidocs/io/vertx/core/eventbus/Message.html#body--[body]` 对应发送或发布(publish)的对象。
+
+消息的头信息可以通过 `link:../../apidocs/io/vertx/core/eventbus/Message.html#headers--[headers]` 方法获取。
+
+[[_acknowledging_messages_sending_replies]]
+==== 应答消息/发送回复
+
+当使用 `link:../../apidocs/io/vertx/core/eventbus/EventBus.html#send-java.lang.String-java.lang.Object-[send]` 方法发送消息时，
+Event Bus会尝试将消息传递到注册在Event Bus上的 `link:../../apidocs/io/vertx/core/eventbus/MessageConsumer.html[MessageConsumer]` 中。
+
+某些情况下，发送者可以通过 *请求/响应+*
+模式来得知消费者已经收到并"处理"了该消息。
+
+消费者可以通过调用
+`link:../../apidocs/io/vertx/core/eventbus/Message.html#reply-java.lang.Object-[reply]` 方法来应答这个消息，确认该消息已被处理。
+
+此时，它会将一个应答消息返回给发送者并调用发送者的应答处理器。
+
+看这个例子会更清楚：
+
+接收者：
+
+[source,java]
+----
+MessageConsumer<String> consumer = eventBus.consumer("news.uk.sport");
+consumer.handler(message -> {
+  System.out.println("I have received a message: " + message.body());
+  message.reply("how interesting!");
+});
+----
+
+发送者：
+
+[source,java]
+----
+eventBus.request("news.uk.sport", "Yay! Someone kicked a ball across a patch of grass", ar -> {
+  if (ar.succeeded()) {
+    System.out.println("Received reply: " + ar.result().body());
+  }
+});
+----
+
+在应答的消息体中可以包含一些有用的信息。
+
+“处理中”的实际含义应当由应用程序来定义。
+这完全取决于消费者如何执行，Event Bus 对此并不关心。
+
+一些例子：
+
+* 一个简单地实现了返回当天时间的服务，
+在应答的消息里会包含当天时间信息。
+* 一个实现了持久化队列的消息消费者，可以回复 `true`
+来表示消息已成功持久化到存储设备中，或回复 `false` 表示失败。
+* 一个处理订单的消息消费者可以使用 `true` 确认这个订单已经成功处理，
+并且可以从数据库中删除。
+
+[[_sending_with_timeouts]]
+==== 带超时的发送
+
+当发送带有应答处理器的消息时，可以在 `link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]` 中指定一个超时时间。
+
+如果在这个时间之内没有收到应答，则会以“失败的结果”为参数调用应答处理器。
+
+默认超时是 *30 秒*。
+
+[[_send_failures]]
+==== 发送失败
+
+消息发送可能会因为其他原因失败，包括：
+
+* 没有可用的处理器来接收消息
+* 接收者调用了 `link:../../apidocs/io/vertx/core/eventbus/Message.html#fail-int-java.lang.String-[fail]` 方法显式声明失败
+
+发生这些情况时，应答处理器将会以这些异常失败结果为参数进行调用。
+
+include::override/eventbus.adoc[]
+
+[[_clustered_event_bus]]
+==== 集群模式的 Event Bus
+
+Event Bus 不仅仅只存在于单个 Vert.x 实例中。将网络上不同的 Vert.x 实例组合成集群，
+就可以在这些实例间形成一个单一的、分布式的Event Bus。
+
+[[_clustering_programmatically]]
+==== 通过编写代码启用集群模式
+
+若您用编程的方式创建 Vert.x 实例（Vertx），则可以通过将 Vert.x
+实例配置成集群模式来获取集群模式的Event Bus：
+
+[source,java]
+----
+VertxOptions options = new VertxOptions();
+Vertx.clusteredVertx(options, res -> {
+  if (res.succeeded()) {
+    Vertx vertx = res.result();
+    EventBus eventBus = vertx.eventBus();
+    System.out.println("We now have a clustered event bus: " + eventBus);
+  } else {
+    System.out.println("Failed: " + res.cause());
+  }
+});
+----
+
+您需要确保在您的 classpath 中（或构建工具的依赖中）包含 `link:../../apidocs/io/vertx/core/spi/cluster/ClusterManager.html[ClusterManager]` 的实现类，如默认的 `HazelcastClusterManager`。
+
+[[_clustering_on_the_command_line]]
+==== 通过命令行启用集群模式
+
+您可以通过以下命令以集群模式运行 Vert.x 应用：
+
+----
+vertx run my-verticle.js -cluster
+----
+
+[[_automatic_clean_up_in_verticles_2]]
+=== Verticle 中的自动清理
+
+若您在 Verticle 中注册了 Event Bus 的处理器，那么这些处理器在 Verticle
+被撤销（undeploy）的时候会自动被注销。
+
+[[_configuring_the_event_bus]]
+== 配置 Event Bus
+
+include::override/configuring-eventbus.adoc[]

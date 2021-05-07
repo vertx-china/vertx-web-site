@@ -1,20 +1,20 @@
-The SQL client can trace query execution when Vert.x has tracing enabled.
+当Vert.x启用tracing功能时，SQL客户端可以跟踪查询的执行情况。
 
-The client reports the following _client_ spans:
+客户端会上报下列这些 _client_ spans：
 
-- `Query` operation name
+- `Query` 操作名称
 - tags
- - `db.user`: the database username
- - `db.instance`: the database instance
- - `db.statement`: the SQL query
- - `db.type`: _sql_
+ - `db.user` ：数据库用户名
+ - `db.instance` ：数据库实例
+ - `db.statement` ：SQL语句
+ - `db.type` ：_sql_
 
-The default tracing policy is `link:../../apidocs/io/vertx/core/tracing/TracingPolicy.html#PROPAGATE[PROPAGATE]`, the client
-will only create a span when involved in an active trace.
+默认的 tracing 策略时 `link:../../apidocs/io/vertx/core/tracing/TracingPolicy.html#PROPAGATE[PROPAGATE]`，客户端
+在一个活跃trace里只创建一个span。
 
-You can change the client policy with `link:../../apidocs/io/vertx/sqlclient/SqlConnectOptions.html#setTracingPolicy-io.vertx.core.tracing.TracingPolicy-[setTracingPolicy]`,
-e.g you can set `link:../../apidocs/io/vertx/core/tracing/TracingPolicy.html#ALWAYS[ALWAYS]` to always report
-a span:
+您可以通过 `link:../../apidocs/io/vertx/sqlclient/SqlConnectOptions.html#setTracingPolicy-io.vertx.core.tracing.TracingPolicy-[setTracingPolicy]` 方法来调整tracing策略，
+例如您可以设置为 `link:../../apidocs/io/vertx/core/tracing/TracingPolicy.html#ALWAYS[ALWAYS]`，
+客户端将始终上报span：
 
 [source,java]
 ----

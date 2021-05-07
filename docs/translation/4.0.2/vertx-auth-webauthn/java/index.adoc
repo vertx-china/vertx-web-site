@@ -1,0 +1,361 @@
+= WebAuthn auth provider
+
+This component contains an out of the box a https://github.com/herrjemand/awesome-webauthn#server-libs[FIDO CONFORMANT]
+WebAuthn implementation. To use this project, add the following dependency to the _dependencies_ section of your build
+descriptor:
+
+* Maven (in your `pom.xml`):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-auth-webauthn</artifactId>
+ <version>4.0.2</version>
+</dependency>
+----
+
+* Gradle (in your `build.gradle` file):
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-auth-webauthn:4.0.2'
+----
+
+https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API[WebAuthn (Web Authentication)] is a web standard
+for authenticating users to web-based applications using public/private key cryptography. Strictly speaking, WebAuthn is
+just the name of the browser API and is part of https://fidoalliance.org/fido2/[FIDO2]. FIDO2 is the overarching term of
+a set of specifications, including WebAuthn and CTAP. FIDO2 is the successor of the FIDO Universal 2nd Factor (U2F)
+legacy protocol.
+
+As an application developer, we don't deal with CTAP (Client-to-Authenticator Protocol), which is the protocol that the
+browser uses to speak with an authenticator like a FIDO security key.
+
+FIDO2 works with public/private keys. The user has an authenticator, which creates public/private key pairs. These key
+pairs are different for each site. The public key is transferred to the server and stored in the user's account. The
+private key never leaves the authenticator. To login, the server first creates a random challenge (a random sequence of
+bytes), sends it to the authenticator. The authenticator signs the challenge with his private key and sends the
+signature back to the server. The server verifies the signature with the stored public key and grants access if the
+signature is valid.
+
+Traditionally this technology needs a hardware security token like a https://www.yubico.com/products/[Yubico key] or a
+key from https://www.ftsafe.com/Products/FIDO[Feitian] to name two brands.
+
+FIDO2 still supports these hardware keys, but the technology also supports alternatives. If you have an Android 7+ phone
+or a Windows 10 system, you don't need to buy a FIDO2 security key if you want to play with WebAuthn.
+
+In https://fidoalliance.org/news-your-google-android-7-phone-is-now-a-fido2-security-key/[April 2019, Google announced]
+that any phone running Android 7+ can function as a FIDO2 security key. In
+https://www.microsoft.com/en-us/microsoft-365/blog/2018/11/20/sign-in-to-your-microsoft-account-without-a-password-using-windows-hello-or-a-security-key/[November 2018, Microsoft announced]
+that you can use Windows Hello as a security key for FIDO2. In https://developer.apple.com/videos/play/wwdc2020/10670/[June 2020 Apple announced]
+that you can use iOS FaceID and TouchID for the web by adopting webauthn standard.
+
+WebAuthn is implemented in Edge, Firefox, Chrome, and Safari. Visit https://caniuse.com to check out the current state
+of implementations: https://caniuse.com/#search=webauthn
+
+== WebAuthn API
+
+The https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API[Web Authentication API] is an extension of
+the https://developer.mozilla.org/en-US/docs/Web/API/Credential_Management_API[Credential Management API].
+
+WebAuthn extends the two functions from the Credential Management API https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/create[navigator.credentials.create()]
+and https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/get[navigator.credentials.get()] so they
+accept a publicKey parameter.
+
+To simplify the usage of the API a simple JavaScript client application is provided here:
+
+* Maven (in your `pom.xml`):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-auth-webauthn</artifactId>
+ <classifier>client</classifier>
+ <type>js</type>
+ <version>4.0.2</version>
+</dependency>
+----
+
+* Gradle (in your `build.gradle` file):
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-auth-webauthn:4.0.2:client@js'
+----
+
+The script should be used in cooperation with vertx-web as it handles the API interaction between the web layer and the
+auth code in this library.
+
+== Registration
+
+Registration is the process of enrolling a new authenticator to the database and associate with the user.
+
+The process takes 2 steps:
+
+1. A call to generate a `link:../../apidocs/io/vertx/ext/auth/webauthn/WebAuthn.html#createCredentialsOptions-io.vertx.core.json.JsonObject-[createCredentialsOptions]`
+2. A call with the solution to the challenge to the normal `authenticate` API method.
+
+If the solution is correct, the new authenticator should be added to the storage and be usable for login purposes.
+
+== Login
+
+Like the registration, login is a 2 step process:
+
+1. A call to generate a `link:../../apidocs/io/vertx/ext/auth/webauthn/WebAuthn.html#getCredentialsOptions-java.lang.String-[getCredentialsOptions]`
+2. A call with the solution to the challenge to the normal `authenticate` API method.
+
+When the challenge is correctly solved, the user is considered logged in.
+
+== Device Attestation
+
+When an authenticator registers a new key pair with a service, the authenticator signs the public key with an
+attestation certificate. The attestation certificate is built into the authenticator during manufacturing time and is
+specific to a device model. That is, all "Samsung Galaxy S8" phones, manufactured at a specific time or particular
+manufacturing run, have the same attestation certificate.
+
+Different devices have different attestation formats. The pre-defined attestation formats in WebAuthn are:
+
+* `Packed` - a generic attestation format that is commonly used by devices whose sole function is as a WebAuthn authenticator, such as security keys.
+* `TPM` - the Trusted Platform Module (TPM) is a set of specifications from the Trusted Platform Group (TPG). This attestation format is commonly found in desktop computers and is used by Windows Hello as its preferred attestation format.
+* `Android Key Attestation` - one of the features added in Android O was Android Key Attestation, which enables the Android operating system to attest to keys.
+* `Android SafetyNet` - prior to Android Key Attestation, the only option for Android devices was to create Android SafetyNet attestations
+* `FIDO U2F` - security keys that implement the FIDO U2F standard use this format
+* `Apple` - Verifies the Anonymous Apple device attestation.
+* `none` - browsers may prompt users whether they want a site to be allowed to see their attestation data and/or may remove attestation data from the authenticator's response if the `attestation` parameter in `navigator.credentials.create()` is set to `none`
+
+The purpose of attestation is to cryptographically prove that a newly generated key pair came from a specific device.
+This provides a root of trust for a newly generated key pair as well as being able to identify the attributes of a
+device being used (how the private key is protected; if / what kind of biometric is being used; whether a device has
+been certified; etc.).
+
+It should be noted that while attestation provides the capability for a root of trust, validating the root of trust is
+frequently not necessary. When registering an authenticator for a new account, typically a Trust On First Use (TOFU)
+model applies; and when adding an authenticator to an existing account, a user has already been authenticated and has
+established a secure session.
+
+== A simple example
+
+=== Create a Registration request
+
+[source,java]
+----
+WebAuthn webAuthN = WebAuthn.create(
+  vertx,
+  new WebAuthnOptions()
+    .setRelyingParty(new RelyingParty().setName("ACME Corporation")))
+  .authenticatorFetcher(query -> {
+    // function that fetches some authenticators from a
+    // persistence storage
+    return Future.succeededFuture(authenticators);
+  })
+  .authenticatorUpdater(authenticator -> {
+    // function that updates an authenticator to a
+    // persistence storage
+    return Future.succeededFuture();
+  });
+
+// some user
+JsonObject user = new JsonObject()
+  // id is expected to be a base64url string
+  .put("id", "000000000000000000000000")
+  .put("rawId", "000000000000000000000000")
+  .put("name", "john.doe@email.com")
+  // optionally
+  .put("displayName", "John Doe")
+  .put("icon", "https://pics.example.com/00/p/aBjjjpqPb.png");
+
+webAuthN
+  .createCredentialsOptions(user)
+  .onSuccess(challengeResponse -> {
+    // return the challenge to the browser
+    // for further processing
+  });
+----
+
+=== Verify the registration request
+
+[source,java]
+----
+WebAuthn webAuthN = WebAuthn.create(
+  vertx,
+  new WebAuthnOptions()
+    .setRelyingParty(new RelyingParty().setName("ACME Corporation")))
+  .authenticatorFetcher(query -> {
+    // function that fetches some authenticators from a
+    // persistence storage
+    return Future.succeededFuture(authenticators);
+  })
+  .authenticatorUpdater(authenticator -> {
+    // function that updates an authenticator to a
+    // persistence storage
+    return Future.succeededFuture();
+  });
+
+// the response received from the browser
+JsonObject request = new JsonObject()
+  .put("id", "Q-MHP0Xq20CKM5LW3qBt9gu5vdOYLNZc3jCcgyyL...")
+  .put("rawId", "Q-MHP0Xq20CKM5LW3qBt9gu5vdOYLNZc3jCcgyyL...")
+  .put("type", "public-key")
+  .put("response", new JsonObject()
+    .put("attestationObject", "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVj...")
+    .put("clientDataJSON", "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlb..."));
+
+webAuthN
+  .authenticate(
+    new JsonObject()
+      // the username you want to link to
+      .put("username", "paulo")
+      // the server origin
+      .put("origin", "https://192.168.178.206.xip.io:8443")
+      // the server domain
+      .put("domain", "192.168.178.206.xip.io")
+      // the challenge given on the previous step
+      .put("challenge", "BH7EKIDXU6Ct_96xTzG0l62qMhW_Ef_K4MQdDLoVNc1UX...")
+      .put("webauthn", request))
+  .onSuccess(user -> {
+    // success!
+  });
+----
+
+=== Create a Login request
+
+[source,java]
+----
+WebAuthn webAuthN = WebAuthn.create(
+  vertx,
+  new WebAuthnOptions()
+    .setRelyingParty(new RelyingParty().setName("ACME Corporation")))
+  .authenticatorFetcher(query -> {
+    // function that fetches some authenticators from a
+    // persistence storage
+    return Future.succeededFuture(authenticators);
+  })
+  .authenticatorUpdater(authenticator -> {
+    // function that updates an authenticator to a
+    // persistence storage
+    return Future.succeededFuture();
+  });
+
+// Login only requires the username and can even be set to null if
+// resident keys are supported, in this case the authenticator remembers
+// the public key used for the relying party
+webAuthN.getCredentialsOptions("paulo")
+  .onSuccess(challengeResponse -> {
+    // return the challenge to the browser
+    // for further processing
+  });
+----
+
+=== Verify the Login request
+
+[source,java]
+----
+WebAuthn webAuthN = WebAuthn.create(
+  vertx,
+  new WebAuthnOptions()
+    .setRelyingParty(new RelyingParty().setName("ACME Corporation")))
+  .authenticatorFetcher(query -> {
+    // function that fetches some authenticators from a
+    // persistence storage
+    return Future.succeededFuture(authenticators);
+  })
+  .authenticatorUpdater(authenticator -> {
+    // function that updates an authenticator to a
+    // persistence storage
+    return Future.succeededFuture();
+  });
+
+// The response from the login challenge request
+JsonObject body = new JsonObject()
+  .put("id", "rYLaf9xagyA2YnO-W3CZDW8udSg8VeMMm25nenU7nCSxUqy1pEzOdb9o...")
+  .put("rawId", "rYLaf9xagyA2YnO-W3CZDW8udSg8VeMMm25nenU7nCSxUqy1pEzOdb9o...")
+  .put("type", "public-key")
+  .put("response", new JsonObject()
+    .put("authenticatorData", "fxV8VVBPmz66RLzscHpg5yjRhO...")
+    .put("clientDataJSON", "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlb...")
+    .put("signature", "MEUCIFXjL0ONRuLP1hkdlRJ8d0ofuRAS12c6w8WgByr-0yQZA...")
+    .put("userHandle", ""));
+
+webAuthN.authenticate(new JsonObject()
+  // the username you want to link to
+  .put("username", "paulo")
+  // the server origin
+  .put("origin", "https://192.168.178.206.xip.io:8443")
+  // the server domain
+  .put("domain", "192.168.178.206.xip.io")
+  // the challenge given on the previous step
+  .put("challenge", "BH7EKIDXU6Ct_96xTzG0l62qMhW_Ef_K4MQdDLoVNc1UX...")
+  .put("webauthn", body))
+  .onSuccess(user -> {
+    // success!
+  });
+----
+
+== Metadata Service
+
+The current module passes all FIDO2 compliance tests **including** the yet to be final FIDO2 Metadata Service API.
+This means that we follow the spec and this handler **can** detect tokens that have been marked as not trustable
+by the token vendor. For example, when a security bug allowed a private key to be extracted from a token.
+
+In order to support the Metadata Service API, as a user you need to register yourself or your application at:
+https://fidoalliance.org/metadata/[https://fidoalliance.org/metadata]
+
+With this the `APIKey` given to you you can configure the application as:
+
+[source,java]
+----
+final WebAuthnOptions webAuthnOptions = new WebAuthnOptions()
+  // in order to fully trust the MDS tokens we should load the CRLs as
+  // described on https://fidoalliance.org/metadata/
+
+  // here the content of: http://mds.fidoalliance.org/Root.crl
+  .addRootCrl(
+    "MIIB1jCCAV0CAQEwCg...")
+  // here the content of: http://mds.fidoalliance.org/CA-1.crl
+  .addRootCrl(
+    "MIIB5DCCAYoCAQEwCg...");
+
+// create the webauthn security object like before
+final WebAuthn webAuthN = WebAuthn.create(vertx, webAuthnOptions);
+
+webAuthN.metaDataService()
+  .fetchTOC("https://mds2.fidoalliance.org/?token=your-access-token-string")
+  .onSuccess(allOk -> {
+    // if all metadata was downloaded and parsed correctly allOk is true
+    // the processing will not stop if a entry is corrupt, in that case that
+    // specific entry is skipped and the flag is false. That also means that
+    // that entry will be tagged and "not trustable" as we can't make any
+    // valid decision.
+  });
+----
+
+== Updating Certificates
+
+Almost all device attestations are based on `X509` Certificate checks. This means that certificates can and will expire
+at some point in time. By default, the current "Active" certificates are hardcoded on the `WebAuthnOptions` object.
+
+However if your application needs to update a certificate on it's own, say for example, use a more up to date one, or
+another with a different cypher, then you can replace the default `root` certificates for each attestation by calling:
+`WebAuthnOptions.putRootCertificate(String, String)`, where the first parameter is the attestation name or "mds" for
+FIDO MetaData Service:
+
+* none
+* u2f
+* packed
+* android-key
+* android-safetynet
+* tpm
+* apple
+* mds
+
+And the second the PEM formatted X509 Certificate (Boundaries are not required).
+
+[source,java]
+----
+final WebAuthnOptions webAuthnOptions = new WebAuthnOptions()
+  // fido2 MDS custom ROOT certificate
+  .putRootCertificate("mds", "MIIB1jCCAV0CAQEwCg...")
+  // updated google root certificate from (https://pki.goog/repository/)
+  .putRootCertificate("android-safetynet", "MIIDvDCCAqSgAwIBAgINAgPk9GHs...");
+----

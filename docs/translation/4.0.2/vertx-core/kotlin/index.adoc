@@ -1,0 +1,170 @@
+= Vert.x for Kotlin
+
+如您使用 Maven 或者 Gradle，可以通过添加以下依赖来使用 
+Vert.x 核心 API 以启用 Kotlin支持：
+
+* Maven （在 `pom.xml` 文件中）：
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+<groupId>io.vertx</groupId>
+<artifactId>vertx-core</artifactId>
+<version>4.0.2</version>
+</dependency>
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-lang-kotlin</artifactId>
+ <version>4.0.2</version>
+</dependency>
+----
+
+* Gradle （在 `build.gradle` 文件中）：
+
+[source,groovy,subs="+attributes"]
+----
+compile "io.vertx:vertx-core:4.0.2"
+compile "io.vertx:vertx-lang-kotlin:4.0.2"
+----
+
+== Verticles
+
+=== 编写 Verticles
+
+使用 Kotlin 编写一个 Verticle 的方式与 Java 相同，即继承 `link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]`
+类即可。
+
+示例如下：
+
+[source, kotlin]
+----
+import io.vertx.core.AbstractVerticle
+
+class MyVerticle : AbstractVerticle() {
+
+ // 当 verticle 被部署时会被调用
+ override fun start() {
+ }
+
+ // 可选的 - 当 verticle 被接触部署时会被调用
+ override fun stop() {
+ }
+}
+----
+
+请参阅 Java 文档
+
+[[data_objects_builders]]
+== Data 对象构造器
+
+Data 对象在 Vert.x 技术栈起着重要作用（Data 对象可以与 JSON 互相转换）
+
+举个例子，Vert.x 模块常常使用 Data 对象作为服务配置：
+
+[source,kotlin]
+----
+val classic: HttpServerOptions = HttpServerOptions()
+ .setIdleTimeout(5)
+ .setIdleTimeoutUnit(TimeUnit.MINUTES)
+ .setLogActivity(true)
+----
+
+有一种更优雅的构造 Data 对象的方式（即使上述方法也是可以的）
+在 Kotlin 中，所有 Data 对象都有一个后缀为 `Of` 的构造器 (builder)：
+
+[source,kotlin]
+----
+val options = httpServerOptionsOf(idleTimeout = 5, idleTimeoutUnit = TimeUnit.MINUTES, logActivity = true)
+----
+
+== JSON
+
+不同于其他语言， Java 没有为 http://json.org/[JSON] 提供一等公民的支持，
+所以我们提供了两个类，使 Vert.x 应用中使用 JSON 更加容易
+
+`link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` 类用来表示 JSON 对象，
+`link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]`
+类用来表示数组，可以参考 Java 文档获得更多信息。
+
+[[builders]]
+=== 构造器
+
+构造器可用于更顺畅地构造 JSON ：
+
+[source, kotlin]
+----
+// 该 json 构造器声明了一个 JSON 结构
+val result = json {
+
+ // 在该块中可以使用 `obj` 函数
+
+ // 使用变长 Pair 参数
+ obj(
+   "key_1" to 1,
+   "key_2" to 2,
+   "key_3" to 3
+ )
+
+ // 或者可迭代的 Pair 集合
+ obj((1..3).map { "key_$it" to it })
+
+ // 还可以是 Map<String, Any?>
+ obj(someMap)
+
+ // 在对象接收者附加函数
+ obj {
+   for (i in 1..3) {
+     put("key_$i", i)
+   }
+ }
+}
+----
+
+构造 JSON 数组也是同样的
+
+[source, kotlin]
+----
+// 这个 json 构造器用于声明 JSON 结构
+val result = json {
+
+ // 在这个块中可以使用 array 函数
+
+ // 直接用变长的值数组作为参数
+ array("1", "2", "3")
+
+ // 一个可迭代的值集合
+ array((1..3).map { "$it" })
+
+ // 在对象接收者上附加函数
+ array {
+   for (i in 1..3) {
+     add("$i")
+   }
+ }
+}
+----
+
+当然混合对象和数组也是可行的
+
+[source, kotlin]
+----
+// 这个 json 构造器用于声明 JSON 结构
+val result = json {
+
+ "firstName" to "Dale",
+ "lastName" to "Cooper",
+ "age" to 64,
+ "names" to array("Dale", "Bartholomew")
+}
+----
+
+[[postscript_operator_overloading]]
+=== 索引访问操作符重载
+
+Kotlin 的索引访问操作符在 JSON 对象和数组上都被重载了
+
+[source, kotlin]
+----
+print(someObject["firstName"]);
+print(someArray[4]);
+----

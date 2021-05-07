@@ -1,7 +1,8 @@
+let flag = true
 export async function fetchGitHubStars(org, repo) {
-  if (process.env.GITHUB_ACCESS_TOKEN === undefined) {
+  if (flag || process.env.GITHUB_ACCESS_TOKEN === undefined) {
     // do nothing
-    return undefined
+    return 0
   }
 
   const CACHE_TIMEOUT_SECONDS = 60 * 60 // one hour

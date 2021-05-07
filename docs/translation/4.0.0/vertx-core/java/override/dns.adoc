@@ -1,0 +1,48 @@
+[[_error_handling]]
+=== 错误处理
+
+如前边部分所述，DnsClient允许您传递一个Handler，
+查询完成后会向其传入一个 AsyncResult。在出现错误的情况下，
+通知中将包含一个 `DnsException` ，该异常会包含一个说明为何失败的 `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html[DnsResponseCode]` 。
+此DnsResponseCode可帮助你更详细地检查原因。
+
+DnsResponseCode的可能取值包含：
+
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NOERROR[NOERROR]` 没有找到待查询的记录
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#FORMERROR[FORMERROR]` 格式错误
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#SERVFAIL[SERVFAIL]` 服务器故障
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NXDOMAIN[NXDOMAIN]` 名称错误
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NOTIMPL[NOTIMPL]` DNS 服务器未实现
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#REFUSED[REFUSED]` DNS 服务器拒绝查询
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#YXDOMAIN[YXDOMAIN]` 域名不应该存在
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#YXRRSET[YXRRSET]` 资源记录不应该存在
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NXRRSET[NXRRSET]` RRSET不存在
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NOTZONE[NOTZONE]` 名称不在区域内
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADVERS[BADVERS]` 错误的版本扩展机制
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADSIG[BADSIG]` 非法签名
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADKEY[BADKEY]` 非法密钥
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADTIME[BADTIME]` 错误时间戳
+
+所有这些错误都由DNS服务器本身“生成”。
+
+您可以从 DnsException 中获取 DnsResponseCode，如：
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+client.lookup("nonexisting.vert.xio", ar -> {
+  if (ar.succeeded()) {
+    String record = ar.result();
+    System.out.println(record);
+  } else {
+    Throwable cause = ar.cause();
+    if (cause instanceof DnsException) {
+      DnsException exception = (DnsException) cause;
+      DnsResponseCode code = exception.code();
+      // ...
+    } else {
+      System.out.println("Failed to resolve entry" + ar.cause());
+    }
+  }
+});
+----

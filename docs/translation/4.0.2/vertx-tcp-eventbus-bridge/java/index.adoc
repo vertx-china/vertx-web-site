@@ -1,0 +1,91 @@
+= Vert.x-tcp-eventbus-bridge
+:toc: left
+
+Vert.x-tcp-eventbus-bridge是连接Vert.x EventBus的TCP bridge。要使用此项目，请先加入以下依赖：
+
+
+Maven（在您的 `pom.xml`）：
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-tcp-eventbus-bridge</artifactId>
+ <version>4.0.2</version>
+</dependency>
+----
+
+Gradle（在您的 `build.gradle` 文件中）：
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-tcp-eventbus-bridge:4.0.2'
+----
+
+TCP EventBus bridge建立在TCP之上，任何能够创建TCP套接字的应用程序都可以通过它的EventBus与远端的Vert.x程序沟通。
+
+
+因为整个HTTP WebSockets已经替换为纯TCP套接字，所以相比于SockJS bridge来说TCP bridge的主要使用场景是有限资源的轻量化应用程序。
+
+
+即使是对于没有严格资源限制的应用程序，协议仍然有用: 该协议足够简单，便于与非JVM程序高效集成。
+
+
+
+该协议已尽可能的保持简单，通信使用双向帧。
+帧结构如下:
+
+----
+<Length: uInt32><{
+  type: String,
+  address: String,
+  (replyAddress: String)?,
+  headers: JsonObject,
+  body: JsonObject
+}: JsonObject>
+----
+
+该消息内包含一个可能未被压缩过的JSON文档。
+该消息必须以大端序32位整数(4 bytes)作为前缀来指示JSON文档的完整长度(以字节为单位)。
+
+
+TCP客户端可以发送如下 `类型 type` 的消息：
+
+1. `send` 发送消息到 `address` ，
+2. `publish` 发布消息到 `address` ，
+3. `register` 订阅发送或发布到 `address` 的消息，
+4. `unregister` 退订已经发送或发布到 `address` 的消息，
+5. `ping` 发送 `ping` 请求到bridge。
+
+请注意 `replyAddress` 字段是可选的，并且只能用于 `send` 消息。
+带有该字段的消息希望 _最终_ 从服务端收到一条对应的返回消息，返回消息中 `address` 的值便是原先消息中的 `replyAddress` 的值。
+
+
+服务端返回到客户端的消息可以是如下的 `类型 type` ：
+
+1. `message` 发送或者发布到 `address` ，
+2. `err` 报告错误( `body` 应该包含详细信息)，
+3. `pong` 响应客户端发送的 `ping` 请求。
+
+项目源代码中提供了一个可用的NodeJS客户端示例。
+
+该客户端使用了与SockJS对应部分相同的API这将会便于在TCP与SockJS之间切换。
+
+关于如何开始使用此birdge的示例如下：
+
+[source,java]
+----
+TcpEventBusBridge bridge = TcpEventBusBridge.create(
+    vertx,
+    new BridgeOptions()
+        .addInboundPermitted(new PermittedOptions().setAddress("in"))
+        .addOutboundPermitted(new PermittedOptions().setAddress("out")));
+
+bridge.listen(7000, res -> {
+  if (res.succeeded()) {
+    // 成功……
+  } else {
+    // 失败……
+  }
+});
+----

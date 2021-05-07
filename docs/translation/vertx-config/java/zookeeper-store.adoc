@@ -1,41 +1,44 @@
-=== Zookeeper Configuration Store
+[[_zookeeper_configuration_store]]
+=== Zookeeper配置中心
 
-The Zookeeper Configuration Store extends the Vert.x Configuration Retriever and provides the
-way to retrieve configuration from a Zookeeper server. It uses Apache Curator as client.
+Zookeeper配置中心扩展了 Vert.x Configuration Retriever
+并提供了从Zookeeper服务获取配置的方法。它使用 Apache Curator 作为客户端
 
-==== Using the Zookeeper Configuration Store
+[[_using_the_zookeeper_configuration_store]]
+==== 使用zookeeper配置中心
 
-To use the Redis Configuration Store, add the following dependency to the
-_dependencies_ section of your build descriptor:
+要使用zookeeper配置中心，
+添加如下依赖：
 
-* Maven (in your `pom.xml`):
+* Maven （在您的 `pom.xml` ）：
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-config-zookeeper</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-config</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle （在您的 `build.gradle` 文件）：
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-config:4.0.0'
-compile 'io.vertx:vertx-config-zookeeper:4.0.0'
+compile 'io.vertx:vertx-config:4.0.3'
+compile 'io.vertx:vertx-config-zookeeper:4.0.3'
 ----
 
-==== Configuring the store
+[[_configuring_the_store]]
+==== 设置配置中心
 
-Once added to your classpath or dependencies, you need to configure the
-`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` to use this store:
+将该库加入classpath或者项目依赖后，您需要配置
+`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` 来使用这个配置中心：
 
 [source, java]
 ----
@@ -50,14 +53,13 @@ ConfigRetriever retriever = ConfigRetriever.create(vertx,
     new ConfigRetrieverOptions().addStore(store));
 ----
 
-The store configuration is used to configure the Apache Curator client and the _path_ of the Zookeeper node
-containing the configuration. Notice that the format of the configuration can be JSON, or any supported format.
+这个配置用来配置 Apache Curator 客户端和包含配置的zookeeper节点的 _路径_ 。
+注意：配置的格式可以是JSON等任何Vert.x支持的格式。
 
-The configuration requires the `configuration` attribute indicating the connection _string_ of the Zookeeper
-server, and the `path` attribute indicating the path of the node containing the configuration.
+这项配置必须需要 `connection` 属性指定zk服务的连接 _字符串_ （译者注：英文逗号隔开的多个zk服务节点），
+以及 `path` 属性指定包含配置项的节点（znode）的路径。
 
-In addition you can configure:
+您还可以额外配置：
 
-* `maxRetries`: the number of connection attempt, 3 by default
-* `baseSleepTimeBetweenRetries`: the amount of milliseconds to wait between retries (exponential backoff strategy).
-1000 ms by default.
+* `maxRetries` ：重连次数，默认3次。
+* `baseSleepTimeBetweenRetries` ：重试间隔毫秒值，默认1000毫秒。

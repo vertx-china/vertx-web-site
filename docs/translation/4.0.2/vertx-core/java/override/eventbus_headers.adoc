@@ -1,0 +1,12 @@
+[[_setting_headers_on_messages]]
+==== 设置消息头
+
+在 Event Bus 上发送的消息可包含头信息。您可以在发送或发布(publish)时提供一个
+ `link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]` 来指定头信息。例如：
+
+[source,java]
+----
+DeliveryOptions options = new DeliveryOptions();
+options.addHeader("some-header", "some-value");
+eventBus.send("news.uk.sport", "Yay! Someone kicked a ball", options);
+----

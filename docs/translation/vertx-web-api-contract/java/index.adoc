@@ -1,88 +1,91 @@
 = Vert.x Web API Contract
 :toc: left
 
-Vert.x Web API Contract extends Vert.x Web to support https://www.openapis.org/[OpenAPI 3], bringing to you a simple interface to build your router and mount security and validation handler.
+Vert.x Web API Contract 继承了 Vert.x Web 用以支持 https://www.openapis.org/[OpenAPI 3] ，为您提供了一个简单的接口来创建您的路由器并挂载了安全和校验处理器
 
-If you are interested in building an application that routes API Requests to event bus, check out https://vertx.io/docs/vertx-web-api-service/java/[Vert.x Web API Service]
+如果您对构建一个转发API请求到事件总线到应用感兴趣，那么请查阅 https://vertx.io/docs/vertx-web-api-service/java/[Vert.x Web API 服务文档]
 
-WARNING: this module is deprecated, if you're going to create a new application, please look at https://vertx.io/docs/vertx-web-openapi/java/[Vert.x Web OpenAPI]
+WARNING: 这个模块已经过时了，如果您想构建一个新的应用，请查阅 https://vertx.io/docs/vertx-web-openapi/java/[Vert.x Web OpenAPI 文档]
 
-== Using Vert.x API Contract
+[[_using_vert_x_api_contract]]
+== 使用 Vert.x API Contract
 
-To use Vert.x API Contract, add the following dependency to the _dependencies_ section of your build descriptor:
+要使用Vert.x API Contract 请添加如下依赖：
 
-* Maven (in your `pom.xml`):
+* Maven (在您的 `pom.xml` 文件):
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-web-api-contract</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle (在您的 `build.gradle` 文件):
 
 [source,groovy,subs="+attributes"]
 ----
 dependencies {
- compile 'io.vertx:vertx-web-api-contract:4.0.0'
+ compile 'io.vertx:vertx-web-api-contract:4.0.3'
 }
 ----
 
-== HTTP Requests validation
+[[_http_requests_validation]]
+== HTTP 请求校验
 
-Vert.x provides a validation framework that will validate requests for you and will put results of validation inside a container. To define a `link:../../apidocs/io/vertx/ext/web/api/validation/HTTPRequestValidationHandler.html[HTTPRequestValidationHandler]`:
+Vert.x提供了一个框架，这个框架校验了请求并且在一个容器当中放入校验结果。定义一个 `link:../../apidocs/io/vertx/ext/web/api/validation/HTTPRequestValidationHandler.html[HTTPRequestValidationHandler]` ：
 
 [source,java]
 ----
 HTTPRequestValidationHandler validationHandler = HTTPRequestValidationHandler.create().addQueryParam("parameterName", ParameterType.INT, true).addFormParamWithPattern("formParameterName", "a{4}", true).addPathParam("pathParam", ParameterType.FLOAT);
 ----
 
-Then you can mount your validation handler:
+然后您可以挂载这个校验处理器：
 
 [source,java]
 ----
 router.route().handler(BodyHandler.create());
 
 router.get("/awesome/:pathParam")
-  // Mount validation handler
+  // 挂载校验处理器
   .handler(validationHandler)
-  //Mount your handler
+  //挂载您的处理器
   .handler((routingContext) -> {
-    // Get Request parameters container
+    // 获取请求参数的容器
     RequestParameters params = routingContext.get("parsedParameters");
 
-    // Get parameters
+    // 获取参数
     Integer parameterName = params.queryParameter("parameterName").getInteger();
     String formParameterName = params.formParameter("formParameterName").getString();
     Float pathParam = params.pathParameter("pathParam").getFloat();
   })
 
-  //Mount your failure handler
+  // 挂载失败处理器
   .failureHandler((routingContext) -> {
     Throwable failure = routingContext.failure();
     if (failure instanceof ValidationException) {
-      // Something went wrong during validation!
+      // 校验过程中失败
       String validationErrorMessage = failure.getMessage();
     }
   });
 ----
 
-If validation succeeds, It returns request parameters inside `link:../../apidocs/io/vertx/ext/web/api/RequestParameters.html[RequestParameters]`,
-otherwise It will throw a fail inside `RoutingContext` with 400 status code and `link:../../apidocs/io/vertx/ext/web/api/validation/ValidationException.html[ValidationException]` failure.
+如果校验成功，则在 `link:../../apidocs/io/vertx/ext/web/api/RequestParameters.html[RequestParameters]` 中返回请求参数，
+否则，会让 `RoutingContext` 以400状态码失败，并抛出 `link:../../apidocs/io/vertx/ext/web/api/validation/ValidationException.html[ValidationException]` 。
 
-=== Types of request parameters
-Every parameter has a type validator, a class that describes the expected type of parameter.
-A type validator validates the value, casts it in required language type and then loads it inside a `link:../../apidocs/io/vertx/ext/web/api/RequestParameter.html[RequestParameter]` object. There are three ways to describe the type of your parameter:
+[[_types_of_request_parameters]]
+=== 请求参数类型
+每一个参数都有一个类型校验器，即一个描述期望类型的参数。
+一个类型校验器对一个值进行校验，在转换成特定语言的类型，然后在 `link:../../apidocs/io/vertx/ext/web/api/RequestParameter.html[RequestParameter]` 对象中加载它。描述参数类型有三种方法：
 
-* There is a set of prebuilt types that you can use: `link:../../apidocs/io/vertx/ext/web/api/validation/ParameterType.html[ParameterType]`
-* You can instantiate a custom instance of prebuilt type validators using static methods of `link:../../apidocs/io/vertx/ext/web/api/validation/ParameterTypeValidator.html[ParameterTypeValidator]` and then load it into `link:../../apidocs/io/vertx/ext/web/api/validation/HTTPRequestValidationHandler.html[HTTPRequestValidationHandler]` using functions ending with `WithCustomTypeValidator`
-* You can create your own `ParameterTypeValidator` implementing `link:../../apidocs/io/vertx/ext/web/api/validation/ParameterTypeValidator.html[ParameterTypeValidator]` interface
+* 这里有一系列预置类型供您使用： `link:../../apidocs/io/vertx/ext/web/api/validation/ParameterType.html[ParameterType]`
+* 您可以用 `link:../../apidocs/io/vertx/ext/web/api/validation/ParameterTypeValidator.html[ParameterTypeValidator]` 的静态方法来实例化您的自定义预置类型的实例，然后用后缀是 `WithCustomTypeValidator` 的函数将它加载到 `link:../../apidocs/io/vertx/ext/web/api/validation/HTTPRequestValidationHandler.html[HTTPRequestValidationHandler]`
 
-=== Handling parameters
-Now you can handle parameter values:
+[[_handling_parameters]]
+=== 处理参数
+现在您可以处理参数值
 
 [source,java]
 ----
@@ -90,18 +93,18 @@ RequestParameters params = routingContext.get("parsedParameters");
 RequestParameter awesomeParameter = params.queryParameter("awesomeParameter");
 if (awesomeParameter != null) {
   if (!awesomeParameter.isEmpty()) {
-    // Parameter exists and isn't empty
-    // ParameterTypeValidator mapped the parameter in equivalent language object
+    // 参数存在且非空
+    // ParameterTypeValidator将参数映射为相应语言的对象
     Integer awesome = awesomeParameter.getInteger();
   } else {
-    // Parameter exists, but it's empty
+    // 参数存在但为空
   }
 } else {
-  // Parameter doesn't exist (it's not required)
+  // 参数不存在 (非必需)
 }
 ----
 
-As you can see, every parameter is mapped in respective language objects. You can also get a json body:
+如您所见，所有的参数都映射为相应语言中的对象，您也可以获得json请求体：
 
 [source,java]
 ----
@@ -111,81 +114,84 @@ if (body != null) {
 }
 ----
 
-=== Manage validation failures
-A validation error fails the `RoutingContext` with 400 status code and `link:../../apidocs/io/vertx/ext/web/api/validation/ValidationException.html[ValidationException]` failure.
-You can manage these failures both at route level using `link:../../apidocs/io/vertx/ext/web/Route.html#failureHandler-io.vertx.core.Handler-[failureHandler]` or at router level using `link:../../apidocs/io/vertx/ext/web/Router.html#errorHandler-int-io.vertx.core.Handler-[errorHandler]`:
+[[_manage_validation_failures]]
+=== 管理校验失败的情况
+校验失败了，则 `RoutingContext` 的状态码则变成400，并抛出 `link:../../apidocs/io/vertx/ext/web/api/validation/ValidationException.html[ValidationException]` 异常。
+您在路由层面即可以用 `link:../../apidocs/io/vertx/ext/web/Route.html#failureHandler-io.vertx.core.Handler-[failureHandler]` 也可以用 `link:../../apidocs/io/vertx/ext/web/Router.html#errorHandler-int-io.vertx.core.Handler-[errorHandler]` 来管理失败情况下的处理方式：
 
 [source,java]
 ----
 router.get("/awesome/:pathParam")
-  // Mount validation handler
+  // 挂载校验处理器
   .handler(validationHandler)
-  //Mount your handler
+  // 挂载您的处理器
   .handler((routingContext) -> {
-    // Your logic
+    // 您的业务逻辑
   })
-  //Mount your failure handler to manage the validation failure at path level
+  // 挂载失败处理器来管理路径级别的校验失败请况
   .failureHandler((routingContext) -> {
     Throwable failure = routingContext.failure();
     if (failure instanceof ValidationException) {
-      // Something went wrong during validation!
+      // 校验过程中失败!
       String validationErrorMessage = failure.getMessage();
     }
   });
 
-// Manage the validation failure for all routes in the router
+// 管理针对于路由器中所有路由的失败处理
 router.errorHandler(400, routingContext -> {
   if (routingContext.failure() instanceof ValidationException) {
-    // Something went wrong during validation!
+    // 校验过程中失败!
     String validationErrorMessage = routingContext.failure().getMessage();
   } else {
-    // Unknown 400 failure happened
+    // 未知的400状态码的失败
     routingContext.response().setStatusCode(400).end();
   }
 });
 ----
 
 == OpenAPI 3
-Vert.x allows you to use your OpenAPI 3 specification directly inside your code using the design first approach. Vert.x-Web API Contract provides:
+Vert.x允许您使用“设计优先”方法直接在代码内部使用OpenAPI 3规范，Vert.x-Web API Contract提供了如下功能：
 
-* OpenAPI 3 compliant API specification validation with automatic **loading of external Json schemas**
-* Automatic request validation
-* Automatic mount of security validation handlers
+* 通过 **自动加载外部Json schema** 来校验符合OpenAPI 3的API规范
+* 自动校验请求
+* 自动挂载安全校验器
 
-You can also use the community project https://github.com/pmlopes/vertx-starter[`vertx-starter`] to generate server code from your OpenAPI 3 specification.
+您也可以用社区项目 https://github.com/pmlopes/vertx-starter[`vertx-starter`] 来从您的OpenAPI3规范来生成服务端代码
 
-=== The Router Factory
-You can create your web service based on OpenAPI 3 specification with `link:../../apidocs/io/vertx/ext/web/api/contract/openapi3/OpenAPI3RouterFactory.html[OpenAPI3RouterFactory]`.
-This class, as name says, is a router factory based on your OpenAPI 3 specification.
-`link:../../apidocs/io/vertx/ext/web/api/contract/openapi3/OpenAPI3RouterFactory.html[OpenAPI3RouterFactory]` is intended to give you a really simple user interface to use OpenAPI 3 related features. It includes:
+[[_the_router_factory]]
+=== 路由器工厂
 
-* Async loading of specification and its schema dependencies
-* Mount path with operationId or with combination of path and HTTP method
-* Automatic generation of validation handlers
-* Automatic conversion between OpenAPI style paths and Vert.x style paths
-* Lazy methods: operations are mounted in declaration order inside specification
-* Automatic mount of security handlers
+您可以用 `link:../../apidocs/io/vertx/ext/web/api/contract/openapi3/OpenAPI3RouterFactory.html[OpenAPI3RouterFactory]` 来创建您自己的基于 OpenAPI 3 规范的web应用。
+`link:../../apidocs/io/vertx/ext/web/api/contract/openapi3/OpenAPI3RouterFactory.html[OpenAPI3RouterFactory]` 用来给您提供简易的用户接口来使用OpenAPI 3的相关特性，其中包括：
 
-=== Create a new router factory
-To create a new router factory, use method `link:../../apidocs/io/vertx/ext/web/api/contract/openapi3/OpenAPI3RouterFactory.html#create-io.vertx.core.Vertx-java.lang.String-io.vertx.core.Handler-[OpenAPI3RouterFactory.create]`.
-As location It accepts absolute paths, local paths and local or remote URLs (HTTP or file protocol).
+* 规范的异步加载以及schema的依赖
+* 用 operationId 或绑定路径和HTTP请求方式来挂载路径
+* 自动生成校验处理器
+* OpenAPI风格和Vert.x风格路径的自动转换
+* 声明式方法：在规范中以声明的顺序来挂载处理步骤
+* 自动挂载安全处理器
 
-For example to load a spec from the local filesystem:
+[[_create_a_new_router_factory]]
+=== 创建新的路由器工厂
+要创建新的路由器工厂，则使用 `link:../../apidocs/io/vertx/ext/web/api/contract/openapi3/OpenAPI3RouterFactory.html#create-io.vertx.core.Vertx-java.lang.String-io.vertx.core.Handler-[OpenAPI3RouterFactory.create]` 方法。
+它以接收到的绝对路径、本地路径、本地/远程URL（HTTP或文件协议）来作为location。
+
+例如从本地文件系统加载一个规范：
 
 [source,java]
 ----
 OpenAPI3RouterFactory.create(vertx, "src/main/resources/petstore.yaml", ar -> {
   if (ar.succeeded()) {
-    // Spec loaded with success
+    // 规范加载成功
     OpenAPI3RouterFactory routerFactory = ar.result();
   } else {
-    // Something went wrong during router factory initialization
+    // 路由器工厂初始化过程中失败
     Throwable exception = ar.cause();
   }
 });
 ----
 
-You can also construct a router factory from a remote spec:
+您也可以从远程规范来构建路由器工厂：
 
 [source,java]
 ----
@@ -194,16 +200,16 @@ OpenAPI3RouterFactory.create(
   "https://raw.githubusercontent.com/OAI/OpenAPI-Specification/master/examples/v3.0/petstore.yaml",
   ar -> {
     if (ar.succeeded()) {
-      // Spec loaded with success
+      // 规范加载成功
       OpenAPI3RouterFactory routerFactory = ar.result();
     } else {
-      // Something went wrong during router factory initialization
+      // 路由器工厂初始化过程中失败
       Throwable exception = ar.cause();
     }
   });
 ----
 
-Or, you can also access a private remote spec by passing one or more https://github.com/swagger-api/swagger-parser#usage[AuthorizationValue]:
+或者，您也可以通过传递一个或多个 https://github.com/swagger-api/swagger-parser#usage[AuthorizationValue] 来获取私有的远程规范：
 
 [source,java]
 ----
@@ -218,25 +224,26 @@ OpenAPI3RouterFactory.create(
   authorizations,
   ar -> {
     if (ar.succeeded()) {
-      // Spec loaded with success
+      // 规范加载成功
       OpenAPI3RouterFactory routerFactory = ar.result();
     } else {
-      // Something went wrong during router factory initialization
+      // 路由器工厂初始化过程中失败
       Throwable exception = ar.cause();
     }
   });
 ----
 
-You can also modify the behaviours of the router factory with `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactoryOptions.html[RouterFactoryOptions]`.
+您也可以用 `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactoryOptions.html[RouterFactoryOptions]` 来修改路由器工厂的行为。
 
-=== Mount the handlers
-Now load your first operation handlers.
-To load an handler use `link:../../apidocs/io/vertx/ext/web/api/contract/openapi3/OpenAPI3RouterFactory.html#addHandlerByOperationId-java.lang.String-io.vertx.core.Handler-[addHandlerByOperationId]`.
-To load a failure handler use `link:../../apidocs/io/vertx/ext/web/api/contract/openapi3/OpenAPI3RouterFactory.html#addFailureHandlerByOperationId-java.lang.String-io.vertx.core.Handler-[addFailureHandlerByOperationId]`
+[[_mount_the_handlers]]
+=== 挂载处理器
+现在挂载您的第一个操作处理器：
+要加载一个处理器，则使用 `link:../../apidocs/io/vertx/ext/web/api/contract/openapi3/OpenAPI3RouterFactory.html#addHandlerByOperationId-java.lang.String-io.vertx.core.Handler-[addHandlerByOperationId]` 。
+要加载一个失败处理器，则使用 `link:../../apidocs/io/vertx/ext/web/api/contract/openapi3/OpenAPI3RouterFactory.html#addFailureHandlerByOperationId-java.lang.String-io.vertx.core.Handler-[addFailureHandlerByOperationId]`
 
-You can, of course, **add multiple handlers to same operation**, without overwrite the existing ones.
+当然，您也可以 **在一个操作中加入多个处理器** ，这样不会覆盖已经存在的处理器。
 
-For example:
+例如：
 
 [source,java]
 ----
@@ -244,53 +251,54 @@ routerFactory.addHandlerByOperationId("awesomeOperation", routingContext -> {
   RequestParameters params = routingContext.get("parsedParameters");
   RequestParameter body = params.body();
   JsonObject jsonBody = body.getJsonObject();
-  // Do something with body
+  // 处理请求体
 });
 routerFactory.addFailureHandlerByOperationId("awesomeOperation", routingContext -> {
-  // Handle failure
+  // 处理失败
 });
 ----
 
-Now you can use parameter values as described above
+现在您可以如上述所示来使用您的参数值。
 
-=== Define security handlers
-A security handler is defined by a combination of schema name and scope. You can mount only one security handler for a combination.
-For example:
+[[_define_security_handlers]]
+=== 定义安全处理器
+一个安全处理器是由 schema name 和 scope的绑定关系所定义。一个安全处理器只能挂载一对绑定关系：
 
 [source,java]
 ----
 routerFactory.addSecurityHandler("security_scheme_name", securityHandler);
 ----
 
-You can of course use included Vert.x security handlers, for example:
+您当然也可以用Vert.x内置的安全处理器，例如：
 
 [source,java]
 ----
 routerFactory.addSecurityHandler("jwt_auth", JWTAuthHandler.create(jwtAuthProvider));
 ----
 
-When you generate the `link:../../apidocs/io/vertx/ext/web/Router.html[Router]` the Router Factory fails if For debugging/testing purpose
+对于 调试/测试 的目的，您在生成 `link:../../apidocs/io/vertx/ext/web/Router.html[Router]` 的时候，路由器工厂会执行失败。
 
-=== Not Implemented Error
-Router Factory automatically mounts a default handler for operations without a specified handler.
-This default handler fails the routing context with 405 `Method Not Allowed`/501 `Not Implemented` error.
-You can enable/disable it with `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactoryOptions.html#setMountNotImplementedHandler-boolean-[setMountNotImplementedHandler]`
-and you can customize this error handling with `link:../../apidocs/io/vertx/ext/web/Router.html#errorHandler-int-io.vertx.core.Handler-[errorHandler]`
+[[_not_implemented_error]]
+=== 未实现错误
+路由器工厂在没有指定处理器时，会挂载默认的处理器。
+这个默认处理器让 `routing context` 处于405 `Method Not Allowed` 错误状态 或 处于 501 `Not Implemented` 错误状态。
+您可以用 `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactoryOptions.html#setMountNotImplementedHandler-boolean-[setMountNotImplementedHandler]` 来启用/禁用它，而且您可以用 `link:../../apidocs/io/vertx/ext/web/Router.html#errorHandler-int-io.vertx.core.Handler-[errorHandler]` 来自定义错误的处理方式。
 
-=== Response Content Type Handler
-Router Factory automatically mounts a `link:../../apidocs/io/vertx/ext/web/handler/ResponseContentTypeHandler.html[ResponseContentTypeHandler]` handler when contract requires it.
-You can disable this feature with `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactoryOptions.html#setMountResponseContentTypeHandler-boolean-[setMountResponseContentTypeHandler]`
+[[_response_content_type_handler]]
+=== 响应内容类型处理器
+当接口需要时，路由器工厂会自动挂载一个 `link:../../apidocs/io/vertx/ext/web/handler/ResponseContentTypeHandler.html[ResponseContentTypeHandler]` 处理器。
+您可以用 `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactoryOptions.html#setMountResponseContentTypeHandler-boolean-[setMountResponseContentTypeHandler]` 来禁用这个特性。
 
 === Operation model
-If you need to access to your operation contract while handling the request,
-you can configure the router factory to push it inside the `RoutingContext` with `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactoryOptions.html#setOperationModelKey-java.lang.String-[setOperationModelKey]`. For example:
+如果您在处理请求时需要获取接口协议，
+您可以配置路由器工厂来将它设置在 `RoutingContext` 中，这需要使用 `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactoryOptions.html#setOperationModelKey-java.lang.String-[setOperationModelKey]` 。 例如：
 
 [source,java]
 ----
 options.setOperationModelKey("operationPOJO");
 routerFactory.setOptions(options);
 
-// Add an handler that uses the operation model
+// 添加一个使用operation model的处理器
 routerFactory.addHandlerByOperationId("listPets", routingContext -> {
   io.swagger.v3.oas.models.Operation operation = routingContext.get("operationPOJO");
 
@@ -298,41 +306,47 @@ routerFactory.addHandlerByOperationId("listPets", routingContext -> {
     .response()
     .setStatusCode(200)
     .setStatusMessage("OK")
-    // Write the response with operation id "listPets"
+    // 以"listPets"为操作id，回写响应
     .end(operation.getOperationId());
 });
 ----
 
-=== Body Handler
-Router Factory automatically mounts a `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]` to manage request bodies.
-You can configure the instance of `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]` (e.g. to change upload directory) with `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactory.html#setBodyHandler-io.vertx.ext.web.handler.BodyHandler-[setBodyHandler]`.
+[[_body_handler]]
+=== 请求体处理器
+路由器工厂为了管理请求体，会自动挂载一个 `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]` 。
+您可以用 `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactory.html#setBodyHandler-io.vertx.ext.web.handler.BodyHandler-[setBodyHandler]` 配置一个 `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]` 对象（例如 更改上传目录）：
 
-=== `multipart/form-data` validation
-The validation handler separates file uploads and form attributes as explained:
+[[_multipart_form_data_validation]]
+=== `multipart/form-data` 校验
+校验处理器像如下描述来区分文件上传和表单属性：
 
-* If the parameter doesn't have an encoding associated field:
- - If the parameter has `type: string` and `format: base64` or `format: binary` is a file upload with content-type `application/octet-stream`
- - Otherwise is a form attribute
-* If the parameter has the encoding associated field is a file upload
 
-The form attributes are parsed and validated as other request parameters,
-while for file uploads the validation handler just checks the existence and the content type.
+* 如果参数中没有编码相关的字段：
+ - 如果参数存在 `type: string` 和 `format: base64` ，或者存在 `format: binary` ，那么它就是 content-type请求头为 `application/octet-stream` 的一个请求。
+ - 否则 就是一个表单请求
+* 如果参数存在编码相关字段，则是一个文件上传的请求。
 
-=== Custom global handlers
-If you need to mount handlers that must be executed for each operation in your router before the operation specific handlers, you can use `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactory.html#addGlobalHandler-io.vertx.core.Handler-[addGlobalHandler]`
+对于表单属性，他们被解析为其他请求参数并校验，
+然而对于文件上传请求，校验处理器仅仅检查存在性和Content-Type。
 
-=== Router factory handlers mount order
-Handlers are loaded by the router factory in this order:
+[[_custom_global_handlers]]
+=== 自定义全局处理器
+如果您需要挂载一个处理器，而这个处理器在您路由器中每个操作执行之前都需要执行特定操作，那么您可以用 `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactory.html#addGlobalHandler-io.vertx.core.Handler-[addGlobalHandler]`
 
-1. Body handler
-2. Custom global handlers
-3. Global security handlers defined in upper spec level
-4. Operation specific security handlers
-5. Generated validation handler
-6. User handlers or "Not implemented" handler (if enabled)
+[[_router_factory_handlers_mount_order]]
+=== 路由器工厂处理器挂载顺序
+路由器工厂以如下顺序加载处理器：
 
-=== Generate the router
-When you are ready, generate the router and use it:
+1. 请求体处理器
+2. 自定义全局处理器
+3. 在规范之上级别的全局安全处理器
+4. 安全处理器中指定的操作
+5. 生成的校验处理器
+6. 用户处理器 或者 "尚未实现的"处理器（如果启用）
+
+[[_generate_the_router]]
+=== 生成路由器
+您准备就绪时，便生成路由器并使用它：
 
 [source,java]
 ----
@@ -342,7 +356,7 @@ HttpServer server = vertx.createHttpServer(new HttpServerOptions().setPort(8080)
 server.requestHandler(router).listen();
 ----
 
-This method can fail with a `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactoryException.html[RouterFactoryException]` if you didn't provide the required security handlers.
+如果您没有提供必要的安全处理器，则这个方法会以 `link:../../apidocs/io/vertx/ext/web/api/contract/RouterFactoryException.html[RouterFactoryException]` 异常结束而失败。
 
 ifeval::["java" == "java"]
 include::override/rxjava2.adoc[]

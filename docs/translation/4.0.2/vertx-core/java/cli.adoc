@@ -1,0 +1,266 @@
+Vert.x Core 提供了一套用于解析传递给程序的命令行参数的API。
+这套API也可以用于打印命令行相关参数、选项的详细帮助信息。
+即使这些功能远离Vert.x Core主题，该API已在 `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]` 类中使用，
+因此您可以在 _fat-jar_ 和 `vertx` 命令行工具中使用它们。
+此外，它支持多语言（可用于任何已支持的语言），并可在 Vert.x Shell 中使用。
+
+Vert.x CLI 不但提供一个编程模型用以描述命令行界面，还提供一个语法解析器。
+这个语法解析器支持不同类型的语法：
+
+* POSIX 风格的选项参数 （例如： `tar -zxvf foo.tar.gz`）
+* GNU 的长字符串风格的选项参数 （例如： `du --human-readable --max-depth=1`）
+* Java 风格的属性参数 （例如： `java -Djava.awt.headless=true -Djava.net.useSystemProxies=true Foo`）
+* 附带选项值的简短风格的选项参数 （例如： `gcc -O2 foo.c`）
+* 包含单个连接符的长字符串风格的选项参数 (例如： `ant -projecthelp`）
+
+使用这个命令行API只需要三个步骤：
+
+1. 定义命令行接口
+2. 解析用户输入的命令行
+3. 进行查询/问答交互操作
+
+[[_definition_stage]]
+=== 定义阶段
+
+每个命令行界面都必须定义所要使用的选项和参数集合。这些选项和参数也需命名。
+命令行API使用 `link:../../apidocs/io/vertx/core/cli/Option.html[Option]` 和 `link:../../apidocs/io/vertx/core/cli/Argument.html[Argument]`
+类来描述选项和参数：
+
+[source,java]
+----
+CLI cli = CLI.create("copy")
+    .setSummary("A command line interface to copy files.")
+    .addOption(new Option()
+        .setLongName("directory")
+        .setShortName("R")
+        .setDescription("enables directory support")
+        .setFlag(true))
+    .addArgument(new Argument()
+        .setIndex(0)
+        .setDescription("The source")
+        .setArgName("source"))
+    .addArgument(new Argument()
+        .setIndex(1)
+        .setDescription("The destination")
+        .setArgName("target"));
+----
+
+正如您所见到的一样，您可以通过 `link:../../apidocs/io/vertx/core/cli/CLI.html#create-java.lang.String-[CLI.create]` 方法来创建一个新的
+`link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` 。此处传入的字符串参数就是这个CLI的名称。
+创建之后，可以给它设置摘要和描述。一般来说，摘要是指一行简短的文字说明，
+描述是指篇幅较长的详细说明。每个选项和参数可以使用
+`link:../../apidocs/io/vertx/core/cli/CLI.html#addArgument-io.vertx.core.cli.Argument-[addArgument]` 和
+`link:../../apidocs/io/vertx/core/cli/CLI.html#addOption-io.vertx.core.cli.Option-[addOption]` 方法加入到 `CLI` 对象中。
+
+[[_options]]
+==== 选项列表
+
+`link:../../apidocs/io/vertx/core/cli/Option.html[Option]` 是指用户输入的命令行中出现的以 _键_ 来标识的命令行参数。
+选项必须至少有一个长名称或一个短名称。通常情况下，长名称使用 `--` 前缀，
+短名称使用单个 `-` 前缀。这些名称都是大小写敏感的；但是，在 <<query_interrogation_stage, 查询/问答交互阶段>> 的环节中，
+如果输入的名称无法精确匹配，则会使用大小写不敏感的方式进行匹配。
+选项可以在用法说明的部分显示出相关的描述（见下文）。选项可以接收0个，1个或者若干个选项值。
+接收0个选项值的选项称作 `标识（flag）`，标识必须使用
+`link:../../apidocs/io/vertx/core/cli/Option.html#setFlag-boolean-[setFlag]` 来声明。缺省情况下，选项接收单个选项值，但是您也可以使用
+`link:../../apidocs/io/vertx/core/cli/Option.html#setMultiValued-boolean-[setMultiValued]` 将其设置成接收多个选项值：
+
+[source,java]
+----
+CLI cli = CLI.create("some-name")
+    .setSummary("A command line interface illustrating the options valuation.")
+    .addOption(new Option()
+        .setLongName("flag").setShortName("f").setFlag(true).setDescription("a flag"))
+    .addOption(new Option()
+        .setLongName("single").setShortName("s").setDescription("a single-valued option"))
+    .addOption(new Option()
+        .setLongName("multiple").setShortName("m").setMultiValued(true)
+        .setDescription("a multi-valued option"));
+----
+
+选项可以标记必填。用户如果没有输入必填选项，
+则会在命令行解析的过程中抛出异常：
+
+[source,java]
+----
+CLI cli = CLI.create("some-name")
+    .addOption(new Option()
+        .setLongName("mandatory")
+        .setRequired(true)
+        .setDescription("a mandatory option"));
+----
+
+非必填选项可以拥有一个 _缺省值_ ，在用户没有输入对应的选项值时，
+则会启用这个默认选项值：
+
+[source,java]
+----
+CLI cli = CLI.create("some-name")
+    .addOption(new Option()
+        .setLongName("optional")
+        .setDefaultValue("hello")
+        .setDescription("an optional option with a default value"));
+----
+
+选项也可以通过 `link:../../apidocs/io/vertx/core/cli/Option.html#setHidden-boolean-[setHidden]` 方法设置成 _隐藏_ 的。
+隐藏的选项不会在使用说明中显示出来，但是仍然可以起作用（提供给高级用户使用）。
+
+如果选项值是一组固定的集合，可以设置允许输入哪些内容：
+
+[source,java]
+----
+CLI cli = CLI.create("some-name")
+    .addOption(new Option()
+        .setLongName("color")
+        .setDefaultValue("green")
+        .addChoice("blue").addChoice("red").addChoice("green")
+        .setDescription("a color"));
+----
+
+选项列表配置也可以通过其对应格式的 JSON 数据来创建。
+
+[[_arguments]]
+==== 参数
+
+和选项不一样，参数不以 _键_ 进行标识而是以其 _索引_ 作为标识。
+例如，在 `java com.acme.Foo` 里， `com.acme.Foo` 就是一个参数。
+
+参数没有名称，它们以从 `0` 开始计数的索引为标识。
+第一个参数的索引为 `0`：
+
+[source,java]
+----
+CLI cli = CLI.create("some-name")
+    .addArgument(new Argument()
+        .setIndex(0)
+        .setDescription("the first argument")
+        .setArgName("arg1"))
+    .addArgument(new Argument()
+        .setIndex(1)
+        .setDescription("the second argument")
+        .setArgName("arg2"));
+----
+
+如果不设置参数的索引，则基于声明顺序自动计算索引值。
+
+[source,java]
+----
+CLI cli = CLI.create("some-name")
+    // will have the index 0
+    .addArgument(new Argument()
+        .setDescription("the first argument")
+        .setArgName("arg1"))
+    // will have the index 1
+    .addArgument(new Argument()
+        .setDescription("the second argument")
+        .setArgName("arg2"));
+----
+
+`argName` 是可选的，并且在说明信息中会使用这个字段。
+
+和选项一样，`link:../../apidocs/io/vertx/core/cli/Argument.html[Argument]` 也可以：
+
+* 使用 `link:../../apidocs/io/vertx/core/cli/Argument.html#setHidden-boolean-[setHidden]` 设置为隐藏的
+* 使用 `link:../../apidocs/io/vertx/core/cli/Argument.html#setRequired-boolean-[setRequired]` 设置为必填的
+* 使用 `link:../../apidocs/io/vertx/core/cli/Argument.html#setDefaultValue-java.lang.String-[setDefaultValue]` 设置默认参数值
+* 使用 `link:../../apidocs/io/vertx/core/cli/Argument.html#setMultiValued-boolean-[setMultiValued]` 来接收多个参数值————只有最后一个参数才
+允许设置成接收多个参数值。
+
+参数也可以通过其对应格式的 JSON 数据来创建。
+
+[[_usage_generation]]
+==== 生成使用说明信息
+
+当 `link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` 实例配置完成之后，您可以用它来生成 _使用说明_ 信息：
+
+[source,java]
+----
+CLI cli = CLI.create("copy")
+    .setSummary("A command line interface to copy files.")
+    .addOption(new Option()
+        .setLongName("directory")
+        .setShortName("R")
+        .setDescription("enables directory support")
+        .setFlag(true))
+    .addArgument(new Argument()
+        .setIndex(0)
+        .setDescription("The source")
+        .setArgName("source"))
+    .addArgument(new Argument()
+        .setIndex(0)
+        .setDescription("The destination")
+        .setArgName("target"));
+
+StringBuilder builder = new StringBuilder();
+cli.usage(builder);
+----
+
+这可以生成诸如此类的使用说明信息：
+
+[source]
+----
+Usage: copy [-R] source target
+
+A command line interface to copy files.
+
+ -R,--directory   enables directory support
+----
+
+如果需要调整这个使用说明信息，请参考 `link:../../apidocs/io/vertx/core/cli/UsageMessageFormatter.html[UsageMessageFormatter]` 类。
+
+[[_parsing_stage]]
+=== 解析阶段
+
+`link:../../apidocs/io/vertx/core/cli/CLI.html[CLI]` 配置完成以后，您可以解析用户输入的命令行，
+并以此处理每个参数和选项：
+
+[source,java]
+----
+CommandLine commandLine = cli.parse(userCommandLineArguments);
+----
+
+`link:../../apidocs/io/vertx/core/cli/CLI.html#parse-java.util.List-[parse]` 方法返回一个包含了这些值的 `link:../../apidocs/io/vertx/core/cli/CommandLine.html[CommandLine]` 对象。
+默认情况下，它会对用户输入的命令行进行检查校验，并确认哪些必填选项和必填参数有无缺失，
+以及每个选项值的数量是否符合要求。您可以将
+`link:../../apidocs/io/vertx/core/cli/CLI.html#parse-java.util.List-boolean-[parse]` 方法中的第二个参数传入 `false` 值来禁用这项校验功能。
+这可以用来检查某个参数或选项是否存在，无论命令行输入是否合规。
+
+您可以使用
+`link:../../apidocs/io/vertx/core/cli/CommandLine.html#isValid--[isValid]` 方法来检查 `link:../../apidocs/io/vertx/core/cli/CommandLine.html[CommandLine]` 对象是否合规。
+
+[[query_interrogation_stage]]
+=== 查询/问答交互阶段
+
+命令行解析完成之后，您可以从
+`link:../../apidocs/io/vertx/core/cli/CLI.html#parse-java.util.List-[parse]` 方法返回的 `link:../../apidocs/io/vertx/core/cli/CommandLine.html[CommandLine]`
+对象中获取到选项值和参数值：
+
+[source,java]
+----
+CommandLine commandLine = cli.parse(userCommandLineArguments);
+String opt = commandLine.getOptionValue("my-option");
+boolean flag = commandLine.isFlagEnabled("my-flag");
+String arg0 = commandLine.getArgumentValue(0);
+----
+
+其中一个选项可以标记为“帮助”。如果命令行启用了“帮助”选项，
+命令行的校验不会失败，而你有机会检查用户是否在寻求帮助：
+
+[source,java]
+----
+CLI cli = CLI.create("test")
+    .addOption(
+        new Option().setLongName("help").setShortName("h").setFlag(true).setHelp(true))
+    .addOption(
+        new Option().setLongName("mandatory").setRequired(true));
+
+CommandLine line = cli.parse(Collections.singletonList("-h"));
+
+// The parsing does not fail and let you do:
+if (!line.isValid() && line.isAskingForHelp()) {
+  StringBuilder builder = new StringBuilder();
+  cli.usage(builder);
+  stream.print(builder.toString());
+}
+----
+
+include::cli-for-java.adoc[]

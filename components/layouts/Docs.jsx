@@ -5,7 +5,6 @@ import DropDownItem from "../DropDownItem"
 import { smoothScrollTo } from "../lib/scroll-utils"
 import VersionContext from "../contexts/VersionContext"
 import { useCallback, useContext, useEffect, useRef, useState } from "react"
-import Link from "next/link"
 import Router from "next/router"
 import Header from "../Header"
 import Footer from "../Footer"
@@ -13,6 +12,7 @@ import SearchPanel from "../search/SearchPanel"
 import GitHubStars from "../GitHubStars"
 import Label from "../Label"
 import { versions as allVersionsPossible } from "../../docs/metadata/all"
+import { filterLatestBugfixVersions } from "../../docs/metadata/helpers"
 import { Book, Code, Edit, List, Paperclip, X } from "react-feather"
 import "./Docs.scss"
 
@@ -203,19 +203,19 @@ const Docs = ({ metadata, allVersions, fallbackGitHubStars, toc, contents }) => 
                 <div className="docs-content-metadata-left">
                   {repository && <div className="docs-content-metadata-repo">{repository}</div>}
                   <div>
-                    <Link href={`https://vertx.io/docs/${currentVersion.version ? `${currentVersion.version}/` : ""}apidocs`}>
-                      <a><Book className="feather" /> API</a>
-                    </Link>
+                    <a href={`https://vertx.io/docs/${currentVersion.version ? `${currentVersion.version}/` : ""}apidocs`}>
+                      <Book className="feather" /> API
+                    </a>
                   </div>
                   {examples && <div className="docs-content-metadata-examples">{examples}</div>}
                   {edit && <div className="docs-content-metadata-edit">{edit}</div>}
                   <span className="docs-content-metadata-version">
-                    <DropDown title={`v${currentVersion.version || sortedAllVersions[0]}`}>
+                    <DropDown title={`v${currentVersion.version || sortedAllVersions[0]}`} align="right">
                       {existsForLatestVersion && <DropDownItem active={currentVersion.version === undefined ||
                             currentVersion.version === sortedAllVersions[0]} href={`/docs${metadata.href}`}>
                         Latest (v{sortedAllVersions[0]})
                       </DropDownItem>}
-                      {sortedAllVersions.slice(existsForLatestVersion ? 1 : 0).map(v => (
+                      {filterLatestBugfixVersions(sortedAllVersions).slice(existsForLatestVersion ? 1 : 0).map(v => (
                         <DropDownItem key={v} active={currentVersion.version === v}
                             href={`/docs/${v}${metadata.href}`}>
                           v{v}

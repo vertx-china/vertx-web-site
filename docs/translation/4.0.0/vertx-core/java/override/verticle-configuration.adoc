@@ -1,0 +1,31 @@
+[[_passing_configuration_to_a_verticle]]
+=== 向 Verticle 传入配置
+
+可在部署时传给 Verticle 一个 JSON 格式的配置
+
+[source,java]
+----
+JsonObject config = new JsonObject().put("name", "tim").put("directory", "/blah");
+DeploymentOptions options = new DeploymentOptions().setConfig(config);
+vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
+----
+
+传入之后，这个配置可以通过 `link:../../apidocs/io/vertx/core/Context.html[Context]` 对象或使用
+`link:../../apidocs/io/vertx/core/AbstractVerticle.html#config--[config]` 方法访问。这个配置会以 JSON 对象（`JsonObject`）的形式返回，
+因此您可以用下边代码读取数据：
+
+[source,java]
+----
+System.out.println("Configuration: " + config().getString("name"));
+----
+
+[[_accessing_environment_variables_in_a_verticle]]
+=== 在 Verticle 中访问环境变量
+
+环境变量和系统属性可以直接通过 Java API 访问：
+
+[source,java]
+----
+System.getProperty("prop");
+System.getenv("HOME");
+----

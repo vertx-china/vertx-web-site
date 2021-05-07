@@ -1,0 +1,84 @@
+[[_host_name_resolution]]
+== 主机名解析
+
+Vert.x 使用自带的网络地址解析器来执行主机名解析的工作（将主机名解析为IP地址），
+而没有使用JVM内置的阻塞式解析器。
+
+把主机名解析成IP地址的操作将会使用到：
+
+- 操作系统的 _hosts_ 文件
+- DNS查询服务器列表
+
+默认情况下它使用系统环境中设定的DNS服务器地址列表，
+如果无法获取该列表，则会使用谷歌的公用DNS服务器地址 `"8.8.8.8"` 以及 `"8.8.4.4"` 。
+
+也可以在创建 `link:../../apidocs/io/vertx/core/Vertx.html[Vertx]` 实例的时候配置DNS服务器：
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().
+    setAddressResolverOptions(
+        new AddressResolverOptions().
+            addServer("192.168.0.1").
+            addServer("192.168.0.2:40000"))
+);
+----
+
+DNS服务器的默认端口为 `53` ，当服务器使用不同的端口时，
+可以使用半角冒号作为分隔符来指定端口，例如： `192.168.0.2:40000` 。
+
+NOTE: 如果某些场景之下必须要使用JVM内置的解析器，此时可以通过在启动时设置系统属性
+_-Dvertx.disableDnsResolver=true_ 来激活JVM内置的解析器。
+
+[[_failover]]
+=== 故障转移
+
+当一个服务器没有及时响应时，解析器会从列表中取出下一个服务器进行查询，
+该故障转移操作的次数限制可以通过 `link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#setMaxQueries-int-[setMaxQueries]` 来设置（默认设置是 `4` 次）。
+
+如果解析器在 `link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#getQueryTimeout--[getQueryTimeout]` 毫秒内未接收到正常响应，则认为DNS查询失败
+（默认值是 `5` 秒）
+
+[[_server_list_rotation]]
+=== 服务器列表轮询
+
+默认情况下，解析器总是使用服务器列表中的第一个服务器，剩下的服务器用于故障转移。
+
+您可以将 `link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#setRotateServers-boolean-[setRotateServers]` 设置为 `true`，
+此时解析器将会使用 round-robin 风格的轮询操作，将查询的负担分摊到列表中的每一个服务器上，
+从而避免所有的查询负担都落在列表中的第一个服务器上。
+
+此时故障转移机制仍然有效，当某个服务器没有及时响应时，解析器会使用列表中的下一个服务器。
+
+[[_hosts_mapping]]
+=== 主机映射
+
+操作系统自身的 _hosts_ 文件用于查找主机名对应的IP地址。
+
+除此之外也可以使用另外的 _hosts_ 文件来代替操作系统自身的 _hosts_ 文件：
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().
+    setAddressResolverOptions(
+        new AddressResolverOptions().
+            setHostsPath("/path/to/hosts"))
+);
+----
+
+[[_search_domains]]
+=== DNS搜索域
+
+默认情况下，解析器使用系统环境中设置的DNS搜索域。如果要使用显式指定的搜索域，
+可以使用以下方式：
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions().
+    setAddressResolverOptions(
+        new AddressResolverOptions().addSearchDomain("foo.com").addSearchDomain("bar.com"))
+);
+----
+
+当使用搜索域列表时， “.” 符号数量的阈值一般为 `1` ，在Linux操作系统里该阈值由 `/etc/resolv.conf` 文件来指定，
+通过 `link:../../apidocs/io/vertx/core/dns/AddressResolverOptions.html#setNdots-int-[setNdots]` 可以人为指定该阈值的大小。

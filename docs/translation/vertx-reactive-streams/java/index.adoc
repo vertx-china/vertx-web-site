@@ -1,50 +1,54 @@
-= Vert.x Reactive Streams Integration
+= 集成Vert.x Reactive Streams
 
-link:http://www.reactive-streams.org/[Reactive Streams] is an initiative to provide a standard for asynchronous stream
-processing with non-blocking back pressure on the JVM.
+link:http://www.reactive-streams.org/[Reactive Streams] 提供了一组标准接口，
+适用于JVM上的非阻塞的带有背压的异步流处理。
 
-This library provides an implementation of reactive streams for Vert.x.
+这个库提供了基于Vert.x的reactive streams实现。
 
-Vert.x provides its own mechanisms for handling streams of data and pumping them with back pressure from one to another
-using the `io.vertx.core.streams.ReadStream`, `io.vertx.core.streams.WriteStream` and `io.vertx.core.streams.Pump`.
-Please see the Vert.x core manual for more information on Vert.x streams.
+Vert.x提供了自己的机制来处理数据流，实现了一个流可以使用背压从另一个流中抽取数据。
+相关的接口包括 `io.vertx.core.streams.ReadStream`, `io.vertx.core.streams.WriteStream` 和 `io.vertx.core.streams.Pump` 。
+请参阅Vert.x core手册，以获取有关Vert.x stream的更多信息。
 
-This library provides implementations of read stream and write stream which also act as reactive streams publishers
-and subscribers. This allows us to treat any reactive streams publisher or subscriber and deal with it like any other
-Vert.x read or write stream.
+这个库提供了 read stream 和 write stream 的实现，
+同时也是作为 reactive streams publishers 和 subscribers 存在。
+这允许我们将任何 reactive streams publisher 或 subscriber 实例像 Vert.x read 或 write stream 一样处理。
 
-== Using Vert.x Reactive Streams
+[[_using_vert_x_reactive_streams]]
+== 使用Vert.x Reactive Streams
 
-To use Vert.x Reactive Streams, add the following dependency to the _dependencies_ section of your build descriptor:
+想使用Vert.x Reactive Streams，需要在你的构建脚本中加入以下依赖。
 
-* Maven (in your `pom.xml`):
+* Maven (在 `pom.xml` 中):
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-reactive-streams</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle (在 `build.gradle` 中):
 
 [source,groovy,subs="+attributes"]
 ----
-compile io.vertx:vertx-reactive-streams:4.0.0
+compile io.vertx:vertx-reactive-streams:4.0.3
 ----
 
+[[_reactive_read_stream]]
 == Reactive Read Stream
 
-We provide an implementation of the Vert.x `ReadStream` interface with `link:../../apidocs/io/vertx/ext/reactivestreams/ReactiveReadStream.html[ReactiveReadStream]`
-which also implements a reactive streams `Subscriber`.
+我们提供了Vert.x `ReadStream` 接口的实现，在 `link:../../apidocs/io/vertx/ext/reactivestreams/ReactiveReadStream.html[ReactiveReadStream]`
+同时也实现了 reactive streams `Subscriber` 。
 
-You can pass an instance of this to any reactive streams `Publisher` (e.g. a Publisher from Akka) and then you will be
-able to read from that just like any other Vert.x `ReadStream` (e.g. use a `Pump` to pump it to a `WriteStream`.
+你可以将ReactiveReadStream实例传递给任何一个实现了reactive streams `Publisher` 接口的实例（比如Akka中的Publisher），
+接着你就可以从上游读取数据，就像Vert.x中其他的 `ReadStream`。
+（比如，使用 `Pump` 接口将其中的数据抽取到一个 `WriteStream` ）。
 
-Here's an example of taking a publisher from some other reactive streams implementation (e.g. Akka) and pumping that
-stream to the body of a server side HTTP response. This will handle back pressure automatically.
+这里有一个例子，给定一个实现了reactive streams的publisher（比如akka），
+将它的数据抽取出来，作为http服务端响应的消息正文。
+它将自己处理背压。
 
 [source,java]
 ----
@@ -59,19 +63,22 @@ Pump pump = Pump.pump(rrs, response);
 pump.start();
 ----
 
+[[_reactive_write_stream]]
 == Reactive Write Stream
 
-We also provide an implementation of the Vert.x `WriteStream` interface with `link:../../apidocs/io/vertx/ext/reactivestreams/ReactiveWriteStream.html[ReactiveWriteStream]`
-which also implements a reactive streams `Publisher`. You can take any reactive streams `Subscriber`
-(e.g. a Subscriber from Akka) and then you will be able* to write to it like any other Vert.x `WriteStream`.
-(e.g. use a `Pump` to pump it from a `ReadStream`).
+我们同样也提供了Vert.x `WriteStream` 接口的实现，
+`link:../../apidocs/io/vertx/ext/reactivestreams/ReactiveWriteStream.html[ReactiveWriteStream]` 。
+它同样也实现了reactive streams `Publisher` 接口。
+给定一个reactive streams `Subscriber` 接口的实例，你可以将数据写入其中，就像其他Vert.x `WriteStream` 的实现一样。
+（比如使用 `Pump` 从 `ReadStream` 中抽取数据）。
 
-You use `pause`, `resume`, and `writeQueueFull`, as you would with any Vert.x read stream to handle your back pressure.
-This is automatically translated internally into the reactive streams method of propagating back pressure
-(requesting more items).
+可以像任何Vert.x read stream一样，
+使用 `pause`, `resume`, and `writeQueueFull` 来处理背压。
+这会在内部自动转换为传播背压的reactive streams方法。
+（需要更多的元素）。
 
-Here's an example of taking a subscriber from some other reactive streams implementation and pumping the body of
-a server side HTTP request to that subscriber. This will handle back pressure automatically.
+这里有一个例子，从其他reactive streams实现库订阅流，并抽取http响应的消息正文数据至subscriber。
+这里会自动处理背压。
 
 [source,java]
 ----

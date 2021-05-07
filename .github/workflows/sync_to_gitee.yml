@@ -1,0 +1,20 @@
+name: Sync to Gitee
+
+on:
+  push:
+    branches: [ master, preview ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actionhub/workflows/git-sync@v1
+        name: Sync repo to gitee
+        with:
+          ssh-key: ${{ secrets.GITEE_TOKEN }}
+          repo-url: git@gitee.com:vertx-china/vertx-web-site.git
+          force: true
+

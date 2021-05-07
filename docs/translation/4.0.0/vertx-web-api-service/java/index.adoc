@@ -1,0 +1,231 @@
+= Vert.x Web API 服务
+:toc: left
+
+Vert.x Web API 服务通过事件总线帮助您处理HTTP请求
+
+事件总线提供了一些重要特性，例如：负载均衡、通过不同Vert.x实例分发请求。
+我们建议您参阅 https://vertx.io/docs/vertx-core/java/#event_bus[事件总线文档] 以了解更多信息。
+
+这个模块提供给您创建Web API 服务的能力，即一个事件总线消息消费者(基于与 https://vertx.io/docs/vertx-service-proxy/java/[Vert.x service proxy] 同样的概念 )
+然后它提供一个处理器来代理访问这些服务的请求。
+
+[[_using_vert_x_api_service]]
+== 使用Vert.x API服务
+
+为了使用Vert.x API 服务，需要添加如下依赖
+
+* Maven (在您的 `pom.xml` 文件):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-codegen</artifactId>
+ <version>4.0.0</version>
+ <classifier>processor</classifier>
+</dependency>
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-web-api-service</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+* Gradle < 5 (在您的 `build.gradle` 文件):
+
+[source,groovy,subs="+attributes"]
+----
+dependencies {
+ compile 'io.vertx:vertx-codegen:4.0.0:processor'
+ compile 'io.vertx:vertx-web-api-service:4.0.0'
+}
+----
+
+* Gradle >= 5 (在您的 `build.gradle` 文件):
+
+[source,groovy,subs="+attributes"]
+----
+dependencies {
+ annotationProcessor 'io.vertx:vertx-codegen:4.0.0:processor'
+ annotationProcessor 'io.vertx:vertx-web-api-service:4.0.0'
+ compile 'io.vertx:vertx-web-api-service:4.0.0'
+}
+----
+
+您需要引入 `vertx-codegen` 来从被注解修饰的接口中生成代码。
+如果您只需要 `link:../../apidocs/io/vertx/ext/web/api/service/RouteToEBServiceHandler.html[RouteToEBServiceHandler]` ，那么您不需要 `vertx-codegen`。
+
+如果您希望用不同语言来调用接口，那么您需要添加 _语言_ 依赖，譬如：
+为groovy语言添加 `vertx-lang-groovy` 依赖。
+
+[[_proxy_an_http_request_to_a_web_api_service]]
+== 代理一个HTTP请求 到一个Web API服务
+
+您可以用 `link:../../apidocs/io/vertx/ext/web/api/service/RouteToEBServiceHandler.html[RouteToEBServiceHandler]` 来代理发送到事件总线的请求。
+这个处理器从 `link:../../apidocs/io/vertx/ext/web/api/service/ServiceRequest.html[ServiceRequest]` 内的 `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]` 提取一些信息，并以 `link:../../apidocs/io/vertx/ext/web/api/service/ServiceResponse.html[ServiceResponse]` 作为响应对象。
+
+[source,java]
+----
+router
+  .get("/hello")
+  .handler(validationHandler)
+  .handler(
+    RouteToEBServiceHandler
+      .build(eventBus, "greeters.myapplication", "hello")
+  );
+----
+
+您也可以定义 `link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]` ，每次通过事件总线发送消息的时候会使用该选项：
+
+[source,java]
+----
+router
+  .get("/hello")
+  .handler(validationHandler)
+  .handler(
+    RouteToEBServiceHandler
+      .build(eventBus, "greeters.myapplication", "hello", new DeliveryOptions().setSendTimeout(1000))
+  );
+----
+
+IMPORTANT: 在挂载 `link:../../apidocs/io/vertx/ext/web/api/service/RouteToEBServiceHandler.html[RouteToEBServiceHandler]` 的时候，您 *必须* 同时挂载一个 `link:../../apidocs/io/vertx/ext/web/validation/ValidationHandler.html[ValidationHandler]` ，该验证处理器提取了请求中的参数。否则，不会发送任何请求参数。
+
+
+[[_define_your_web_api_service_interface]]
+== 定义您的Web API 服务接口
+
+在更进一步之前，我们建议您去查阅 https://vertx.io/docs/vertx-service-proxy/java/[Service Proxy documentation]
+
+假设我们已经在 `link:../../apidocs/io/vertx/ext/web/Router.html[Router]` 中定义了如下两个不同的路由：
+
+[source,java]
+----
+router.get("/api/transactions")
+  .handler(
+    ValidationHandlerBuilder.create(schemaParser)
+      .queryParameter(optionalParam("from", stringSchema()))
+      .queryParameter(optionalParam("to", stringSchema()))
+      .build()
+  ).handler(
+    RouteToEBServiceHandler.build(eventBus, "transactions.myapplication", "getTransactionsList")
+  );
+router.post("/api/transactions")
+  .handler(
+    ValidationHandlerBuilder.create(schemaParser)
+      .body(json(objectSchema()))
+      .build()
+  ).handler(
+    RouteToEBServiceHandler.build(eventBus, "transactions.myapplication", "putTransaction")
+  );
+----
+
+`GET /api/transactions` 获取这样两个可选参数 `from` 和 `to` 。`POST /api/transactions` 从请求体获取一个 `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` 。
+
+现在我们可以构建用于处理那些终端（endpoint）的 *TransactionService* 接口。对于各个终端您在构建 `link:../../apidocs/io/vertx/ext/web/api/service/RouteToEBServiceHandler.html[RouteToEBServiceHandler]` 时需要写入一个方法，该方法名与指定的 `action` 相关联。
+对于方法参数，有如下几个规则：
+
+* 最后一个参数的类型必须是 `Handler<AsyncResult<ServiceResponse>>`
+* 第二个到最后一个参数必须存在 `link:../../apidocs/io/vertx/ext/web/api/service/ServiceRequest.html[ServiceRequest]` 类型
+* 所有参数从第一个、第二个到最后一个（不含）会被自动从 `link:../../apidocs/io/vertx/ext/web/validation/RequestParameters.html[RequestParameters]` 中按照类型解析出来，但是他们需要遵循 https://vertx.io/docs/vertx-service-proxy/java/#_restrictions_for_service_interface[service proxy restrictions] 。
+
+一个请求参数仅通过名称（name）区分，而且特殊的 `body` 方法参数名称用于从请求中解析出请求体。
+
+例如：
+
+[source,java]
+----
+@WebApiServiceGen
+interface TransactionService {
+ void getTransactionsList(String from, String to, ServiceRequest context, Handler<AsyncResult<ServiceResponse>> resultHandler);
+ void putTransaction(JsonObject body, ServiceRequest context, Handler<AsyncResult<ServiceResponse>> resultHandler);
+}
+----
+
+当您从 `TransactionService#getTransactionsList` 方法中接收到一个请求，自动生成的服务处理器会从 `link:../../apidocs/io/vertx/ext/web/api/service/ServiceRequest.html[ServiceRequest]` 自动解析出 `from` 和 `to` 参数（如果存在）
+
+服务处理器也有自动转换 `JsonObject` 为Vert.x 数据对象的能力，例如，如果您有一个满足上述json schema的 `Transaction` 数据对象，您可以像如下重写 `putTransaction` 方法签名：
+
+[source,java]
+----
+void putTransaction(Transaction body, ServiceRequest context, Handler<AsyncResult<ServiceResponse>> resultHandler);
+----
+
+您也可以用 `link:../../apidocs/io/vertx/ext/web/validation/RequestParameter.html[RequestParameter]` 来提取参数，如下：
+
+[source,java]
+----
+void putTransaction(RequestParameter body, ServiceRequest context, Handler<AsyncResult<ServiceResponse>> resultHandler);
+----
+
+
+我们建议用 `link:../../apidocs/io/vertx/ext/web/validation/RequestParameter.html[RequestParameter]` 类型来提取以json shcema（allOf/anyOf/oneOf/not）定义的参数，因为提取参数可能产生未定义的行为。
+
+[[_implement_your_web_api_service]]
+== 实现您自己的Web API服务
+
+现在您可以实现您自己的服务。切记 `link:../../apidocs/io/vertx/ext/web/api/service/ServiceRequest.html[ServiceRequest]` 对象包含了请求头以及请求参数的映射。
+
+要写一个请求 您必须调用包含了 `link:../../apidocs/io/vertx/ext/web/api/service/ServiceResponse.html[ServiceResponse]` 的 `resultHandler`
+创建一个 `link:../../apidocs/io/vertx/ext/web/api/service/ServiceResponse.html[ServiceResponse]` 实例，您可以用一些方便的方法，比如 `link:../../apidocs/io/vertx/ext/web/api/service/ServiceResponse.html#completedWithJson-io.vertx.core.buffer.Buffer-[ServiceResponse.completedWithJson]` 或者 `link:../../apidocs/io/vertx/ext/web/api/service/ServiceResponse.html#completedWithPlainText-io.vertx.core.buffer.Buffer-[ServiceResponse.completedWithPlainText]`
+
+例如 `TransactionService#getTransactionsList` 的实现看起来如下：
+
+[source,java]
+----
+resultHandler.handle(
+  Future.succeededFuture(
+    ServiceResponse.completedWithJson(new JsonArray())
+  )
+);
+----
+
+或当请求失败时：
+
+[source,java]
+----
+resultHandler.handle(
+  Future.failedFuture(
+    new HttpStatusException(555, "Something bad happened")
+  )
+);
+----
+
+[[_the_servicerequest_data_object]]
+=== `ServiceRequest` 数据对象
+
+`ServiceRequest` 是一个 _可序列化_ 的 `RoutingContext` ，但是 它并不包含 `RoutingContext` 的所有数据。它将如下数据转送到您的服务：
+
+* `link:../../apidocs/io/vertx/ext/web/api/service/ServiceRequest.html#getHeaders--[getHeaders]` ： 请求头
+* `link:../../apidocs/io/vertx/ext/web/api/service/ServiceRequest.html#getParams--[getParams]` ：包含 `routingContext.get("parsedParameters")`
+* `link:../../apidocs/io/vertx/ext/web/api/service/ServiceRequest.html#getUser--[getUser]`: Contains `routingContext.user().principal()` 如果没有用户被认证，则返回null
+* `link:../../apidocs/io/vertx/ext/web/api/service/ServiceRequest.html#getExtra--[getExtra]` ：包含额外的可配置的 payload
+
+
+您可以用 `link:../../apidocs/io/vertx/ext/web/api/service/RouteToEBServiceHandler.html#extraPayloadMapper-java.util.function.Function-[extraPayloadMapper]` 配置一个lambda表达式来构建额外的 payload
+
+[[_the_serviceresponse_data_object]]
+=== `ServiceResponse` 数据对象
+
+`ServiceResponse` 由如下元素组成：
+
+* 响应头
+* 状态码/状态信息
+* 作为payload的请求体。如果您不设置payload或者设置为null，则不会发送响应体。
+
+[[_expose_your_web_api_service]]
+== 暴露您的Web API 服务
+
+现在您可以将服务注册到事件总线上：
+
+[source,java]
+----
+TransactionService transactionService = new TransactionServiceImpl();
+
+// Mount the service on the event bus
+ServiceBinder transactionServiceBinder = new ServiceBinder(vertx);
+transactionServiceBinder
+  .setAddress("transactions.myapplication")
+  .register(TransactionService.class, transactionService);
+----
+
+关于暴露服务的方法 更多信息请参考 https://vertx.io/docs/vertx-service-proxy/java/#_exposing_your_service[Vert.x service proxy documentation]

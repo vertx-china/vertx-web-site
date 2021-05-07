@@ -1,0 +1,883 @@
+= Vert.x Web Client
+:toc: left
+:lang: java
+:java: java
+
+Vert.x Web Client 是一个异步的 HTTP 和 HTTP/2 客户端。
+
+Web Client使得发送 HTTP 请求以及从 Web 服务器接收 HTTP 响应变得更加便捷，同时提供了额外的高级功能，例如：
+
+* Json body的编码和解码
+* 请求和响应泵
+* 请求参数的处理
+* 统一的错误处理
+* 提交表单
+
+制作Web Client的目的并非为了替换Vert.x Core中的 `link:../../apidocs/io/vertx/core/http/HttpClient.html[HttpClient]` ，而是基于该客户端，继承其配置和强大的功能，例如请求连接池（Pooling），HTTP/2的支持，流水线／管线的支持等。当您需要对 HTTP 请求和响应做细微粒度控制时，您应当使用 `link:../../apidocs/io/vertx/core/http/HttpClient.html[HttpClient]` 。
+
+另外Web Client并未提供 WebSocket API，此时您应当使用 Vert.x Core的 `link:../../apidocs/io/vertx/core/http/HttpClient.html[HttpClient]` 。目前还无法处理cookies。
+
+[[_using_the_web_client]]
+== 使用Web Client
+
+如需使用Vert.x Web Client，请先加入以下依赖,到您的build描述 _dependencies_ 部分 ：
+
+* Maven (在您的 `pom.xml` 文件内):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-web-client</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+* Gradle (在您的 `build.gradle` 文件内):
+
+[source,groovy,subs="+attributes"]
+----
+dependencies {
+ compile 'io.vertx:vertx-web-client:4.0.0'
+}
+----
+
+[[_re_cap_on_vert_x_core_http_client]]
+== 回顾 Vert.x Core的 HTTP Client
+
+Vert.x Web Client使用Vert.x core的API，如果您对此还不熟悉，熟悉基于 Vert.x core的 `link:../../apidocs/io/vertx/core/http/HttpClient.html[HttpClient]` 基本概念是很有价值的。
+
+[[_creating_a_web_client]]
+== 创建Web Client
+
+您可以创建一个缺省 `link:../../apidocs/io/vertx/ext/web/client/WebClient.html[WebClient]` 实例：
+[source,java]
+----
+WebClient client = WebClient.create(vertx);
+----
+
+您还可以使用配置项来创建客户端：
+
+[source,java]
+----
+WebClientOptions options = new WebClientOptions()
+  .setUserAgent("My-App/1.2.3");
+options.setKeepAlive(false);
+WebClient client = WebClient.create(vertx, options);
+----
+
+Web Client配置项继承自 `HttpClient` 配置项，您可以设置其中任何一个项。
+
+如果已在程序中创建 `HttpClient`，可用以下方式复用：
+[source,java]
+----
+WebClient client = WebClient.wrap(httpClient);
+----
+
+IMPORTANT: 在大多数情况下，一个Web Client 应该在应用程序启动时创建，并重用它。
+否则，您将失去很多好处，例如连接池。如果实例未正确关闭，则可能会资源泄漏。
+
+[[_making_requests]]
+== 发送请求
+
+[[_simple_requests_with_no_body]]
+=== 无请求体的简单请求
+
+通常，您想发送一个无请求体的HTTP请求。以下是一般情况下的 HTTP GET， OPTIONS和HEAD 请求
+[source,java]
+----
+WebClient client = WebClient.create(vertx);
+
+// 发送GET请求
+client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .send()
+  .onSuccess(response -> System.out
+    .println("Received response with status code" + response.statusCode()))
+  .onFailure(err ->
+    System.out.println("Something went wrong " + err.getMessage()));
+
+// 发送HEAD请求
+client
+  .head(8080, "myserver.mycompany.com", "/some-uri")
+  .send()
+  .onSuccess(response -> System.out
+    .println("Received response with status code" + response.statusCode()))
+  .onFailure(err ->
+    System.out.println("Something went wrong " + err.getMessage()));
+----
+
+您可用以下链式方式向请求URI添加查询参数
+
+[source,java]
+----
+client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .addQueryParam("param", "param_value")
+  .send()
+  .onSuccess(response -> System.out
+    .println("Received response with status code" + response.statusCode()))
+  .onFailure(err ->
+    System.out.println("Something went wrong " + err.getMessage()));
+----
+
+在请求URI中的参数将会被预填充
+
+[source,java]
+----
+HttpRequest<Buffer> request = client
+  .get(
+    8080,
+    "myserver.mycompany.com",
+    "/some-uri?param1=param1_value&param2=param2_value");
+
+// 添加 param3
+request.addQueryParam("param3", "param3_value");
+
+// 覆盖 param2
+request.setQueryParam("param2", "another_param2_value");
+----
+
+设置请求URI将会自动清除已有的查询参数
+
+[source,java]
+----
+HttpRequest<Buffer> request = client
+  .get(8080, "myserver.mycompany.com", "/some-uri");
+
+// 添加 param1
+request.addQueryParam("param1", "param1_value");
+
+// 覆盖 param1 并添加 param2
+request.uri("/some-uri?param1=param1_value&param2=param2_value");
+----
+
+[[_writing_request_bodies]]
+=== 填充请求体
+
+如需要发送请求体，可使用相同的API，并在最后加上 `sendXXX` 方法，发送相应的请求体。
+
+使用 `link:../../apidocs/io/vertx/ext/web/client/HttpRequest.html#sendBuffer-io.vertx.core.buffer.Buffer-io.vertx.core.Handler-[sendBuffer]` 发送一个buffer body
+
+[source,java]
+----
+client
+  .post(8080, "myserver.mycompany.com", "/some-uri")
+  .sendBuffer(buffer)
+  .onSuccess(res -> {
+    // OK
+  });
+----
+
+发送single buffer很有用，但是通常您不想完全将内容加载到内存中，因为它可能太大，或者您想同时处理多个请求，或者每个请求只想使用最小的（消耗）。
+为此，Web Client可以使用 `ReadStream<Buffer>` 的 (例如 `link:../../apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]` 是一个ReadStream<Buffer> ) `link:../../apidocs/io/vertx/ext/web/client/HttpRequest.html#sendStream-io.vertx.core.streams.ReadStream-io.vertx.core.Handler-[sendStream]` 方法发送。
+
+[source,java]
+----
+client
+  .post(8080, "myserver.mycompany.com", "/some-uri")
+  .sendStream(stream)
+  .onSuccess(res -> {
+    // OK
+  });
+----
+
+Web Client负责为您设置泵传输（transfer pump）。如果流长度未知则使用分块传输（chunked transfer）编码。
+
+当您知道流的大小，您应该在HTTP header中设置 `content-length`
+
+[source,java]
+----
+fs.open("content.txt", new OpenOptions(), fileRes -> {
+  if (fileRes.succeeded()) {
+    ReadStream<Buffer> fileStream = fileRes.result();
+
+    String fileLen = "1024";
+
+    // 用POST方法发送文件
+    client
+      .post(8080, "myserver.mycompany.com", "/some-uri")
+      .putHeader("content-length", fileLen)
+      .sendStream(fileStream)
+      .onSuccess(res -> {
+        // OK
+      })
+    ;
+  }
+});
+----
+
+这个POST方法不会被分块传输。
+
+[[_json_bodies]]
+==== JSON bodies
+
+有时您需要发送JSON body请求，可使用 `link:../../apidocs/io/vertx/ext/web/client/HttpRequest.html#sendJsonObject-io.vertx.core.json.JsonObject-io.vertx.core.Handler-[sendJsonObject]` 发送一个 `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]`
+
+[source,java]
+----
+client
+  .post(8080, "myserver.mycompany.com", "/some-uri")
+  .sendJsonObject(
+    new JsonObject()
+      .put("firstName", "Dale")
+      .put("lastName", "Cooper"))
+  .onSuccess(res -> {
+    // OK
+  });
+----
+
+在Java，Groovy以及Kotlin中，您可以使用 `link:../../apidocs/io/vertx/ext/web/client/HttpRequest.html#sendJson-java.lang.Object-io.vertx.core.Handler-[sendJson]` 方法，它使用 `link:../../apidocs/io/vertx/core/json/Json.html#encode-java.lang.Object-[Json.encode]` 方法映射一个 POJO (Plain Old Java Object) 到一个 Json 对象
+
+[source,java]
+----
+client
+  .post(8080, "myserver.mycompany.com", "/some-uri")
+  .sendJson(new User("Dale", "Cooper"))
+  .onSuccess(res -> {
+    // OK
+  });
+----
+
+NOTE: `link:../../apidocs/io/vertx/core/json/Json.html#encode-java.lang.Object-[Json.encode]` 方法使用Jackson mapper将 POJO 编码成 JSON。
+
+[[_form_submissions]]
+==== 表单提交
+
+您可以使用 `link:../../apidocs/io/vertx/ext/web/client/HttpRequest.html#sendForm-io.vertx.core.MultiMap-io.vertx.core.Handler-[sendForm]` 的变体发送http表单提交。
+
+[source,java]
+----
+MultiMap form = MultiMap.caseInsensitiveMultiMap();
+form.set("firstName", "Dale");
+form.set("lastName", "Cooper");
+
+// 用URL编码方式提交表单
+client
+  .post(8080, "myserver.mycompany.com", "/some-uri")
+  .sendForm(form)
+  .onSuccess(res -> {
+    // OK
+  });
+----
+
+默认情况下，提交表单header中的 `content-type` 属性值为 `application/x-www-form-urlencoded`，您还可将其替换为 `multipart/form-data`：
+
+[source,java]
+----
+MultiMap form = MultiMap.caseInsensitiveMultiMap();
+form.set("firstName", "Dale");
+form.set("lastName", "Cooper");
+
+// 提交multipart form表单
+client
+  .post(8080, "myserver.mycompany.com", "/some-uri")
+  .putHeader("content-type", "multipart/form-data")
+  .sendForm(form)
+  .onSuccess(res -> {
+    // OK
+  });
+----
+
+如果你想上传文件的同时发送属性,您可以创建一个 `link:../../apidocs/io/vertx/ext/web/multipart/MultipartForm.html[MultipartForm]` , 然后使用 `link:../../apidocs/io/vertx/ext/web/client/HttpRequest.html#sendMultipartForm-io.vertx.ext.web.multipart.MultipartForm-io.vertx.core.Handler-[sendMultipartForm]` 。
+
+[source,java]
+----
+MultipartForm form = MultipartForm.create()
+  .attribute("imageDescription", "a very nice image")
+  .binaryFileUpload(
+    "imageFile",
+    "image.jpg",
+    "/path/to/image",
+    "image/jpeg");
+
+// 提交multipart form表单
+client
+  .post(8080, "myserver.mycompany.com", "/some-uri")
+  .sendMultipartForm(form)
+  .onSuccess(res -> {
+    // OK
+  });
+----
+
+[[_writing_request_headers]]
+=== 填充请求头
+
+您可使用headers的multi-map 填充请求头：
+
+[source,java]
+----
+HttpRequest<Buffer> request = client
+  .get(8080, "myserver.mycompany.com", "/some-uri");
+
+MultiMap headers = request.headers();
+headers.set("content-type", "application/json");
+headers.set("other-header", "foo");
+----
+
+此处 Headers 是一个 `link:../../apidocs/io/vertx/core/MultiMap.html[MultiMap]` 实例，提供了添加、设置以及删除头属性操作的入口。HTTP headers允许某个特定的key有多个值。
+
+您还可使用 putHeader 写入headers属性：
+
+[source,java]
+----
+HttpRequest<Buffer> request = client
+  .get(8080, "myserver.mycompany.com", "/some-uri");
+
+request.putHeader("content-type", "application/json");
+request.putHeader("other-header", "foo");
+----
+
+[[_configure_the_request_to_add_authentication]]
+=== 配置请求以添加身份验证
+
+可以通过设置正确的 headers 来手动执行身份验证，或我们的预定义方法 （我们强烈建议启用HTTPS，尤其是对于经过身份验证的请求）：
+在基本的HTTP身份验证中，请求包含以下形式的表单header字段 `Authorization: Basic <credentials>` ，credentials是base64编码的，由冒号连接的id和密码。
+
+您可以像下面这样配置请求以添加基本访问验证：
+
+[source,java]
+----
+HttpRequest<Buffer> request = client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .authentication(new UsernamePasswordCredentials("myid", "mypassword"));
+----
+
+在OAuth 2.0种，请求包含以下形式的表单header字段 `Authorization: Bearer <bearerToken>` ，bearerToken是授权服务器发布的，用于访问受保护资源的不记名令牌。
+
+您可以像下面这样配置请求，以添加bearer token访问验证：
+
+[source,java]
+----
+HttpRequest<Buffer> request = client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .authentication(new TokenCredentials("myBearerToken"));
+----
+
+[[_reusing_requests]]
+=== 重用请求
+
+`link:../../apidocs/io/vertx/ext/web/client/HttpRequest.html#send-io.vertx.core.Handler-[send]` 方法可被安全的重复多次调用，这使得它可以很容易的配置以及重用 `link:../../apidocs/io/vertx/ext/web/client/HttpRequest.html[HttpRequest]` 对象
+
+[source,java]
+----
+HttpRequest<Buffer> get = client
+  .get(8080, "myserver.mycompany.com", "/some-uri");
+
+get
+  .send()
+  .onSuccess(res -> {
+    // OK
+  });
+
+// 又一些请求
+get
+  .send()
+  .onSuccess(res -> {
+    // OK
+  });
+----
+
+不过要当心 `link:../../apidocs/io/vertx/ext/web/client/HttpRequest.html[HttpRequest]` 实例是可变的（mutable）.
+因此，您应该在修改已被缓存了的实例之前，使用 `link:../../apidocs/io/vertx/ext/web/client/HttpRequest.html#copy--[copy]` 方法。
+
+[source,java]
+----
+HttpRequest<Buffer> get = client
+  .get(8080, "myserver.mycompany.com", "/some-uri");
+
+get
+  .send()
+  .onSuccess(res -> {
+    // OK
+  });
+
+// "get" 请求实例保持未修改
+get
+  .copy()
+  .putHeader("a-header", "with-some-value")
+  .send()
+  .onSuccess(res -> {
+    // OK
+  });
+----
+
+[[_timeouts]]
+=== 超时
+
+您可通过 `link:../../apidocs/io/vertx/ext/web/client/HttpRequest.html#timeout-long-[timeout]`. 方法设置超时时间。
+
+[source,java]
+----
+client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .timeout(5000)
+  .send()
+  .onSuccess(res -> {
+    // OK
+  })
+  .onFailure(err -> {
+    // 当是由java.util.concurrent.TimeoutException导致时，或许是一个超时
+  });
+----
+
+若请求在设定时间内没有返回任何数据，则一个异常将会传递给响应处理器。
+
+[[_handling_http_responses]]
+== 处理HTTP响应
+
+Web Client请求发送之后，您总是在单个 `link:../../apidocs/io/vertx/ext/web/client/HttpResponse.html[HttpResponse]` 中处理单个异步结果 。
+
+当响应被成功接收到之后，相应的回调函数将会被调用。
+
+[source,java]
+----
+client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .send()
+  .onSuccess(res ->
+    System.out.println("Received response with status code" + res.statusCode()))
+  .onFailure(err ->
+    System.out.println("Something went wrong " + err.getMessage()));
+----
+
+[CAUTION]
+====
+默认状况下，仅当在网络级别发生错误时，Vert.x Web Client请求才以错误结尾。换言之，`404 Not Found` 响应或错误content type的响应，*不* 被视为失败。
+====
+
+WARNING: 响应会被完全缓冲，请使用 `link:../../apidocs/io/vertx/ext/web/codec/BodyCodec.html#pipe-io.vertx.core.streams.WriteStream-[BodyCodec.pipe]` 将响应接入写入流。
+
+[[_decoding_responses]]
+=== 响应解码
+
+缺省状况下，Web Client提供一个response body作为 `Buffer` ，并且未运用任何解码器。
+
+可以使用 `link:../../apidocs/io/vertx/ext/web/codec/BodyCodec.html[BodyCodec]` 实现以下自定义response body解码：
+
+* 文本字符串
+* Json 对象
+* Json 映射的 POJO
+* `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]`
+
+一个body解码器可以将任意二进制数据流解码为特定的对象实例，从而节省了您自己在响应处理器里解码的步骤。
+
+使用 `link:../../apidocs/io/vertx/ext/web/codec/BodyCodec.html#jsonObject--[BodyCodec.jsonObject]` 解码一个 Json 对象:
+
+[source,java]
+----
+client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .as(BodyCodec.jsonObject())
+  .send()
+  .onSuccess(res -> {
+    JsonObject body = res.body();
+
+    System.out.println(
+      "Received response with status code" +
+        res.statusCode() +
+        " with body " +
+        body);
+  })
+  .onFailure(err ->
+    System.out.println("Something went wrong " + err.getMessage()));
+----
+
+在Java，Groovy以及Kotlin中，可以自定义Json映射POJO解码：
+
+[source,java]
+----
+client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .as(BodyCodec.json(User.class))
+  .send()
+  .onSuccess(res -> {
+    User user = res.body();
+
+    System.out.println(
+      "Received response with status code" +
+        res.statusCode() +
+        " with body " +
+        user.getFirstName() +
+        " " +
+        user.getLastName());
+  })
+  .onFailure(err ->
+    System.out.println("Something went wrong " + err.getMessage()));
+----
+
+这个编码器将响应缓存泵入到  `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` 中，并且在异步结果响应中，发出操作成功或失败的信号。
+
+[source,java]
+----
+client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .as(BodyCodec.pipe(writeStream))
+  .send()
+  .onSuccess(res ->
+    System.out.println("Received response with status code" + res.statusCode()))
+  .onFailure(err ->
+    System.out.println("Something went wrong " + err.getMessage()));
+----
+
+经常会看到API返回一个JSON对象流。例如，Twitter API可以提供一个推文回馈。处理这个情况，您可以使用 `link:../../apidocs/io/vertx/ext/web/codec/BodyCodec.html#jsonStream-io.vertx.core.parsetools.JsonParser-[BodyCodec.jsonStream]`。传递一个JSON解析器，该解析器从HTTP响应中开始读取JSON流。
+
+[source,java]
+----
+JsonParser parser = JsonParser.newParser().objectValueMode();
+parser.handler(event -> {
+  JsonObject object = event.objectValue();
+  System.out.println("Got " + object.encode());
+});
+client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .as(BodyCodec.jsonStream(parser))
+  .send()
+  .onSuccess(res ->
+    System.out.println("Received response with status code" + res.statusCode()))
+  .onFailure(err ->
+    System.out.println("Something went wrong " + err.getMessage()));
+----
+
+最后，如您对响应结果不感兴趣，可用 `link:../../apidocs/io/vertx/ext/web/codec/BodyCodec.html#none--[BodyCodec.none]` 简单的丢弃response body。
+
+[source,java]
+----
+client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .as(BodyCodec.none())
+  .send()
+  .onSuccess(res ->
+    System.out.println("Received response with status code" + res.statusCode()))
+  .onFailure(err ->
+    System.out.println("Something went wrong " + err.getMessage()));
+----
+
+若无法预知响应内容类型，您依旧可以在获取结果之后，用 `bodyAsXXX()` 方法将其转换成指定的类型
+
+[source,java]
+----
+client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .send()
+  .onSuccess(res -> {
+    // 将结果解码为Json对象
+    JsonObject body = res.bodyAsJsonObject();
+
+    System.out.println(
+      "Received response with status code" +
+        res.statusCode() +
+        " with body " +
+        body);
+  })
+  .onFailure(err ->
+    System.out.println("Something went wrong " + err.getMessage()));
+----
+
+WARNING: 这种方式仅对响应结果为buffer有效。
+
+[[response-predicates]]
+=== 响应谓词
+
+默认的, 仅当在网络级别发生错误时，Vert.x Web Client请求才以错误结尾。
+
+换言之， 您必须在收到响应后手动执行健全性检查:
+
+[source,java]
+----
+client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .send()
+  .onSuccess(res -> {
+    if (
+      res.statusCode() == 200 &&
+        res.getHeader("content-type").equals("application/json")) {
+      // 将结果解码为Json对象
+      JsonObject body = res.bodyAsJsonObject();
+
+      System.out.println(
+        "Received response with status code" +
+          res.statusCode() +
+          " with body " +
+          body);
+    } else {
+      System.out.println("Something went wrong " + res.statusCode());
+    }
+  })
+  .onFailure(err ->
+    System.out.println("Something went wrong " + err.getMessage()));
+----
+
+您可以灵活的替换成清晰简明的 _response predicates_ 。
+
+`link:../../apidocs/io/vertx/ext/web/client/predicate/ResponsePredicate.html[Response predicates]` 当响应不符合条件会使请求失败。
+
+Web Client附带了一组开箱即用的谓词，可供使用：
+
+[source,java]
+----
+client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .expect(ResponsePredicate.SC_SUCCESS)
+  .expect(ResponsePredicate.JSON)
+  .send()
+  .onSuccess(res -> {
+    // 安全地将body解码为json对象
+    JsonObject body = res.bodyAsJsonObject();
+    System.out.println(
+      "Received response with status code" +
+        res.statusCode() +
+        " with body " +
+        body);
+  })
+  .onFailure(err ->
+    System.out.println("Something went wrong " + err.getMessage()));
+----
+
+当现有谓词不满足您的需求时，您还可以创建自定义谓词：
+
+[source,java]
+----
+Function<HttpResponse<Void>, ResponsePredicateResult> methodsPredicate =
+  resp -> {
+    String methods = resp.getHeader("Access-Control-Allow-Methods");
+    if (methods != null) {
+      if (methods.contains("POST")) {
+        return ResponsePredicateResult.success();
+      }
+    }
+    return ResponsePredicateResult.failure("Does not work");
+  };
+
+// 发送预检CORS请求
+client
+  .request(
+    HttpMethod.OPTIONS,
+    8080,
+    "myserver.mycompany.com",
+    "/some-uri")
+  .putHeader("Origin", "Server-b.com")
+  .putHeader("Access-Control-Request-Method", "POST")
+  .expect(methodsPredicate)
+  .send()
+  .onSuccess(res -> {
+    // 立即处理POST请求
+  })
+  .onFailure(err ->
+    System.out.println("Something went wrong " + err.getMessage()));
+----
+
+TIP: 响应谓词是在收到响应体 _之前_ 对其进行评估。 因此，您无法在谓词测试函数中检查response body。
+
+[[_predefined_predicates]]
+==== 预定义谓词
+
+为了方便起见，Web Client附带了一些常见用例的谓词。
+
+对于状态码, 例如 `link:../../apidocs/io/vertx/ext/web/client/predicate/ResponsePredicate.html#SC_SUCCESS[ResponsePredicate.SC_SUCCESS]` ，验证响应具有 `2xx` 代码，您也可以自定义创建一个
+
+[source,java]
+----
+client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .expect(ResponsePredicate.status(200, 202))
+  .send()
+  .onSuccess(res -> {
+    // ....
+  });
+----
+
+对于content types, 例如 `link:../../apidocs/io/vertx/ext/web/client/predicate/ResponsePredicate.html#JSON[ResponsePredicate.JSON]` ，验证响应具有JSON数据，您也可以自定义创建一个
+
+[source,java]
+----
+client
+  .get(8080, "myserver.mycompany.com", "/some-uri")
+  .expect(ResponsePredicate.contentType("some/content-type"))
+  .send()
+  .onSuccess(res -> {
+    // ....
+  });
+----
+
+请参考 `link:../../apidocs/io/vertx/ext/web/client/predicate/ResponsePredicate.html[ResponsePredicate]` 文档获取预定义谓词的完整列表。
+
+ifeval::["java" == "java"]
+[[_creating_custom_failures]]
+==== 创建自定义失败
+
+默认情况下, 响应谓词 (包括预定义的) 使用默认的错误转换器，它将丢弃body并传递一条简单消息。您可以通过自定义异常类来替换错误转换器：
+
+[source,java]
+----
+ResponsePredicate predicate = ResponsePredicate.create(
+  ResponsePredicate.SC_SUCCESS,
+  result -> new MyCustomException(result.message()));
+----
+
+许多Web API在错误响应中提供了详细信息。
+例如, https://developer.marvel.com/docs[Marvel API] 使用此JSON对象格式：
+
+[source,javascript]
+----
+{
+ "code": "InvalidCredentials",
+ "message": "The passed API key is invalid."
+}
+----
+
+为避免丢失此信息, 在错误发生之前，可以在转换器被调用之前等待响应body被完全接收：
+
+[source,java]
+----
+ErrorConverter converter = ErrorConverter.createFullBody(result -> {
+
+  // 响应body被完全接收之后调用
+  HttpResponse<Buffer> response = result.response();
+
+  if (response
+    .getHeader("content-type")
+    .equals("application/json")) {
+
+    // 错误body是JSON数据
+    JsonObject body = response.bodyAsJsonObject();
+
+    return new MyCustomException(
+      body.getString("code"),
+      body.getString("message"));
+  }
+
+  // 返回自定义的消息
+  return new MyCustomException(result.message());
+});
+
+ResponsePredicate predicate = ResponsePredicate
+  .create(ResponsePredicate.SC_SUCCESS, converter);
+----
+
+WARNING: 在Java中，当捕获了stack trace，创建异常可能会带来性能开销，所以您可能想要创建不捕获stack trace的异常。默认情况下，报告异常使用不捕获stack trace的异常。
+
+endif::[]
+
+[[_handling_30x_redirections]]
+=== 处理 30x 重定向
+
+默认情况下，客户端跟随着重定向，您可以在 `link:../../apidocs/io/vertx/ext/web/client/WebClientOptions.html[WebClientOptions]` 配置默认行为 :
+
+[source,java]
+----
+WebClient client = WebClient
+  .create(vertx, new WebClientOptions().setFollowRedirects(false));
+----
+
+客户端最多可以跟随 `16` 个请求重定向，可以在相同的配置中进行更改：
+
+[source,java]
+----
+WebClient client = WebClient
+  .create(vertx, new WebClientOptions().setMaxRedirects(5));
+----
+
+NOTE: 出于安全原因,客户端不会使用除了GET或HEAD的方法来跟随着重定向请求
+
+[[_using_https]]
+== 使用 HTTPS
+
+Vert.x Web Client 可以用跟 Vert.x `link:../../apidocs/io/vertx/core/http/HttpClient.html[HttpClient]` 完全一样的方式配置使用HTTPS。
+
+您可以指定每个请求的行为
+
+[source,java]
+----
+client
+  .get(443, "myserver.mycompany.com", "/some-uri")
+  .ssl(true)
+  .send()
+  .onSuccess(res ->
+    System.out.println("Received response with status code" + res.statusCode()))
+  .onFailure(err ->
+    System.out.println("Something went wrong " + err.getMessage()));
+----
+
+或使用带有绝对URI参数的创建方法
+
+[source,java]
+----
+client
+  .getAbs("https://myserver.mycompany.com:4043/some-uri")
+  .send()
+  .onSuccess(res ->
+    System.out.println("Received response with status code" + res.statusCode()))
+  .onFailure(err ->
+    System.out.println("Something went wrong " + err.getMessage()));
+----
+
+[[_sessions_management]]
+== 会话管理
+
+Vert.x Web提供了Web会话管理设施；使用它，您需要对于每个用户（会话）创建一个 `link:../../apidocs/io/vertx/ext/web/client/WebClientSession.html[WebClientSession]` ，并使用它来代替 `link:../../apidocs/io/vertx/ext/web/client/WebClient.html[WebClient]` 。
+
+[[_creating_a_websession]]
+=== 创建一个 WebSession
+
+您像下面一样创建一个 `link:../../apidocs/io/vertx/ext/web/client/WebClientSession.html[WebClientSession]` 实例
+
+[source,java]
+----
+WebClient client = WebClient.create(vertx);
+WebClientSession session = WebClientSession.create(client);
+----
+
+[[_making_requests_2]]
+=== 发出请求
+
+一旦创建, `link:../../apidocs/io/vertx/ext/web/client/WebClientSession.html[WebClientSession]` 可以代替
+`link:../../apidocs/io/vertx/ext/web/client/WebClient.html[WebClient]` 去做HTTP(s) 请求并且自动管理你正在调用的，从服务器收到的所有cookie。
+
+[[_setting_session_level_headers]]
+=== 设置会话级别headers
+
+您可以按以下步骤设置任何会话级别的headers到要添加的每个请求：
+
+[source,java]
+----
+WebClientSession session = WebClientSession.create(client);
+session.addHeader("my-jwt-token", jwtToken);
+----
+
+然后headers将被添加到每个请求中； 注意 这些headers将发送给所有主机; 如果你需要发送不同的headers到不同的主机, 您必须将它们手动添加到每个单个请求中，并且不添加到 `link:../../apidocs/io/vertx/ext/web/client/WebClientSession.html[WebClientSession]` 。
+
+ifeval::["java" == "java"]
+include::override/rxjava2.adoc[]
+endif::[]
+
+[[_domain_sockets]]
+== 域套接字
+
+自3.7.1后， Web Client 支持domain sockets, 例如，您可以跟 https://docs.docker.com/engine/reference/commandline/dockerd/[local Docker daemon] 交流。
+
+为了达成这个目的, `link:../../apidocs/io/vertx/core/Vertx.html[Vertx]` 实例必须使用native transport创建， 你可以阅读Vert.x核心文档，它清楚地说明了这一点。
+
+[source,java]
+----
+SocketAddress serverAddress = SocketAddress
+  .domainSocketAddress("/var/run/docker.sock");
+
+// 我们仍然需要指定主机和端口，因此请求的HTTP header 是 localhost:8080
+// 否则将是错误格式的HTTP请求
+// 在此示例中，实际值并不重要
+client
+  .request(
+    HttpMethod.GET,
+    serverAddress,
+    8080,
+    "localhost",
+    "/images/json")
+  .expect(ResponsePredicate.SC_ACCEPTED)
+  .as(BodyCodec.jsonObject())
+  .send()
+  .onSuccess(res ->
+    System.out.println("Current Docker images" + res.body()))
+  .onFailure(err ->
+    System.out.println("Something went wrong " + err.getMessage()));
+----

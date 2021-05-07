@@ -1,0 +1,77 @@
+= .htdigest 鉴权与授权的提供程序（.htdigest鉴授权提供者）
+
+Vert.x提供了 `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` 的实现类，
+它使用了 `.digest` 的文件格式以验证身份。提供程序加载该文件后，将不再监视文件的更新。
+如果您需要动态的用户管理，使用动态提供程序（如jdbc或mongo提供程序）会更加的方便。
+
+要使用该项目，
+需在构建描述文件的 _dependencies_ 部分添加以下依赖项：
+
+* Maven (在 `pom.xml` 文件中)：
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-auth-htdigest</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+* Gradle (在 `build.gradle` 文件中)：
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-auth-htdigest:4.0.0'
+----
+
+要创建一个实例，您首先需要一份.htdigest文件。该文件可使用apache htdigest工具生成。
+
+若您已拥有一个Vertx实例，那么您可按如下方式创建 `link:../../apidocs/io/vertx/ext/auth/htdigest/HtdigestAuth.html[HtdigestAuth]` 实例：
+
+[source,java]
+----
+HtdigestAuth authProvider = HtdigestAuth.create(vertx, ".htdigest");
+----
+
+获得HtdigestAuth实例后， 您可以像使用任何的 `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` 实例一样，使用它进行身份验证。
+
+缺省配置默认 .htdigest 文件存在于项目的根目录中。
+
+[[_authentication]]
+== 鉴权/身份认证
+
+使用此实现进行身份验证时，假定 digest 授权头是可解析的JSON对象，
+从现在开始，我们将其称为身份验证信息：
+
+[source,java]
+----
+JsonObject authInfo = new JsonObject()
+  .put("username", "Mufasa")
+  .put("realm", "testrealm@host.com")
+  .put("nonce", "dcd98b7102dd2f0e8b11d0f600bfb0c093")
+  .put("method", "GET")
+  .put("uri", "/dir/index.html")
+  .put("response", "6629fae49393a05397450978507c4ef1");
+
+authProvider.authenticate(authInfo)
+  .onSuccess(user -> System.out.println("User: " + user.principal()))
+  .onFailure(err -> {
+    // Failed!
+  });
+----
+
+[[_provider_internal_behavior]]
+== 提供程序的内部行为
+
+提供程序将在启动时加载指定的 `.htdigest` 文件，并且不会监视文件的修改。
+如果需要动态加载, 您需要重新启动程序。
+
+除.htdigest文件本身之外，该实现是无状态的，
+这意味着必须在此实现外部进行处理验证以及“nonce”字符串还有计数器的生成。
+
+最后，不支持 `auth-int` `qop` ，以避免为了验证完整请求的哈希值而不得不使用潜在的大块数据。
+在现代Web浏览器中通常也不会出现这种情况。
+
+验证用户的特定权限时总是返回false，
+因为 htdigest 文件是一个纯粹身份验证机制，并非是授权。

@@ -1,0 +1,251 @@
+= Vert.x Web Validation
+:toc: left
+
+Vert.x Web Validation可以帮助您解析校验您的参数以及来自请求体中的内容
+
+您可以做到如下事情：
+
+* 解析校验请求参数，也可以序列化和分解
+* 解析和校验请求体（包括json和form格式）
+* 配置请求方式
+* 允许同一路由中的不同请求体同时进行的解析和验证
+* 自定义解析校验规则
+* 管理解析校验失败的处理逻辑
+
+它用 https://vertx.io/docs/vertx-json-schema/java/[Vert.x Json Schema] 来定义您的请求参数和请求体
+
+[[_using_vert_x_web_validation]]
+== 使用 Vert.x Web Validation
+
+为了使用Vert.x Web Validation，请在您的build模块中添加如下的依赖：
+
+* Maven ( `pom.xml` 文件):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-web-validation</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+* Gradle ( `build.gradle` 文件):
+
+[source,groovy,subs="+attributes"]
+----
+dependencies {
+ compile 'io.vertx:vertx-web-validation:4.0.0'
+}
+----
+
+[[_without_vert_x_web_validation]]
+== 不使用 Vert.x Web Validation 时
+
+当您接收到一个HTTP请求时，您经常需要解析请求中的参数以及请求体：
+
+[source,java]
+----
+router
+  .get("/user")
+  .handler(routingContext -> {
+    // 接收 aParam
+    String aParamUnparsed = routingContext.queryParam("aParam").get(0);
+    if (aParamUnparsed == null) {
+      routingContext.fail(400);
+      return;
+    }
+    // 解析 aParam
+    int aParam;
+    try {
+      aParam = Integer.parseInt(aParamUnparsed);
+    } catch (NumberFormatException e) {
+      routingContext.fail(400, e);
+      return;
+    }
+    // 校验aParam是否大于 100
+    if (aParam > 100) {
+      routingContext.fail(400);
+      return;
+    }
+    // aParam接收完毕，现在我们可以专注于处理请求的业务逻辑
+  });
+----
+
+Vert.x Web Validation 提供了非常好用的API来构建一个解析和校验请求的handler
+
+[source,java]
+----
+router
+  .get("/user")
+  .handler(
+    ValidationHandler
+      .builder(schemaParser)
+      .queryParameter(param(
+        "aParam",
+        intSchema().with(maximum(100))
+      ))
+      .build()
+  )
+  .handler(routingContext -> {
+    RequestParameters parameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+    int aParam = parameters.queryParameter("aParam").getInteger();
+    // 处理请求的业务逻辑
+  });
+----
+
+[[_creating_the_validationhandler]]
+== 创建 `ValidationHandler`
+
+这个模块提供了一个简单好用的builder API 来创建 `link:../../apidocs/io/vertx/ext/web/validation/ValidationHandler.html[ValidationHandler]` ，
+这个 `link:../../apidocs/io/vertx/core/Handler.html[Handler]` 用于解析和校验请求。
+
+用 `link:../../apidocs/io/vertx/ext/web/validation/ValidationHandler.html#builder-io.vertx.json.schema.SchemaParser-[ValidationHandler.builder]` 创建这个 `builder`
+
+`link:../../apidocs/io/vertx/json/schema/SchemaParser.html[SchemaParser]` 用来解析所有由 https://vertx.io/docs/vertx-json-schema/java/[Vert.x Json Schema DSL] 定义的schema
+
+[[_defining_parameters]]
+=== 定义参数
+
+您可以在请求中4个不同的位置来定义参数: query， cookie， header， path。
+
+每个参数都由一个 `link:../../apidocs/io/vertx/ext/web/validation/impl/parameter/ParameterProcessor.html[ParameterProcessor]` 所接收， 您可以用 `link:../../apidocs/io/vertx/ext/web/validation/builder/Parameters.html[Parameters]` 中提供的方法来创建这个 `Processor`：
+
+[source,java]
+----
+ValidationHandler
+  .builder(schemaParser)
+  .pathParameter(Parameters.param("myPathParam", stringSchema()))
+  .queryParameter(Parameters.optionalParam("myQueryParam", intSchema()));
+----
+
+注意：所有这些方法都需要一个schema参数，validator要用这个schema做校验操作。这个schema也可以用来指定正确的parser
+
+尽管请求头和路径参数只允许传简单参数，但是 query 和cookie允许传复杂参数(url参数的或层次较深的对象)；
+
+[source,java]
+----
+ValidationHandler
+  .builder(schemaParser)
+  .queryParameter(Parameters.explodedParam(
+    "myArray",
+    arraySchema().items(stringSchema())
+  ))  // 接收 myArray=item1&myArray=item2
+  .queryParameter(Parameters.deepObjectParam(
+    "myDeepObject",
+    objectSchema()
+      .property("name", stringSchema())
+  )); // 接收 myDeepObject[name]=francesco
+----
+
+更多关于参数的文档 可见于 `link:../../apidocs/io/vertx/ext/web/validation/builder/Parameters.html[Parameters]`
+
+[[_defining_request_bodies]]
+=== 定义请求体
+
+每个请求体类型都被符合某个 `Content-type` 请求头的 `link:../../apidocs/io/vertx/ext/web/validation/impl/parameter/ParameterProcessor.html[ParameterProcessor]` 所解析。如果没有找到匹配的请求体处理器，除非您指定了下述的解析器，否则验证**不会**失败
+
+您可以用 `link:../../apidocs/io/vertx/ext/web/validation/builder/Bodies.html[Bodies]` 提供的方法来轻松创建这些解析器。
+
+[source,java]
+----
+ObjectSchemaBuilder bodySchemaBuilder = objectSchema()
+  .property("username", stringSchema())
+  .property("password", stringSchema());
+ValidationHandler
+  .builder(schemaParser)
+  .body(Bodies.json(bodySchemaBuilder))
+  .body(Bodies.formUrlEncoded(bodySchemaBuilder));
+----
+
+这个例子中 `ValidationHandler` 可以管理两个不同的请求体类型(同时解析校验) 尤其是form类型的请求体 会被转换成json。当您接收解析后的结果时，不需要关心请求体时form还是json。
+
+关于请求体解析器的更多信息，见于 `link:../../apidocs/io/vertx/ext/web/validation/builder/Bodies.html[Bodies]`
+
+[[_defining_request_predicates]]
+=== 定义请求断言
+
+您可以在 `ValidationHandler` 中用 `link:../../apidocs/io/vertx/ext/web/validation/RequestPredicate.html[RequestPredicate]` 来定义请求断言 ，例如 断言请求体非空：
+
+[source,java]
+----
+ValidationHandler
+  .builder(schemaParser)
+  .predicate(RequestPredicate.BODY_REQUIRED);
+----
+
+[[_building_the_validationhandler]]
+=== 构建 `ValidationHandler`
+
+在您配置了所有的 '参数'、'请求体'、'断言'之后， 您可以创建 `ValidationHandler` :
+
+[source,java]
+----
+router
+  .get("/user")
+  .handler(
+    ValidationHandler
+      .builder(schemaParser)
+      .build()
+  );
+----
+
+[[_using_the_parsed_parameters_and_body]]
+== 使用解析的参数和请求体
+
+`ValidationHandler` 会把解析到的参数放入 `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]` :
+
+[source,java]
+----
+router
+  .get("/user")
+  .handler(
+    ValidationHandler
+      .builder(schemaParser)
+      .queryParameter(Parameters.explodedParam(
+        "myArray",
+        arraySchema().items(stringSchema())
+      ))
+      .body(Bodies.json(objectBodySchemaBuilder))
+      .body(Bodies.formUrlEncoded(objectBodySchemaBuilder))
+      .build()
+  ).handler(routingContext -> {
+    RequestParameters parameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+    JsonArray myArray = parameters.queryParameter("myArray").getJsonArray();
+    JsonObject body = parameters.body().getJsonObject();
+  });
+----
+
+[[_manage_the_failures]]
+== 处理失败
+
+`ValidationHandler` 每次遇到解析错误或者校验错误，它会让 `RoutingContext` 以400的状态码结束请求，
+然后抛出 `link:../../apidocs/io/vertx/ext/web/validation/BadRequestException.html[BadRequestException]` 。
+想要了解如何处理请求失败，请查看 https://vertx.io/docs/vertx-web/java/#_error_handling[Vert.x Web doc] 和 `link:../../apidocs/io/vertx/ext/web/Router.html#errorHandler-int-io.vertx.core.Handler-[errorHandler]` 方法.
+
+`link:../../apidocs/io/vertx/ext/web/validation/BadRequestException.html[BadRequestException]` 的子类如下：
+
+* `link:../../apidocs/io/vertx/ext/web/validation/ParameterProcessorException.html[ParameterProcessorException]`: 用来管理参数校验失败
+* `link:../../apidocs/io/vertx/ext/web/validation/BodyProcessorException.html[BodyProcessorException]`: 用来管理请求体校验失败
+* `link:../../apidocs/io/vertx/ext/web/validation/RequestPredicateException.html[RequestPredicateException]`: 用来管理断言失败
+
+例如：
+
+[source,java]
+----
+router.errorHandler(400, routingContext -> {
+  if (routingContext.failure() instanceof BadRequestException) {
+    if (routingContext.failure() instanceof ParameterProcessorException) {
+      // 解析或校验参数失败
+    } else if (routingContext.failure() instanceof BodyProcessorException) {
+      // 解析或校验请求体失败
+    } else if (routingContext.failure() instanceof RequestPredicateException) {
+      // 不满足请求断言
+    }
+  }
+ });
+----
+
+`BadRequestException` 也提供一个便捷的 `link:../../apidocs/io/vertx/ext/web/validation/BadRequestException.html#toJson--[toJson]` 方法，它将异常转换成了Json。
+
+请注意 `ValidationHandler` 的设计为 _迅速失败_ ，即一旦遇到错误，`ValidationHandler` 将置  `RoutingContext` 为失败状态。

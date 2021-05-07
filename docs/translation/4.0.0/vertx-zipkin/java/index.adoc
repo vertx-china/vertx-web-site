@@ -1,0 +1,98 @@
+= Vertx Zipkin 链路追踪
+
+Vert.x 借助 Zipkin Brave client 的支持集成了 Zipkin。
+
+Vert.x 在 Vert.x HTTP Client 中使用 ZipKin HTTP sender 将 span 信息以 JSON 格式
+报告给 `http://localhost:9411/api/v2/spans` 。
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions()
+  .setTracingOptions(
+    new ZipkinTracingOptions().setServiceName("A cute service")
+  )
+);
+----
+
+service name 必须是合法的 Zipkin 服务名称。如果没有填写，则会被以 `a-service` 名称替代。
+
+您可以将 sender 配置成使用别的 URL
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions()
+  .setTracingOptions(
+    new ZipkinTracingOptions()
+      .setSenderOptions(new HttpSenderOptions().setSenderEndpoint(senderEndpoint))
+  )
+);
+----
+
+缺省的 sender 使用单一的 HTTP 连接发送纯文本（body的内容是经过压缩的）。
+
+您可使用自定义的 `HttpClientOptions` 来覆盖 HTTP sender 默认选项。
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions()
+  .setTracingOptions(
+    new ZipkinTracingOptions()
+      .setSenderOptions(new HttpSenderOptions()
+        .setSenderEndpoint(senderEndpoint)
+        .setSsl(true)
+        .setKeyCertOptions(sslOptions))
+  )
+);
+----
+
+最后，您可以设置一个自定义的 ZipKin `Tracing` 对象
+来实施更进一步的控制。
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx(new VertxOptions()
+  .setTracingOptions(
+    new ZipkinTracingOptions(tracing)
+  )
+);
+----
+
+[[_tracing_policy]]
+== 追踪策略
+
+当开启追踪时，追踪策略用于在指定组件的追踪行为：
+
+- `link:../../apidocs/io/vertx/core/tracing/TracingPolicy.html#PROPAGATE[PROPAGATE]` ：组件在当前追踪活动中报告 span
+- `link:../../apidocs/io/vertx/core/tracing/TracingPolicy.html#ALWAYS[ALWAYS]` ：组件在当前追踪活动中报告 span 或者创建一个新的追踪活动
+- `link:../../apidocs/io/vertx/core/tracing/TracingPolicy.html#IGNORE[IGNORE]` ：该组件不参与任何追踪活动。
+
+追踪策略一般是通过组件选项来配置。
+
+[[_http_tracing]]
+== HTTP追踪
+
+Vert.x HTTP 服务端和客户端基于 HTTP 请求来报告 span ：
+
+- `operationName` ：HTTP 方法
+- tags
+- `http.method` ：HTTP 方法
+- `http.url` ：请求的 URL
+- `http.status_code` ：HTTP 状态码
+
+HTTP 服务端的缺省追踪策略是 `ALWAYS`, 您可以通过 `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setTracingPolicy-io.vertx.core.tracing.TracingPolicy-[setTracingPolicy]` 来配置追踪策略
+
+[source,java]
+----
+HttpServer server = vertx.createHttpServer(new HttpServerOptions()
+  .setTracingPolicy(TracingPolicy.IGNORE)
+);
+----
+
+HTTP 客户端的缺省追踪策略是 `PROPAGATE` ， 您可以通过 `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setTracingPolicy-io.vertx.core.tracing.TracingPolicy-[setTracingPolicy]` 来配置追踪策略
+
+[source,java]
+----
+HttpClient client = vertx.createHttpClient(new HttpClientOptions()
+  .setTracingPolicy(TracingPolicy.IGNORE)
+);
+----

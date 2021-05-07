@@ -1,0 +1,64 @@
+[[_redis_configuration_store]]
+=== Redis配置中心
+
+Reids配置中心扩展了 Vert.x Configuration Retriever
+并提供了从Redis服务获取配置的方法。
+
+[[_using_the_redis_configuration_store]]
+=== 使用Redis配置中心
+
+要使用Redis配置中心，
+添加如下依赖：
+
+* Maven (在您的 `pom.xml` 文件):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-config-redis</artifactId>
+ <version>4.0.0</version>
+</dependency>
+<dependency>
+ <groupId>io.vertx</groupId>
+ <artifactId>vertx-config</artifactId>
+ <version>4.0.0</version>
+</dependency>
+----
+
+* Gradle (在您的 `build.gradle` 文件):
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-config:4.0.0'
+compile 'io.vertx:vertx-config-redis:4.0.0'
+----
+
+[[_configuring_the_store]]
+== 设置配置中心
+
+将该库加入classpath或者项目依赖后，您需要配置
+`link:../../apidocs/io/vertx/config/ConfigRetriever.html[ConfigRetriever]` 来使用这个配置中心：
+
+[source, java]
+----
+ConfigStoreOptions store = new ConfigStoreOptions()
+    .setType("redis")
+    .setConfig(new JsonObject()
+        .put("host", "localhost")
+        .put("port", 6379)
+        .put("key", "my-configuration")
+    );
+
+ConfigRetriever retriever = ConfigRetriever.create(vertx,
+    new ConfigRetrieverOptions().addStore(store));
+----
+
+配置中心的配置用于创建 `link:../../apidocs/io/vertx/redis/client/Redis.html[Redis]` 对象。
+更多细节请查阅
+Vert.x Redis Client 文档
+
+另外，您可以设置 `key` 属性来指示配置中心中的某一 _field_ ，
+默认为 `configuration` 属性。
+
+Redis客户端使用 `HGETALL` 配置项来获取配置。

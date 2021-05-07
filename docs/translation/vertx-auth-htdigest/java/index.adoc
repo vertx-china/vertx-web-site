@@ -1,47 +1,48 @@
-= .htdigest Auth Provider
+= .htdigest 鉴权与授权的提供程序（.htdigest鉴授权提供者）
 
-We provide an implementation of `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` which uses the `.digest` file format
-to perform authentication. The provider will not watch for updates to the file after loading. If you need dynamic
-user management it would be more convenient to use dynamic providers such as jdbc or mongo providers.
+Vert.x提供了 `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` 的实现类，
+它使用了 `.digest` 的文件格式以验证身份。提供程序加载该文件后，将不再监视文件的更新。
+如果您需要动态的用户管理，使用动态提供程序（如jdbc或mongo提供程序）会更加的方便。
 
-To use this project, add the following
-dependency to the _dependencies_ section of your build descriptor:
+要使用该项目，
+需在构建描述文件的 _dependencies_ 部分添加以下依赖项：
 
-* Maven (in your `pom.xml`):
+* Maven (在 `pom.xml` 文件中)：
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-auth-htdigest</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle (在 `build.gradle` 文件中)：
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-auth-htdigest:4.0.0'
+compile 'io.vertx:vertx-auth-htdigest:4.0.3'
 ----
 
-To create an instance you first need an .htdigest file. This file is created using the apache htdigest tool.
+要创建一个实例，您首先需要一份.htdigest文件。该文件可使用apache htdigest工具生成。
 
-Once you've got one of these you can create a `link:../../apidocs/io/vertx/ext/auth/htdigest/HtdigestAuth.html[HtdigestAuth]` instance as follows:
+若您已拥有一个Vertx实例，那么您可按如下方式创建 `link:../../apidocs/io/vertx/ext/auth/htdigest/HtdigestAuth.html[HtdigestAuth]` 实例：
 
 [source,java]
 ----
 HtdigestAuth authProvider = HtdigestAuth.create(vertx, ".htdigest");
 ----
 
-Once you've got your instance you can authenticate with it just like any `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]`.
+获得HtdigestAuth实例后， 您可以像使用任何的 `link:../../apidocs/io/vertx/ext/auth/authentication/AuthenticationProvider.html[AuthenticationProvider]` 实例一样，使用它进行身份验证。
 
-The out of the box config assumes the usage of the file .htdigest in the root of the project.
+缺省配置默认 .htdigest 文件存在于项目的根目录中。
 
-== Authentication
+[[_authentication]]
+== 鉴权/身份验证
 
-When authenticating using this implementation, it assumes that the digest authorization header is parsed as a JSON
-object which we refer from now on as authentication info:
+使用此实现进行身份验证时，假定 digest 授权头是可解析的JSON对象，
+从现在开始，我们将其称为身份验证信息：
 
 [source,java]
 ----
@@ -60,16 +61,17 @@ authProvider.authenticate(authInfo)
   });
 ----
 
-== Provider internal behavior
+[[_provider_internal_behavior]]
+== 提供程序的内部行为
 
-The provider will load the specified `.htdigest` file at start time and will not watch for modifications. If you
-require dynamic reloads, you will need to restart the provider.
+提供程序将在启动时加载指定的 `.htdigest` 文件，并且不会监视文件的修改。
+如果需要动态加载, 您需要重新启动程序。
 
-The implementation does not have any other state than the digest file itself, this means that validation and
-generation of `nonce` strings and counters must be handled outside this provider.
+除.htdigest文件本身之外，该实现是无状态的，
+这意味着必须在此实现外部进行处理验证以及“nonce”字符串还有计数器的生成。
 
-Finally `auth-int` `qop` is not supported to avoid having to consume potential large blobs of data in order to
-validate the hash of the full request. This is usually also not present on modern web browsers.
+最后，不支持 `auth-int` `qop` ，以避免为了验证完整请求的哈希值而不得不使用潜在的大块数据。
+在现代Web浏览器中通常也不会出现这种情况。
 
-When validating a user for a particular permission it will always return false since the htdigest file is a pure
-authentication mechanism and not authorization.
+验证用户的特定权限时总是返回false，
+因为 htdigest 文件是一个纯粹身份验证机制，并非是授权。

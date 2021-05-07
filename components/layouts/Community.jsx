@@ -5,7 +5,7 @@ import "./Community.scss"
 
 const Layout = ({ children }) => (
   <main>
-    <Header title="Community"/>
+    <Header title="社区"/>
     <CommunityHero />
     <div className="container community">
       <div className="community-love">Eclipse Vert.x is made with ❤️ by the following people</div>

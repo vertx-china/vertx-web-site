@@ -14,7 +14,7 @@ docs.categories = [
   findCategory(docs, "testing"),
   {
     id: "standards",
-    name: "Standards",
+    name: "规范",
     icon: <Book />
   },
   {
@@ -34,7 +34,7 @@ docs.categories = [
   findCategory(docs, "event-bus-bridges"),
   {
     id: "monitoring",
-    name: "Monitoring",
+    name: "监控",
     icon: <Monitor />
   },
   findCategory(docs, "services"),
@@ -74,9 +74,8 @@ find(docs, "vertx-health-check").category = "monitoring"
 insert(docs, "vertx-web-api-service",
   {
     id: "vertx-web-validation",
-    name: "Web Validation",
-    description: `A library to declaratively parse and validate incoming Vert.x
-      Web HTTP requests.`,
+    name: "网络校验",
+    description: "一个声明式解析和校验HTTP请求的类库。",
     category: "web",
     href: "/vertx-web-validation/java/",
     repository: "https://github.com/vert-x3/vertx-web",
@@ -86,8 +85,7 @@ insert(docs, "vertx-web-api-service",
   {
     id: "vertx-web-openapi",
     name: "Web OpenAPI",
-    description: `Extends Vert.x Web to support OpenAPI 3, bringing a simple
-      interface for building web routers that conform to OpenAPI contracts.`,
+    description: "扩展Vert.x Web以支持OpenAPI 3，并为构建符合OpenAPI要求的Web路由器提供了一个简单的界面。",
     category: "web",
     href: "/vertx-web-openapi/java/",
     repository: "https://github.com/vert-x3/vertx-web",
@@ -99,8 +97,7 @@ insert(docs, "vertx-web-api-service",
 docs.entries.push({
   id: "vertx-json-schema",
   name: "JSON Schema",
-  description: `An extensible implementation of the Json Schema specification
-    to validate every JSON data structure, asynchronously.`,
+  description: "Json模式规范的扩展实现，以异步的方式来校验每一个Json数据结构。",
   category: "standards",
   href: "/vertx-json-schema/java/",
   repository: "https://github.com/eclipse-vertx/vertx-json-schema",
@@ -110,8 +107,8 @@ docs.entries.push({
 
 docs.entries.push({
   id: "vertx-lang-groovy",
-  name: "Vert.x for Groovy",
-  description: "Groovy bindings and helpers for Vert.x.",
+  name: "Groovy 版 Vert.x",
+  description: "Vert.x 的 Groovy 绑定及帮助。",
   category: "groovy",
   href: "/vertx-core/groovy/",
   repository: "https://github.com/vert-x3/vertx-lang-groovy",
@@ -120,8 +117,8 @@ docs.entries.push({
 
 docs.entries.push({
   id: "vertx-lang-kotlin",
-  name: "Vert.x for Kotlin",
-  description: "Kotlin bindings and helpers for Vert.x.",
+  name: "Kotlin 版 Vert.x",
+  description: "Vert.x 的 Kotlin 绑定及帮助。",
   category: "kotlin",
   href: "/vertx-core/kotlin/",
   repository: "https://github.com/vert-x3/vertx-lang-kotlin",
@@ -130,10 +127,8 @@ docs.entries.push({
 
 docs.entries.push({
     id: "vertx-lang-kotlin-coroutines",
-    name: "Kotlin coroutines",
-    description: `Kotlin coroutines for Vert.x, gives you super powers such as
-      async/await or Go-like channels. This enables you to write your verticle
-      code in a familiar sequential style.`,
+    name: "Kotlin 协程",
+    description: "Vert.x 对 Kotlin 协程的支持，提供如 async/await 或 类似 Go 通道的强大支持。由此您可用熟悉的顺序风格编写 Verticle 代码。",
     category: "kotlin",
     href: "/vertx-lang-kotlin-coroutines/kotlin/",
     repository: "https://github.com/vert-x3/vertx-lang-kotlin",
@@ -153,9 +148,8 @@ insert(docs, "vertx-auth-mongo",
   },
   {
     id: "vertx-auth-sql-client",
-    name: "SQL Client Auth",
-    description: `Authentication and authorization support based on the Vert.x
-      SQL client and a relational database.`,
+    name: "SQL 客户端鉴权与授权",
+    description: "基于Vert.x SQL客户端和关系型数据库的身份验证和授权支持。",
     category: "authentication-and-authorization",
     href: "/vertx-auth-sql-client/java/",
     repository: "https://github.com/vert-x3/vertx-auth/tree/master/vertx-auth-sql-client",
@@ -166,8 +160,8 @@ insert(docs, "vertx-auth-mongo",
 insert(docs, "vertx-auth-htdigest",
   {
     id: "vertx-auth-properties",
-    name: "Properties Auth",
-    description: "Authentication and authorization support based on Java properties files.",
+    name: "属性鉴权与授权",
+    description: "基于 Java 属性文件的鉴权与授权支持。",
     category: "authentication-and-authorization",
     href: "/vertx-auth-properties/java/",
     repository: "https://github.com/vert-x3/vertx-auth/tree/master/vertx-auth-properties",
@@ -184,8 +178,8 @@ insert(docs, "vertx-auth-htdigest",
   },
   {
     id: "vertx-auth-htpasswd",
-    name: ".htpasswd Auth",
-    description: <>Authentication and authorization support based on <code>.htpasswd</code> files.</>,
+    name: ".htpasswd 鉴权与授权",
+    description: <>基于 <code>.htpasswd</code> 文件的鉴权与授权支持。</>,
     category: "authentication-and-authorization",
     href: "/vertx-auth-htpasswd/java/",
     repository: "https://github.com/vert-x3/vertx-auth/tree/master/vertx-auth-htpasswd",
@@ -196,9 +190,8 @@ insert(docs, "vertx-auth-htdigest",
 insert(docs, "vertx-mongo-client",
   {
     id: "vertx-sql-client-templates",
-    name: "SQL Client Templates",
-    description: `A small library designed to facilitate the execution and data
-      manipulation of SQL queries.`,
+    name: "SQL 客户端模版",
+    description: "一个旨在促进SQL查询执行和数据操作的小型库。",
     category: "databases",
     href: "/vertx-sql-client-templates/java/",
     repository: "https://github.com/eclipse-vertx/vertx-sql-client",
@@ -210,7 +203,7 @@ insert(docs, "vertx-dropwizard-metrics",
   {
     id: "vertx-zipkin",
     name: "Zipkin",
-    description: "Distributed tracing with Zipkin.",
+    description: "基于 Zipkin 的分布式链路追踪。",
     category: "monitoring",
     href: "/vertx-zipkin/java/",
     repository: "https://github.com/eclipse-vertx/vertx-tracing/tree/master/vertx-zipkin",
@@ -219,7 +212,7 @@ insert(docs, "vertx-dropwizard-metrics",
   {
     id: "vertx-opentracing",
     name: "OpenTracing",
-    description: "Distributed tracing with OpenTracing.",
+    description: "基于 OpenTracing 的分布式链路追踪。",
     category: "monitoring",
     href: "/vertx-opentracing/java/",
     repository: "https://github.com/eclipse-vertx/vertx-tracing/tree/master/vertx-opentracing",
@@ -240,8 +233,11 @@ for (let entry of docs.entries) {
     entry.examples = entry.examples
       .replace(/3\.x/, "4.x")
       .replace("reactive-sql-client-examples", "sql-client-examples")
-    entry.edit = `https://github.com/vertx-china/vertx-web-site/tree/master/docs/translation/${entry.id}/java`
   }
+  entry.edit = `https://github.com/vertx-china/vertx-web-site/tree/master/docs/translation/${entry.id}/java`
 }
+find(docs, "vertx-lang-kotlin-coroutines").edit = "https://github.com/vertx-china/vertx-web-site/edit/master/docs/translation/vertx-lang-kotlin-coroutines/kotlin/index.adoc"
+find(docs, "vertx-lang-kotlin").edit = "https://github.com/vertx-china/vertx-web-site/edit/master/docs/translation/vertx-core/kotlin/index.adoc"
+find(docs, "vertx-lang-groovy").edit = "https://github.com/vertx-china/vertx-web-site/edit/master/docs/translation/vertx-core/groovy/index.adoc"
 
 export default docs

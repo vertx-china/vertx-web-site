@@ -1,0 +1,164 @@
+= Zookeeper 群集管理器
+
+`ZookeeperClusterManager` 是基于 http://zookeeper.apache.org/[Zookeeper] 来实现的Vert.x集群管理器。
+
+它完全实现了vert.x集群的接口。因此，你可以根据你的需要使用它来代替vertx-hazelcast。
+此实现需要引入以下依赖：
+
+* Maven (在 `pom.xml` 文件中):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+<groupId>io.vertx</groupId>
+<artifactId>vertx-zookeeper</artifactId>
+<version>4.0.0</version>
+</dependency>
+----
+* Gradle (在 `build.gradle` 文件中):
+
+[source,groovy,subs="+attributes"]
+----
+compile 'io.vertx:vertx-zookeeper:4.0.0'
+----
+
+Vert.x 集群管理器包含以下几个功能：
+
+* 发现并管理集群中的节点
+* 管理集群端的主题订阅清单（这样就可以轻松得知集群中的那些节点订阅了那些 EventBus 地址）
+* 分布式 Map 支持
+* 分布式锁
+* 分布式计数器
+
+Vert.x 集群器并不处理节点之间的通信，在 Vert.x 中节点中的通信是直接由 TCP 链接处理的。
+
+[[_how_to_work]]
+== 工作原理
+`ZookeeperClusterManager` 使用 http://curator.apache.org/[Apache Curator] 框架而不是原生Zookeeper 客户端，因此
+需要添加 Curator 依赖的库到项目中，比如 `guava` 、 `slf4j` 、 `zookeeper` 等其他第三方 jar 包。
+
+由于 Zookeeper 采用字典树来存储数据，便可以将 `root` 路径作为命名空间，在默认的 `zookeeper.json` 中定义默认的根路径是 `io.vertx` ，
+同时还有 5 个 子路径用来存储用于管理 vert.x 集群的相关信息。所有的路径中，只有根路径可以自定义配置。
+
+`/io.vertx/cluster/nodes/` :: 对应 Vert.x 节点信息
+`/io.vertx/asyncMap/$name/` :: 存储通过接口 `io.vertx.core.shareddata.AsyncMap` 创建的 `AsyncMap` 记录
+`/io.vertx/asyncMultiMap/$name/` :: 存储通过接口 `io.vertx.core.spi.cluster.AsyncMultiMap` 创建的 `AsyncMultiMap` 记录
+`/io.vertx/locks/` :: 存储分布式锁
+`/io.vertx/counters/` :: 存储分布式计数器
+
+[[_using_this_cluster_manager]]
+== 使用 Zookeeper cluster manager
+
+如果您从命令行使用Vert.x，则应将此集群管理器对应的jar（将其命名为 `vertx-zookeeper-4.0.0.jar`
+复制到Vert.x安装目录下的 `lib` 目录中。
+
+如果要在Maven或Gradle项目中使用此群集管理器管理Vert.x 的群集，则只需将
+`io.vertx:vertx-zookeeper:4.0.0` 添加到项目依赖中。
+
+Vert.x 能够从 classpath 路径的 jar 自动检测并使用出 `ClusterManager` 的实现。
+不过需要确保在 classpath 没有其他的 `ClusterManager` 实现。 否则Vert.x会
+选择错误的 ClusterManager
+
+如果你要嵌入指定的集群管理器，你也可以通过编程方式来指定。
+在创建Vert.x实例时，通过下面代码来配置集群管理器
+
+[source, java]
+----
+ClusterManager mgr = new ZookeeperClusterManager();
+VertxOptions options = new VertxOptions().setClusterManager(mgr);
+Vertx.clusteredVertx(options, res -> {
+  if (res.succeeded()) {
+    Vertx vertx = res.result();
+  } else {
+    // failed!
+  }
+});
+----
+
+[[_configuring_this_cluster_manager]]
+== 配置 Zookeeper cluster manager
+
+通常情况下，`ZookeeperClusterManager` 使用 jar 包中内嵌的
+https://github.com/vert-x3/vertx-zookeeper/blob/master/src/main/resources/default-zookeeper.json[`default-zookeeper.json`]
+设置相应的配置。
+
+如果要覆盖此配置，可以在 `classpath` 中添加一个 `zookeeper.json` 文件。
+如果想在 fat jar 中内嵌 `zookeeper.json` ，此文件必须在 fat jar 的根目录中。
+如果此文件是一个外部文件，则必须将其添加至 `classpath` 中。
+举个例子，如果你使用的是Vert.x的 _Launcher_ 类，则可以按以下方式实现：
+
+[source]
+----
+# zookeeper.json 在当前路径中
+java -jar ... -cp . -cluster
+vertx run MyVerticle -cp . -cluster
+
+# zookeeper.json 在 conf 目录中
+java -jar ... -cp conf -cluster
+----
+
+还有一种方式来覆盖默认的配置文件，那就是利用系统配置 `vertx.zookeeper.config` 来
+实现：
+
+[source]
+----
+# 指定一个外部文件为自定义配置文件
+java -Dvertx.zookeeper.config=./config/my-zookeeper-conf.json -jar ... -cluster
+
+# 从 classpath 中加载一个文件为自定义配置文件
+java -Dvertx.zookeeper.config=classpath:my/package/config/my-cluster-config.json -jar ... -cluster
+----
+
+如果系统变量 `vertx.zookeeper.config` 值不为空时，将覆盖 `classpath` 中所有的 `zookeeper.json` 文件， 但是如果
+加载
+`vertx.zookeeper.config` 失败时，系统将选取 `classpath` 任意一个 `zookeeper.json` ，甚至直接使用默认配置。
+
+在配置文件 `default-zookeeper.json` 中已经通过注释的形式，详细说明每个配置项的作用。
+
+同其他集群管理器，亦可通过编程的形式来进行配置，举例：
+
+[source,java]
+----
+JsonObject zkConfig = new JsonObject();
+zkConfig.put("zookeeperHosts", "127.0.0.1");
+zkConfig.put("rootPath", "io.vertx");
+zkConfig.put("retry", new JsonObject()
+    .put("initialSleepTime", 3000)
+    .put("maxTimes", 3));
+
+
+ClusterManager mgr = new ZookeeperClusterManager(zkConfig);
+VertxOptions options = new VertxOptions().setClusterManager(mgr);
+
+Vertx.clusteredVertx(options, res -> {
+  if (res.succeeded()) {
+    Vertx vertx = res.result();
+  } else {
+    // failed!
+  }
+});
+----
+
+IMPORTANT: 通过系统变量 `vertx.zookeeper.hosts` 也可以达到配置 zookeeper `hosts` 的目的。
+
+=== 开启日志
+
+在排除故障时，开启 Zookeeper 日志，将会给予很大的帮助，
+通过日志查看集群管理器是否正常工作。你可以（使用默认的JUL日志记录时）通过
+在 `classpath` 中添加 `vertx-default-jul-logging.properties` 文件来配置日志，这是一个标准 java.util.loging（JUL） 配置文件。
+具体配置如下：
+
+----
+org.apache.zookeeper.level=INFO
+----
+
+同时
+
+----
+java.util.logging.ConsoleHandler.level=INFO
+java.util.logging.FileHandler.level=INFO
+----
+
+[[_about_zookeeper_version]]
+== Zookeeper 版本
+Vert.x 使用 4.3.0 版本的 Curator，其使用 3.4.8 版本的 Zookeeper，因此不支持 3.5.x 中的最新特性。

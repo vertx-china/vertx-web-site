@@ -1,0 +1,179 @@
+= Vert.x Kafka Admin Client
+:toc: left
+:lang: java
+:java: java
+
+This component provides a Vert.x wrapper around the Kafka Admin Client API.
+The Kafka Admin Client is used to create, modify, and delete topics.
+It also provides methods for handling ACLs (Access Control Lists), consumer groups and many more.
+
+== Creating the Kafka Admin Client
+
+Creating the admin client is quite similar on how it works using the native Kafka client library.
+
+It needs to be configured with a bunch of properties as described in the official
+Apache Kafka documentation, for the link:https://kafka.apache.org/documentation/#adminclientconfigs[admin].
+
+To achieve that, a map can be configured with such properties passing it to one of the
+static creation methods exposed by `link:../../apidocs/io/vertx/kafka/admin/KafkaAdminClient.html[KafkaAdminClient]`.
+
+[source,java]
+----
+Properties config = new Properties();
+config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+
+KafkaAdminClient adminClient = KafkaAdminClient.create(vertx, config);
+----
+
+== Using the Kafka Admin Client
+
+=== Listing topics
+
+You can call the `link:../../apidocs/io/vertx/kafka/admin/KafkaAdminClient.html#listTopics-io.vertx.core.Handler-[listTopics]` for listing the topics in the cluster.
+The only parameter is the usual callback to handle the result, which provides the topics list.
+
+[source,java]
+----
+adminClient.listTopics().onSuccess(topics ->
+    System.out.println("Topics= " + topics)
+);
+----
+
+=== Describe topics
+
+You can call `link:../../apidocs/io/vertx/kafka/admin/KafkaAdminClient.html#describeTopics-java.util.List-io.vertx.core.Handler-[describeTopics]` to describe topics in the cluster.
+Describing a topic means getting all related metadata like number of partitions, replicas, leader, in-sync replicas and so on.
+The needed parameters are the list of topics names to describe, and the usual callback to handle the result providing
+a map with topic names and related `link:../../apidocs/io/vertx/kafka/admin/TopicDescription.html[TopicDescription]`.
+
+[source,java]
+----
+adminClient.describeTopics(Collections.singletonList("my-topic")).onSuccess(topics -> {
+  TopicDescription topicDescription = topics.get("first-topic");
+
+  System.out.println("Topic name=" + topicDescription.getName() +
+      " isInternal= " + topicDescription.isInternal() +
+      " partitions= " + topicDescription.getPartitions().size());
+
+  for (TopicPartitionInfo topicPartitionInfo : topicDescription.getPartitions()) {
+    System.out.println("Partition id= " + topicPartitionInfo.getPartition() +
+      " leaderId= " + topicPartitionInfo.getLeader().getId() +
+      " replicas= " + topicPartitionInfo.getReplicas() +
+      " isr= " + topicPartitionInfo.getIsr());
+  }
+});
+----
+
+=== Create topic
+
+You can call `link:../../apidocs/io/vertx/kafka/admin/KafkaAdminClient.html#createTopics-java.util.List-io.vertx.core.Handler-[createTopics]` to create topics in the cluster.
+The needed parameters are the list of the topics to create, and the usual callback to handle the result.
+The topics to create are defined via the `link:../../apidocs/io/vertx/kafka/admin/NewTopic.html[NewTopic]` class specifying the name, the number of
+partitions and the replication factor.
+It is also possible to describe the replicas assignment, mapping each replica to the broker id, instead of specifying the
+number of partitions and the replication factor (which in this case has to be set to -1).
+
+[source,java]
+----
+adminClient.createTopics(Collections.singletonList(new NewTopic("testCreateTopic", 1, (short)1)))
+  .onSuccess(v -> {
+    // topics created successfully
+  })
+  .onFailure(cause -> {
+    // something went wrong when creating the topics
+  });
+----
+
+=== Delete topic
+
+You can call `link:../../apidocs/io/vertx/kafka/admin/KafkaAdminClient.html#deleteTopics-java.util.List-io.vertx.core.Handler-[deleteTopics]` to delete topics in the cluster.
+The needed parameters are the list of the topics to delete, and the usual callback to handle the result.
+
+[source,java]
+----
+adminClient.deleteTopics(Collections.singletonList("topicToDelete"))
+  .onSuccess(v -> {
+    // topics deleted successfully
+  })
+  .onFailure(cause -> {
+    // something went wrong when removing the topics
+  });
+----
+
+=== Describe configuration
+
+You can call `link:../../apidocs/io/vertx/kafka/admin/KafkaAdminClient.html#describeConfigs-java.util.List-io.vertx.core.Handler-[describeConfigs]` to describe resources configuration.
+Describing resources configuration means getting all configuration information for cluster resources like topics or brokers.
+The needed parameters are the list of the resources for which you want the configuration, and the usual callback to handle the result.
+The resources are described by a collection of `link:../../apidocs/io/vertx/kafka/client/common/ConfigResource.html[ConfigResource]` while the result maps
+each resource with a corresponding `link:../../apidocs/io/vertx/kafka/admin/Config.html[Config]` which as more `link:../../apidocs/io/vertx/kafka/admin/ConfigEntry.html[ConfigEntry]` for
+each configuration parameter.
+
+[source,java]
+----
+adminClient.describeConfigs(Collections.singletonList(
+  new ConfigResource(org.apache.kafka.common.config.ConfigResource.Type.TOPIC, "my-topic"))).onSuccess(configs -> {
+  // check the configurations
+});
+----
+
+=== Alter configuration
+
+You can call `link:../../apidocs/io/vertx/kafka/admin/KafkaAdminClient.html#alterConfigs-java.util.Map-io.vertx.core.Handler-[alterConfigs]` to alter resources configuration.
+Altering resources configuration means updating configuration information for cluster resources like topics or brokers.
+The needed parameters are the list of the resources with the related configurations to updated, and the usual callback to handle the result.
+It is possible to alter configurations for different resources with just one call. The input parameter maps each
+`link:../../apidocs/io/vertx/kafka/client/common/ConfigResource.html[ConfigResource]` with the corresponding `link:../../apidocs/io/vertx/kafka/admin/Config.html[Config]` you want to apply.
+
+[source,java]
+----
+ConfigResource resource = new ConfigResource(org.apache.kafka.common.config.ConfigResource.Type.TOPIC, "my-topic");
+// create a entry for updating the retention.ms value on the topic
+ConfigEntry retentionEntry = new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, "51000");
+Map<ConfigResource, Config> updateConfig = new HashMap<>();
+updateConfig.put(resource, new Config(Collections.singletonList(retentionEntry)));
+adminClient.alterConfigs(updateConfig)
+  .onSuccess(v -> {
+    // configuration altered successfully
+  })
+  .onFailure(cause -> {
+    // something went wrong when altering configs
+  });
+----
+
+=== List consumer groups
+
+You can call the `link:../../apidocs/io/vertx/kafka/admin/KafkaAdminClient.html#listConsumerGroups-io.vertx.core.Handler-[listConsumerGroups]` for listing the consumer groups in the cluster.
+The only parameter is the usual callback to handle the result, which provides the consumer groups list.
+
+[source,java]
+----
+adminClient.listConsumerGroups().onSuccess(consumerGroups ->
+  System.out.println("ConsumerGroups= " + consumerGroups)
+);
+----
+
+=== Describe consumer groups
+
+You can call `link:../../apidocs/io/vertx/kafka/admin/KafkaAdminClient.html#describeConsumerGroups-java.util.List-io.vertx.core.Handler-[describeConsumerGroups]` to describe consumer groups in the cluster.
+Describing a consumer group means getting all related information like members, related ids, topics subscribed, partitions assignment and so on.
+The needed parameters are the list of consumer groups names to describe, and the usual callback to handle the result providing
+a map with consumer group names and related `link:../../apidocs/io/vertx/kafka/admin/MemberDescription.html[MemberDescription]`.
+
+[source,java]
+----
+adminClient.describeTopics(Collections.singletonList("my-topic")).onSuccess(topics -> {
+  TopicDescription topicDescription = topics.get("first-topic");
+
+  System.out.println("Topic name=" + topicDescription.getName() +
+      " isInternal= " + topicDescription.isInternal() +
+      " partitions= " + topicDescription.getPartitions().size());
+
+  for (TopicPartitionInfo topicPartitionInfo : topicDescription.getPartitions()) {
+    System.out.println("Partition id= " + topicPartitionInfo.getPartition() +
+      " leaderId= " + topicPartitionInfo.getLeader().getId() +
+      " replicas= " + topicPartitionInfo.getReplicas() +
+      " isr= " + topicPartitionInfo.getIsr());
+  }
+});
+----

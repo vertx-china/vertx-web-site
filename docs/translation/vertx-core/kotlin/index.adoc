@@ -1,40 +1,40 @@
-== Vert.x for Kotlin
+= Vert.x for Kotlin
 
-If you are using Maven or Gradle, add the following dependency to the _dependencies_ section of your
-project descriptor to access the Vert.x Core API and enable the JavaScript support:
+如您使用 Maven 或者 Gradle，可以通过添加以下依赖来使用 
+Vert.x 核心 API 以启用 Kotlin支持：
 
-* Maven (in your `pom.xml`):
+* Maven （在 `pom.xml` 文件中）：
 
 [source,xml,subs="+attributes"]
 ----
 <dependency>
 <groupId>io.vertx</groupId>
 <artifactId>vertx-core</artifactId>
-<version>4.0.0</version>
+<version>4.0.3</version>
 </dependency>
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-lang-kotlin</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
-* Gradle (in your `build.gradle` file):
+* Gradle （在 `build.gradle` 文件中）：
 
 [source,groovy,subs="+attributes"]
 ----
-compile "io.vertx:vertx-core:4.0.0"
-compile "io.vertx:vertx-lang-kotlin:4.0.0"
+compile "io.vertx:vertx-core:4.0.3"
+compile "io.vertx:vertx-lang-kotlin:4.0.3"
 ----
 
 == Verticles
 
-=== Writing Verticles
+=== 编写 Verticles
 
-Writing a Verticle with Kotlin is achieved the same way you write a Java Verticle by
-extending the `link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]`.
+使用 Kotlin 编写一个 Verticle 的方式与 Java 相同，即继承 `link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]`
+类即可。
 
-Here's an example verticle:
+示例如下：
 
 [source, kotlin]
 ----
@@ -42,23 +42,24 @@ import io.vertx.core.AbstractVerticle
 
 class MyVerticle : AbstractVerticle() {
 
- // Called when verticle is deployed
+ // 当 verticle 被部署时会被调用
  override fun start() {
  }
 
- // Optional - called when verticle is undeployed
+ // 可选的 - 当 verticle 被接触部署时会被调用
  override fun stop() {
  }
 }
 ----
 
-Please refer to the Java documentation.
+请参阅 Java 文档
 
-== Data Objects builders
+[[data_objects_builders]]
+== Data 对象构造器
 
-Data Objects play an essential role in the Vert.x stack (a Data Object is a type that can be converted to/from JSON).
+Data 对象在 Vert.x 技术栈起着重要作用（Data 对象可以与 JSON 互相转换）
 
-For example, Vert.x modules often use Data Objects for the configuration of servers:
+举个例子，Vert.x 模块常常使用 Data 对象作为服务配置：
 
 [source,kotlin]
 ----
@@ -68,8 +69,8 @@ val classic: HttpServerOptions = HttpServerOptions()
  .setLogActivity(true)
 ----
 
-While the above construct is valid, there is a more idiomatic way of configuring Data Objects.
-In Kotlin, all Data Objects have a builder method suffixed with `Of`:
+有一种更优雅的构造 Data 对象的方式（即使上述方法也是可以的）
+在 Kotlin 中，所有 Data 对象都有一个后缀为 `Of` 的构造器 (builder)：
 
 [source,kotlin]
 ----
@@ -78,37 +79,39 @@ val options = httpServerOptionsOf(idleTimeout = 5, idleTimeoutUnit = TimeUnit.MI
 
 == JSON
 
-Unlike some other languages, Java does not have first class support for http://json.org/[JSON] so we provide
-two classes to make handling JSON in your Vert.x applications a bit easier.
+不同于其他语言， Java 没有为 http://json.org/[JSON] 提供一等公民的支持，
+所以我们提供了两个类，使 Vert.x 应用中使用 JSON 更加容易
 
-Use the `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` class to represent JSON objects and the `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]`
-class to represent JSON arrays, you can refer to the Java documentation for more details.
+`link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` 类用来表示 JSON 对象，
+`link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]`
+类用来表示数组，可以参考 Java 文档获得更多信息。
 
-=== Builders
+[[builders]]
+=== 构造器
 
-Builders are provided to provide a more fluent JSON construction:
+构造器可用于更顺畅地构造 JSON ：
 
 [source, kotlin]
 ----
-// The json builder declares a JSON structure
+// 该 json 构造器声明了一个 JSON 结构
 val result = json {
 
- // in this structure the obj function can be used
+ // 在该块中可以使用 `obj` 函数
 
- // takes a vararg of Kotlin pairs
+ // 使用变长 Pair 参数
  obj(
    "key_1" to 1,
    "key_2" to 2,
    "key_3" to 3
  )
 
- // or an iterable of Kotlin pairs
+ // 或者可迭代的 Pair 集合
  obj((1..3).map { "key_$it" to it })
 
- // or a Map<String, Any?>
+ // 还可以是 Map<String, Any?>
  obj(someMap)
 
- // apply function on object receiver
+ // 在对象接收者附加函数
  obj {
    for (i in 1..3) {
      put("key_$i", i)
@@ -117,22 +120,22 @@ val result = json {
 }
 ----
 
-You can also build JSON arrays:
+构造 JSON 数组也是同样的
 
 [source, kotlin]
 ----
-// The json builder declares a JSON structure
+// 这个 json 构造器用于声明 JSON 结构
 val result = json {
 
- // in this structure the array function can be used
+ // 在这个块中可以使用 array 函数
 
- // takes a vararg of values
+ // 直接用变长的值数组作为参数
  array("1", "2", "3")
 
- // or an iterable of values
+ // 一个可迭代的值集合
  array((1..3).map { "$it" })
 
- // apply function on array receiver
+ // 在对象接收者上附加函数
  array {
    for (i in 1..3) {
      add("$i")
@@ -141,11 +144,11 @@ val result = json {
 }
 ----
 
-Of course it is possible to mix objects and arrays
+当然混合对象和数组也是可行的
 
 [source, kotlin]
 ----
-// The json builder declares a JSON structure
+// 这个 json 构造器用于声明 JSON 结构
 val result = json {
 
  "firstName" to "Dale",
@@ -155,9 +158,10 @@ val result = json {
 }
 ----
 
-=== Postscript operator overloading
+[[postscript_operator_overloading]]
+=== 索引访问操作符重载
 
-The Kotlin postscript operator is overloaded for JSON object and array:
+Kotlin 的索引访问操作符在 JSON 对象和数组上都被重载了
 
 [source, kotlin]
 ----

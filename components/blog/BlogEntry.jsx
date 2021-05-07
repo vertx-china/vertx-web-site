@@ -29,7 +29,7 @@ const BlogEntry = ({ post }) => {
           </Link>
         </div>
         <div className="blog-entry-meta-right">
-          {post.meta.pinned && <Label tiny>Pinned</Label>}
+          {post.meta.pinned && <Label tiny>置顶</Label>}
         </div>
       </div>
       <h3>
