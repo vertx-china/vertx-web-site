@@ -3,9 +3,9 @@
 
 当你编写Vert.x程序的时候，你也许想将某处独立服务功能提供给其他程序使用。这时候可以使用服务代理了。 它可以让你在事件总线上公开你的 _服务_ , 因此，任何Vert.x程序只要知道其推送的 _地址_ 就可以消费使用它。
 
- _服务_ 它是遵循Java接口定义，方法定义必须遵循 _异步规范_. 更深层次下,
+ _服务_ 它是遵循Java接口定义，方法定义必须遵循 _异步规范_。更深层次下,
 在事件总线上发送请求消息并调用服务响应请求。 但是为了更简单使用,
-他会成为一个 _代理_ 可以直接调用 (使用服务接口的API).
+他会成为一个 _代理_ 可以直接调用 (使用服务接口的API)。
 
 [[_using_vert_x_service_proxies]]
 == 使用Vert.x服务代理
@@ -27,7 +27,7 @@
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-service-proxy:4.0.0'
+compile 'io.vertx:vertx-service-proxy:4.0.3'
 ----
 
 为了 *实现* 服务代理, 您还需要添加:
@@ -39,7 +39,7 @@ compile 'io.vertx:vertx-service-proxy:4.0.0'
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-codegen</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
  <scope>provided</scope>
 </dependency>
 ----
@@ -48,15 +48,15 @@ compile 'io.vertx:vertx-service-proxy:4.0.0'
 
 [source,groovy,subs="+attributes"]
 ----
-compileOnly 'io.vertx:vertx-codegen:4.0.0'
+compileOnly 'io.vertx:vertx-codegen:4.0.3'
 ----
 
 * Gradle版本大于等于 5 (在 `build.gradle` 文件中):
 
 [source,groovy,subs="+attributes"]
 ----
-annotationProcessor 'io.vertx:vertx-codegen:4.0.0:processor'
-annotationProcessor 'io.vertx:vertx-service-proxy:4.0.0'
+annotationProcessor 'io.vertx:vertx-codegen:4.0.3:processor'
+annotationProcessor 'io.vertx:vertx-service-proxy:4.0.3'
 ----
 
 注意：因为服务代理类是通过代码生成的缘故，每当你你修改了 _服务接口_ 你必须重新编译编码，以重新 生成代理类。
@@ -113,7 +113,7 @@ void save(String collection, JsonObject document,
 }
 ----
 
-你还需要编写 `package-info.java` 文件，位置处于接口定义包中.
+你还需要编写 `package-info.java` 文件，位置处于接口定义包中。
 这个包还需要 `@ModuleGen` 注解，以方便Vert.x代码生成器生成事件总线代理代码。
 
 .package-info.java
@@ -221,9 +221,9 @@ void close();
 [[_security]]
 == 安全
 
-Service proxies can perform basic security using a simple interceptor.
-A authentication provider must be provided, optionally `Authorization`s can be added and in this case an `AuthorizationProvider` must also be present.
-Note that the authentication works based on tokens, that are extracted from the `auth-token` header.
+服务代理可以使用简单的拦截器保障基本安全。
+提供一个身份验证器，可以选择添加 `Authorization` 在这种情况下，`AuthorizationProvider` 是必须提提供的。
+注意，身份认证的令牌从 `auth-token` 信息头获取。
 
 [source,java]
 ----
@@ -262,7 +262,7 @@ Service annotated with `@ProxyGen` annotation trigger the generation of the serv
 产生的服务代理和处理器的命名是在类名的后面加相关的字段，例如，如果一个服务接口名为 `MyService`，
 则对应的处理器类命名为 `MyServiceProxyHandler`,对应的服务代理类命名为 MyServiceVertxEBProxy。
 
-此外Vert.x Core提供了一个生成器用于数据转化器，以简化服务代理中数据对象的使用.
+此外Vert.x Core提供了一个生成器用于数据转化器，以简化服务代理中数据对象的使用。
 数据转化器要求数据对象提供一个以 `JsonObject` 为基础的构造器和`toJson()` 方法
 
 _codegen_ 注释处理器在编译时生成这些类
@@ -277,13 +277,13 @@ _codegen_ 注释处理器在编译时生成这些类
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-codegen</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
  <classifier>processor</classifier>
 </dependency>
 <dependency>
  <groupId>io.vertx</groupId>
  <artifactId>vertx-service-proxy</artifactId>
- <version>4.0.0</version>
+ <version>4.0.3</version>
 </dependency>
 ----
 
@@ -291,13 +291,13 @@ _codegen_ 注释处理器在编译时生成这些类
 
 [source]
 ----
-compile "io.vertx:vertx-codegen:4.0.0:processor"
-compile "io.vertx:vertx-service-proxy:4.0.0"
+compile "io.vertx:vertx-codegen:4.0.3:processor"
+compile "io.vertx:vertx-service-proxy:4.0.3"
 ----
 
-IDE通常为注释处理器提供支持.
+IDE通常为注释处理器提供支持。
 代码生成 `处理器` 分类器会把服务代理注释处理器的配置自动添加到jar中 `META-INF/services` 当中
-如果你想和其与常规jar一起使用，但是需要显式声明注释处理器 , 例如在Maven中:
+如果你想和其与常规jar一起使用，但是需要显式声明注释处理器 , 例如在Maven中：
 
 [source,xml]
 ----
@@ -353,8 +353,8 @@ binder.unregister(consumer);
 [[_proxy_creation]]
 == 代理创建
 
-现在服务已经公开, 现在可以消费使用它.
-为此, 你必须创建一个代理.
+现在服务已经公开, 现在可以消费使用它。
+为此，你必须创建一个代理。
 创建代理使用 `link:../../apidocs/io/vertx/serviceproxy/ServiceProxyBuilder.html[ServiceProxyBuilder]` 类:
 
 [source,java]
@@ -368,14 +368,14 @@ SomeDatabaseService service2 = builder.setOptions(options)
   .build(SomeDatabaseService.class);
 ----
 
-第二种构造通过 `link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]` 构造实例，您可以在其中配置属性（例如超时）
+第二种构造通过 `link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]` 构造实例，您可以在其中配置属性（例如：超时）
 
-或者,你也可以使用代理类.
-这个代理名称为 _服务接口_ 类目后追加 `VertxEBProxy`.
-例如, 如果你的 _服务接口_ 名为 `SomeDatabaseService`, 那么代理类名为 `SomeDatabaseServiceVertxEBProxy`。
+或者,你也可以使用代理类。
+这个代理名称为 _服务接口_ 类目后追加 `VertxEBProxy`。
+例如, 如果你的 _服务接口_ 名为 `SomeDatabaseService`，那么代理类名为 `SomeDatabaseServiceVertxEBProxy`。
 
 一般来说, _服务接口_ 包含 `createProxy` 静态方法用于创建代理。
-但这不是必须的:
+但这不是必须的：
 
 [source,java]
 ----
@@ -396,10 +396,10 @@ static SomeDatabaseService createProxy(Vertx vertx, String address) {
 服务方法可能会通过向方法的处理器（Handler）传递一个失败状态的 Future （包含一个 `link:../../apidocs/io/vertx/serviceproxy/ServiceException.html[ServiceException]`
 实例。
 一个 `ServiceException` 包含 `int` 类型的错误码、消息,以及一个可选的
-`JsonObject` 对象用于传递额外信息.
-为了方便,
+`JsonObject` 对象用于传递额外信息。
+为了方便，
 `link:../../apidocs/io/vertx/serviceproxy/ServiceException.html#fail-int-java.lang.String-[ServiceException.fail]` 工厂方法来创建一个已经是失败状态并且包装着
-`ServiceException` 实例的失败 `Future`.
+`ServiceException` 实例的失败 `Future` 。
 例如:
 
 [source,java]
@@ -459,7 +459,7 @@ public void foo(String shoeSize, Handler<AsyncResult<JsonObject>> handler) {
 }
 ----
 
-如果需要的话, 服务实现的时候也可以返回 `ServiceException` 子类, 只要向Event Bus注册了对应的默认 `MessageCodec` 就可以了。例如, 比如给定下面的 `ServiceException` 子类:
+如果需要的话, 服务实现的时候也可以返回 `ServiceException` 子类, 只要向Event Bus注册了对应的默认 `MessageCodec` 就可以了。例如, 比如给定下面的 `ServiceException` 子类：
 
 [source,java]
 ----
@@ -542,15 +542,15 @@ public void foo(String shoeSize, Handler<AsyncResult<JsonObject>> handler) {
 [[_restrictions_for_service_interface]]
 == 接口类型限制
 
-There are restrictions on the types and return values that can be used in a service method so that these are easy to marshall over event bus messages and so they can be used asynchronously.
-They are:
+在服务中参数和返回值在类型上有一定的限制,因此可以方便在Event Bus中进行转化。
+他们是:
 
 === 返回类型
 
 必须是以下两种:
 
 * `void`
-* `@Fluent` 返回服务实例本身(即:`this`):
+* `@Fluent` 返回服务实例本身(即: `this` ):
 
 [source,java]
 ----
@@ -596,7 +596,7 @@ SomeDatabaseService doSomething();
 
 === 重载方法
 
-服务接口不支持任何的重载服务方法. (即方法名相同，参数列表不同).
+服务接口不支持任何的重载服务方法。(方法名相同，参数列表不同)。
 
 [_convention_for_invoking_services_over_the_event_bus_without_proxies]
 == 通过事件总线调用服务的规则 (不使用服务代理)
@@ -627,7 +627,7 @@ Body:
    }
 ----
 
-无论有没有用到服务代理来创建服务，都应该用上面这种方式编写服务，因为这样允许服务交互时保持一致性.
+无论有没有用到服务代理来创建服务，都应该用上面这种方式编写服务，因为这样允许服务交互时保持一致性。
 
 在上面的例子中，"action"对应的值应该与服务接口的某个方法名称相对应，而消息体中每个 `[key, value]` 都要与服务方法中的某个 `[arg_name, arg_value]` 相对应
 
