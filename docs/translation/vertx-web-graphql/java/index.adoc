@@ -1,6 +1,6 @@
 = Vert.x Web GraphQL
 
-Vert.x Web GraphQL 用 https://www.graphql-java.com[GraphQL-Java] 库扩展了 Vert.x Web 以便您创建一个 GraphQL 的服务器。
+Vert.x Web GraphQL 用 https://www.graphql-java.com[GraphQL-Java] 库扩展了 Vert.x Web，您可以用它创建一个 GraphQL 的服务器。
 
 TIP: 这是一个 Vert.x Web GraphQL 的参考文档。
 强烈建议您先熟悉一下 GraphQL-Java API。
@@ -27,7 +27,7 @@ TIP: 这是一个 Vert.x Web GraphQL 的参考文档。
 compile 'io.vertx:vertx-web-graphql:4.0.3'
 ----
 
-[[_getting_started]]
+[[_handlers_setup]]
 == 设置处理器
 
 === HTTP
@@ -42,7 +42,7 @@ router.route("/graphql").handler(GraphQLHandler.create(graphQL));
 ----
 
 该处理器可处理 `GET` 以及 `POST` 请求。
-然而，您可限制处理器仅处理其中一种 HTTP 方法：
+当然，您也可以限制处理器仅处理其中一种 HTTP 方法：
 
 [source,java]
 ----
@@ -51,14 +51,14 @@ GraphQL graphQL = setupGraphQLJava();
 router.post("/graphql").handler(GraphQLHandler.create(graphQL));
 ----
 
-IMPORTANT: `link:../../apidocs/io/vertx/ext/web/handler/graphql/GraphQLHandler.html[GraphQLHandler]` 需要 `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]` 以读取 `POST` 请求内容。
+IMPORTANT: `link:../../apidocs/io/vertx/ext/web/handler/graphql/GraphQLHandler.html[GraphQLHandler]` 需要 `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]` ，用于读取 `POST` 请求体内容。
 
 [[_query_batching]]
 ==== 查询批处理
 
-查询批处理将数组而非单个对象通过 post 方法发送到 GraphQL 端点（endpoint）。
+查询批处理将数组（而非单个对象）通过 post 方法发送到 GraphQL 端点（endpoint）。
 
-Vert.x Web GraphQL 可以处理此类请求但该特性默认是被禁用的。
+Vert.x Web GraphQL 可以处理此类请求，但该特性默认是被禁用的。
 如要启用，需创建带参数的 `link:../../apidocs/io/vertx/ext/web/handler/graphql/GraphQLHandler.html[GraphQLHandler]` ：
 
 [source,java]
@@ -83,14 +83,14 @@ GraphiQLHandlerOptions options = new GraphiQLHandlerOptions()
 router.route("/graphiql/*").handler(GraphiQLHandler.create(options));
 ----
 
-随后浏览以下地址 http://localhost:8080/graphiql/。
+随后浏览以下地址 http://localhost:8080/graphiql/ 。
 
-NOTE: 出于安全原因，默认情况下GraphiQL用户界面是禁用的。
-这就是为什么必需配置 `link:../../apidocs/io/vertx/ext/web/handler/graphql/GraphiQLHandlerOptions.html[GraphiQLHandlerOptions]` 以启用它的原因。
+NOTE: 出于安全考虑，默认情况下 GraphiQL 用户界面是禁用的。
+所以需要配置 `link:../../apidocs/io/vertx/ext/web/handler/graphql/GraphiQLHandlerOptions.html[GraphiQLHandlerOptions]` 才能启用 GraphiQL 用户界面。
 
-TIP: 当Vert.x Web在开发模式下运行时，将自动启用GraphiQL。
-要打开开发模式，请使用 `VERTXWEB_ENVIRONMENT` 环境变量或 `vertxweb.environment` 系统属性并将其设置为 `dev` 。
-在这种情况下，创建 `link:../../apidocs/io/vertx/ext/web/handler/graphql/GraphiQLHandler.html[GraphiQLHandler]` 时， `options` 无需设置为 `enabled` 属性。
+TIP: 当 Vert.x Web 在开发模式下运行时，将自动启用 GraphiQL。
+要启用开发模式，请将 `VERTXWEB_ENVIRONMENT` 环境变量或 `vertxweb.environment` 系统属性设置为 `dev` 。
+在这种情况下，创建 `link:../../apidocs/io/vertx/ext/web/handler/graphql/GraphiQLHandler.html[GraphiQLHandler]` 时，无需设置 `GraphiQLHandlerOptions` 的 `enabled` 属性。
 
 如果您的应用程序受身份验证保护，则可以动态自定义 GraphiQL 发送的标头（headers）：
 
@@ -109,7 +109,7 @@ router.route("/graphiql/*").handler(graphiQLHandler);
 === Apollo WebSocketLink
 
 您可以使用 https://www.apollographql.com/docs/link/links/ws/[Apollo WebSocketLink] 连接 websocket。
-如果要订阅 GraphQL schema，这将特别有效，但您亦可以使用 websocket 查询和变更。（译者注：GraphQL的三种操作类型的翻译及原文：查询 Query，变更 Mutation以及订阅 Subscription）
+这对订阅 GraphQL schema 特别有帮助，但您亦可以使用 websocket 查询和变更。（译者注：GraphQL的三种操作类型的翻译及原文：查询 Query，变更 Mutation以及订阅 Subscription）
 
 [source,java]
 ----
@@ -139,7 +139,7 @@ router.route("/graphql").handler(ApolloWSHandler.create(graphQL));
 router.route("/graphql").handler(GraphQLHandler.create(graphQL));
 ----
 
-您可在此处找到配置 Apollo 订阅客户端（SubscriptionClient）的方法：https://github.com/apollographql/subscriptions-transport-ws
+您可在此处找到配置 Apollo 订阅客户端（SubscriptionClient）的方法： https://github.com/apollographql/subscriptions-transport-ws
 
 IMPORTANT: 一个 `DataFetcher` 订阅必需返回一个 `org.reactivestreams.Publisher` 实例。
 
@@ -148,7 +148,7 @@ IMPORTANT: 一个 `DataFetcher` 订阅必需返回一个 `org.reactivestreams.Pu
 
 GraphQL-Java API 非常适合异步环境：查询操作默认策略便是异步执行（对于变更，则是串行异步）。
 
-为 https://vertx.io/docs/vertx-core/java/#golden_rule[避免阻塞 eventloop] ，您需要做的是实现 https://www.graphql-java.com/documentation/v16/data-fetching/[data fetchers] 并返回 `CompletionStage` 而不是直接返回结果。
+为 https://vertx-china.github.io/docs/vertx-core/java/#golden_rule[避免阻塞 eventloop] ，您需要做的是实现 https://www.graphql-java.com/documentation/v16/data-fetching/[data fetchers] 并返回 `CompletionStage` ，而不是直接返回结果。（译者注： Data Fetcher 下文统一保留原文、不翻译）
 
 [source,java]
 ----
@@ -172,12 +172,13 @@ RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
   .build();
 ----
 
-=== Working with callback-based APIs
+[[_working_with_callback_based_apis]]
+=== 使用基于回调的API
 
-Implementing a data fetcher that returns a `CompletionStage` is not a complex task.
-But when you work with Vert.x callback-based APIs, it requires a bit of boilerplate.
+实现一个返回 `CompletionStage` 的 DataFetcher 并不复杂。
+但当您使用基于回调的 Vert.x API 时，需要一些八股文代码。
 
-This is where the `link:../../apidocs/io/vertx/ext/web/handler/graphql/schema/VertxDataFetcher.html[VertxDataFetcher]` can help:
+这时可以参考 `link:../../apidocs/io/vertx/ext/web/handler/graphql/schema/VertxDataFetcher.html[VertxDataFetcher]` 获取帮助：
 
 [source,java]
 ----
@@ -190,9 +191,10 @@ RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
   .build();
 ----
 
-=== Working with Vert.x Futures
+[[_working_with_vert_x_futures]]
+=== 使用 Vert.x Future
 
-`link:../../apidocs/io/vertx/ext/web/handler/graphql/schema/VertxDataFetcher.html[VertxDataFetcher]` can also help with futurized APIs:
+`link:../../apidocs/io/vertx/ext/web/handler/graphql/schema/VertxDataFetcher.html[VertxDataFetcher]` 对于使用 Future 化的 API 也有帮助：
 
 [source,java]
 ----
@@ -206,15 +208,16 @@ RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
   .build();
 ----
 
-=== Providing data fetchers with some context
+[[_providing_data_fetchers_with_some_context]]
+=== 为数据获取器提供上下文
 
-Very often, the `link:../../apidocs/io/vertx/ext/web/handler/graphql/GraphQLHandler.html[GraphQLHandler]` will be declared after other route handlers.
-For example, you could protect your application with authentication.
+`link:../../apidocs/io/vertx/ext/web/handler/graphql/GraphQLHandler.html[GraphQLHandler]` 通常是最后一个声明的处理器。
+例如，您可以通过身份验证保护您的应用程序。
 
-In this case, it is likely that your data fetchers will need to know which user is logged-in to narrow down the results.
-Let's say your authentication layer stores a `User` object in the `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]`.
+在这种情况下，您的 DataFetcher 可能需要知道哪个用户已登录，才能缩小结果范围。
+假设您的身份验证层在 `link:../../apidocs/io/vertx/ext/web/RoutingContext.html[RoutingContext]` 中存储了一个 `User` 对象。
 
-You may retrieve this object by inspecting the `DataFetchingEnvironment`:
+您可以通过 `DataFetchingEnvironment` 来获取这个 `User` 对象：
 
 [source,java]
 ----
@@ -229,15 +232,15 @@ VertxDataFetcher<List<Link>> dataFetcher = VertxDataFetcher.create((environment,
 });
 ----
 
-NOTE: The routing context is available with any kind of data fetchers, not just `link:../../apidocs/io/vertx/ext/web/handler/graphql/schema/VertxDataFetcher.html[VertxDataFetcher]`.
+NOTE: RoutingContext 可用于任何类型的 DataFetcher ，而不仅仅是 `link:../../apidocs/io/vertx/ext/web/handler/graphql/schema/VertxDataFetcher.html[VertxDataFetcher]` 。
 
-If you prefer not to expose the routing context to your data fetchers, configure the GraphQL handler to customize the context object:
+如果您不想将 RoutingContext 暴露给 DataFetcher ，请配置 GraphQL 处理器并自定义上下文对象：
 
 [source,java]
 ----
 VertxDataFetcher<List<Link>> dataFetcher = VertxDataFetcher.create((environment, promise) -> {
 
-  // User as custom context object
+  // 以 User 对象作为自定义上下文对象
   User user = environment.getContext();
 
   retrieveLinksPostedBy(user, promise);
@@ -246,7 +249,7 @@ VertxDataFetcher<List<Link>> dataFetcher = VertxDataFetcher.create((environment,
 
 GraphQL graphQL = setupGraphQLJava(dataFetcher);
 
-// Customize the query context object when setting up the handler
+// 设置处理器时，自定义查询上下文对象
 GraphQLHandler handler = GraphQLHandler.create(graphQL).queryContext(routingContext -> {
 
   return routingContext.get("user");
@@ -256,14 +259,15 @@ GraphQLHandler handler = GraphQLHandler.create(graphQL).queryContext(routingCont
 router.route("/graphql").handler(handler);
 ----
 
-=== JSON data results
+[[_json_data_results]]
+=== JSON 类型数据结果
 
-The default GraphQL data fetcher is `PropertyDataFetcher`.
-As a consequence, it will be able to read the fields of your domain objects without further configuration.
+默认的GraphQL DataFetcher 是 `PropertyDataFetcher` 。
+因此，它无需进一步配置即可读取域对象的字段。
 
-Nevertheless, some Vert.x data clients return `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` and `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` results.
+不过，某些 Vert.x 数据客户端会返回 `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` 和 `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` 类型的结果。
 
-If you don't need (or don't wish to) use a domain object layer, you can configure GraphQL-Java to use `link:../../apidocs/io/vertx/ext/web/handler/graphql/schema/VertxPropertyDataFetcher.html[VertxPropertyDataFetcher]` instead:
+如果您不需要（或不想）使用域对象层，则可以将 GraphQL-Java 配置改为使用 `link:../../apidocs/io/vertx/ext/web/handler/graphql/schema/VertxPropertyDataFetcher.html[VertxPropertyDataFetcher]` ：
 
 [source,java]
 ----
@@ -280,23 +284,24 @@ builder.wiringFactory(new WiringFactory() {
 });
 ----
 
-TIP: `link:../../apidocs/io/vertx/ext/web/handler/graphql/schema/VertxPropertyDataFetcher.html[VertxPropertyDataFetcher]` wraps a `PropertyDataFetcher` so you can still use it with domain objects.
+TIP: `link:../../apidocs/io/vertx/ext/web/handler/graphql/schema/VertxPropertyDataFetcher.html[VertxPropertyDataFetcher]` 包装了一个 `PropertyDataFetcher` ，因此您也可以通过它使用域对象。
 
-=== Batch loading
+[[_batch_loading]]
+=== 批量加载
 
-Dataloaders help you to load data efficiently by batching fetch requests and caching results.
+DataLoader 可以批量化请求并缓存结果，助您高效地加载数据。（译者注：与 DataFetcher 对应，DataLoader保留原文不翻译）
 
-First, create a batch loader:
+首先，创建一个批量加载器： 
 
 [source,java]
 ----
 BatchLoaderWithContext<String, Link> linksBatchLoader = this::retrieveLinksFromBackend;
 ----
 
-TIP: If you work with Vert.x callback-based APIs, you may use a `link:../../apidocs/io/vertx/ext/web/handler/graphql/dataloader/VertxBatchLoader.html[VertxBatchLoader]`
-or a `link:../../apidocs/io/vertx/ext/web/handler/graphql/dataloader/VertxMappedBatchLoader.html[VertxMappedBatchLoader]` to simplify your code.
+TIP: 如果您使用基于回调的 Vert.x API，则可以使用 `link:../../apidocs/io/vertx/ext/web/handler/graphql/dataloader/VertxBatchLoader.html[VertxBatchLoader]`
+或 `link:../../apidocs/io/vertx/ext/web/handler/graphql/dataloader/VertxMappedBatchLoader.html[VertxMappedBatchLoader]` 简化代码。
 
-Then, configure the `link:../../apidocs/io/vertx/ext/web/handler/graphql/GraphQLHandler.html[GraphQLHandler]` to create a `DataLoaderRegistry` for each request:
+然后，配置 `link:../../apidocs/io/vertx/ext/web/handler/graphql/GraphQLHandler.html[GraphQLHandler]` ，为每个请求创建一个 `DataLoaderRegistry` ：
 
 [source,java]
 ----
@@ -309,13 +314,14 @@ GraphQLHandler handler = GraphQLHandler.create(graphQL).dataLoaderRegistry(rc ->
 });
 ----
 
-=== File uploads
+[[_file_uploads]]
+=== 文件上传
 
-https://github.com/jaydenseric/graphql-multipart-request-spec[GraphQL multipart request] is an interoperable multipart form field structure for `GraphQL` requests.
-By enabling this functionality, GraphQL clients will be able to upload files using a single mutation call.
-All the server-side file handling will be abstracted by the `link:../../apidocs/io/vertx/ext/web/handler/graphql/GraphQLHandler.html[GraphQLHandler]`.
+https://github.com/jaydenseric/graphql-multipart-request-spec[GraphQL multipart 请求] 是用于 `GraphQL` 请求的可互操作表单结构。
+通过启用此功能，GraphQL 客户端将能够使用单个变更（Mutation）调用来上传文件。
+所有服务器端文件处理逻辑都抽象到了 `link:../../apidocs/io/vertx/ext/web/handler/graphql/GraphQLHandler.html[GraphQLHandler]` 。
 
-To enable it, create a `link:../../apidocs/io/vertx/ext/web/handler/graphql/GraphQLHandler.html[GraphQLHandler]` with the requestMultipartEnabled configuration set to true and add the `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]` to the router.
+启用该功能需要创建一个 `link:../../apidocs/io/vertx/ext/web/handler/graphql/GraphQLHandler.html[GraphQLHandler]` ，并将 requestMultipartEnabled 配置设置为true，然后添加 `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]` 到路由。 
 
 [source,java]
 ----
@@ -330,16 +336,16 @@ router.route().handler(BodyHandler.create());
 router.route("/graphql").handler(graphQLHandler);
 ----
 
-IMPORTANT: If the router does not have a `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]`, the multipart request parser will not be able to handle the GraphQL mutation call.
+IMPORTANT: 如果路由没有 `link:../../apidocs/io/vertx/ext/web/handler/BodyHandler.html[BodyHandler]` ，则 multipart 请求解析器无法处理 GraphQL 的变更请求。
 
-Finally, create the `Upload` scalar and set it to the `RuntimeWiring`:
+最后，创建 `Upload` scalar 并设置到 `RuntimeWiring` 中：
 
 [source,java]
 ----
 RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring().scalar(UploadScalar.build()).build();
 ----
 
-The `FileUpload` instance can be accessed using the `DataFetchingEnvironment::getArgument` method.
+`FileUpload` 实例可以通过 `DataFetchingEnvironment::getArgument` 方法获取。
 
 [source,java]
 ----

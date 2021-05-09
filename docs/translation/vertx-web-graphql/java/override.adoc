@@ -1,17 +1,19 @@
 == RxJava 2 API
 
-=== Setting up with an Rxified router
+[[_setting_up_with_an_rxified_router]]
+=== 配置 Rxified 路由
 
-To handle GraphQL requests on a Rxified `link:../../apidocs/io/vertx/reactivex/ext/web/Route.html[Route]`, make sure to import the `link:../../apidocs/io/vertx/reactivex/ext/web/handler/graphql/GraphQLHandler.html[GraphQLHandler]` class.
+若需要在 Rxified `link:../../apidocs/io/vertx/reactivex/ext/web/Route.html[路由]` 中处理 GraphQL 请求，则请确保已导入了 `link:../../apidocs/io/vertx/reactivex/ext/web/handler/graphql/GraphQLHandler.html[GraphQLHandler]` 类。
 
-=== Working with Vert.x Rxified APIs
+[[_working_with_vert_x_rxified_apis]]
+=== 使用 Vert.x 的 Rxified API
 
-GraphQL-Java expects `CompletionStage` for asynchronous results in data fetchers and batch loaders.
+GraphQL-Java 期望 DataFetcher 和批量加载器使用 `CompletionStage` 提供异步结果。
 
-Therefore, if you work with the Vert.x Rxified APIs (e.g. the https://vertx.io/docs/vertx-web-client/java/#_rxjava_2_api[Web Client] or the https://vertx.io/docs/vertx-cassandra-client/java/#_rxjava_2_api[Cassandra Client]), you will have to adapt the `Single` and `Maybe` objects.
+但是若您使用 Vert.x Rxified API （如 https://vertx.io/docs/vertx-web-client/java/#_rxjava_2_api[Web 客户端] 或 https://vertx.io/docs/vertx-cassandra-client/java/#_rxjava_2_api[Cassandra 客户端]），则需要适配 `Single` 和 `Maybe` 对象。
 
-The `RxJava2Jdk8Interop` library provides the tooling to do just that.
-Add the following to the _dependencies_ section of your Maven build file:
+`RxJava2Jdk8Interop` 库提供了这些适配工具。
+您可以在 Maven 构建配置文件的 _dependencies_ 部分中增加以下依赖：
 
 [source,xml,subs="+attributes"]
 ----
@@ -22,14 +24,14 @@ Add the following to the _dependencies_ section of your Maven build file:
 </dependency>
 ----
 
-Or if you use Gradle:
+如果您使用 Gradle，则增加以下依赖配置：
 
 [source,groovy,subs="+attributes"]
 ----
 compile 'com.github.akarnokd:rxjava2-jdk8-interop:0.3.5'
 ----
 
-Then you can create a data fetcher from a `Single` result:
+然后可以从 `Single` 结果中创建 DataFetcher ：
 
 [source,java]
 ----
@@ -39,4 +41,4 @@ DataFetcher<CompletionStage<String>> fetcher = environment -> {
 };
 ----
 
-For `Maybe` results, use `MaybeInterop`.
+同样，可以使用 `MaybeInterop` 处理 `Maybe` 结果。
