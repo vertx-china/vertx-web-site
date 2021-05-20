@@ -63,8 +63,8 @@ const Footer = () => {
                 className={classNames({ visible: listVisible[1][0] })}>
               <li><Link href="/faq/"><a>答疑</a></Link></li>
               <li><Link href="/channels/"><a>联系渠道</a></Link></li>
-              <li><a href="https://how-to.vertx.io/">How-To’s</a></li>
-              <li><a href="https://start.vertx.io/">App Generator</a></li>
+              <li><a href="https://how-to.vertx.io/">操作指南</a></li>
+              <li><a href="https://start.vertx.io/">应用生成器</a></li>
             </ul>
           </div>
           <div className="footer-nav-list">
