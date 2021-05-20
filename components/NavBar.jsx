@@ -97,7 +97,7 @@ const NavBar = () => {
                   <a><DropDownItem>答疑</DropDownItem></a>
                 </Link>
                 <Link href="/channels/">
-                  <a><DropDownItem>沟通渠道</DropDownItem></a>
+                  <a><DropDownItem>联系渠道</DropDownItem></a>
                 </Link>
                 <a href="https://how-to.vertx.io/" target="_blank" rel="noreferrer">
                   <DropDownItem>How-To’s <ExternalLink className="external-link-icon"

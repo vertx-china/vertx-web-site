@@ -62,7 +62,7 @@ const Footer = () => {
             <ul ref={listRef[1]} style={{ maxHeight: listMaxHeight[1][0] }}
                 className={classNames({ visible: listVisible[1][0] })}>
               <li><Link href="/faq/"><a>答疑</a></Link></li>
-              <li><Link href="/channels/"><a>沟通渠道</a></Link></li>
+              <li><Link href="/channels/"><a>联系渠道</a></Link></li>
               <li><a href="https://how-to.vertx.io/">How-To’s</a></li>
               <li><a href="https://start.vertx.io/">App Generator</a></li>
             </ul>
