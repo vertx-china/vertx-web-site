@@ -97,7 +97,7 @@ const NavBar = () => {
                   <a><DropDownItem>答疑</DropDownItem></a>
                 </Link>
                 <Link href="/channels/">
-                  <a><DropDownItem>Channels</DropDownItem></a>
+                  <a><DropDownItem>沟通渠道</DropDownItem></a>
                 </Link>
                 <a href="https://how-to.vertx.io/" target="_blank" rel="noreferrer">
                   <DropDownItem>How-To’s <ExternalLink className="external-link-icon"
@@ -133,8 +133,8 @@ const NavBar = () => {
             <a href="https://discord.gg/KzEMwP2" className="navbar-social-link" title="Discord" target="_blank" rel="noopener noreferrer">
               <Discord aria-label="Eclipse Vert.x channel on Discord" />
             </a>
-            <a href="https://groups.google.com/forum/?fromgroups#!forum/vertx" className="navbar-social-link" title="Vert.x User Group" target="_blank" rel="noopener noreferrer">
-              <Googlemessages aria-label="A Google group for Vert.x users" title="Vert.x User Group" />
+            <a href="https://groups.google.com/forum/?fromgroups#!forum/vertx" className="navbar-social-link" title="Vert.x 用户组" target="_blank" rel="noopener noreferrer">
+              <Googlemessages aria-label="A Google group for Vert.x users" title="Vert.x 用户组" />
             </a>
             <a href="https://shang.qq.com/wpa/qunwpa?idkey=587f58cacb9557e3291b46098e0fe09427b98a1c0f866da23c04c2762bc7e2ad" className="navbar-social-link" title="Vert.x中国用户组QQ群" target="_blank" rel="noopener noreferrer">
               <Tencentqq aria-label="Vert.x中国用户组QQ群" title="Vert.x中国用户组QQ群" />

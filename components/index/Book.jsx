@@ -30,8 +30,7 @@ const Book = () => (
             </div>
             <div className="quote">
               <div className="quote-content">
-                &ldquo;一本很优秀的书，
-                可以加入您的个人书库中。
+                &ldquo;一本很优秀的书，可以加入您的个人书库。
                 该书讨论了编写消息传递框架在架构方面的主要挑战。&rdquo;
               </div>
               <div className="quote-name">
@@ -48,7 +47,7 @@ const Book = () => (
               </div>
             </div>
             <a href={URL} target="_blank" rel="noopener noreferrer">
-              <Button primary>Get the book!</Button>
+              <Button primary>获取这本书！</Button>
             </a>
           </div>
         </div>

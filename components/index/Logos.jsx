@@ -137,7 +137,7 @@ const Logos = () => {
   return (
     <div className="logos">
       <hr/>
-      <h3>Who&rsquo;s using Eclipse Vert.x?</h3>
+      <h3>哪些公司在用 Eclipse Vert.x？</h3>
       <div className="logos-row" style={{ animationDuration: `${DURATION1}s` }}>
         <div className="logos-row-half" ref={refRow1a}>{LOGO_ELEMENTS1}</div>
         <div className="logos-row-half" ref={refRow1b}>{LOGO_ELEMENTS1}</div>
@@ -148,9 +148,9 @@ const Logos = () => {
         <div className="logos-row-half" ref={refRow2b}>{LOGO_ELEMENTS2}</div>
       </div>
       <div className="logos-contact-us">
-        <span className="logos-contact-us-question">Want to be listed here?</span>
+        <span className="logos-contact-us-question">希望在这里列出？</span>
         <a href="mailto:vertx-enquiries@googlegroups.com"><Button primary>
-          <Mail className="feather" /> Contact us!
+          <Mail className="feather" /> 请联系我们！
         </Button></a>
       </div>
     </div>

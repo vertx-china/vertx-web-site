@@ -62,7 +62,7 @@ const Footer = () => {
             <ul ref={listRef[1]} style={{ maxHeight: listMaxHeight[1][0] }}
                 className={classNames({ visible: listVisible[1][0] })}>
               <li><Link href="/faq/"><a>答疑</a></Link></li>
-              <li><Link href="/channels/"><a>Channels</a></Link></li>
+              <li><Link href="/channels/"><a>沟通渠道</a></Link></li>
               <li><a href="https://how-to.vertx.io/">How-To’s</a></li>
               <li><a href="https://start.vertx.io/">App Generator</a></li>
             </ul>
@@ -71,21 +71,21 @@ const Footer = () => {
             <h5 onClick={() => onClick(2)}>Eclipse</h5>
             <ul ref={listRef[2]} style={{ maxHeight: listMaxHeight[2][0] }}
                 className={classNames({ visible: listVisible[2][0] })}>
-              <li><a href="https://www.eclipse.org/">Eclipse Foundation</a></li>
-              <li><a href="https://www.eclipse.org/legal/privacy.php">Privacy Policy</a></li>
-              <li><a href="https://www.eclipse.org/legal/termsofuse.php">Terms of Use</a></li>
-              <li><a href="https://www.eclipse.org/legal/copyright.php">Copyright Agent</a></li>
-              <li><a href="https://www.eclipse.org/legal/">Legal Resources</a></li>
+              <li><a href="https://www.eclipse.org/">Eclipse 基金会</a></li>
+              <li><a href="https://www.eclipse.org/legal/privacy.php">隐私政策</a></li>
+              <li><a href="https://www.eclipse.org/legal/termsofuse.php">使用条款</a></li>
+              <li><a href="https://www.eclipse.org/legal/copyright.php">版权代理</a></li>
+              <li><a href="https://www.eclipse.org/legal/">法律资源</a></li>
             </ul>
           </div>
         </div>
         <div className="footer-copyright">
           <div className="footer-copyright-remarks">
             &copy; {new Date().getFullYear()} Eclipse Vert.x<br/>
-            Eclipse Vert.x is open source and dual-licensed under
-            the <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener noreferrer">Eclipse Public License 2.0</a> and
-            the <a href="https://www.apache.org/licenses/LICENSE-2.0.html" target="_blank" rel="noopener noreferrer">Apache License 2.0</a>. <br className="footer-copyright-break"/>
-            Website design by <a href="https://michelkraemer.com" target="_blank" rel="noopener noreferrer">Michel Krämer</a>.
+            Eclipse Vert.x 是开源的，并在
+            <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener noreferrer">Eclipse Public License 2.0</a>和
+            <a href="https://www.apache.org/licenses/LICENSE-2.0.html" target="_blank" rel="noopener noreferrer">Apache License 2.0</a>协议下获得了双重许可。<br className="footer-copyright-break"/>
+            网站由 <a href="https://michelkraemer.com" target="_blank" rel="noopener noreferrer">Michel Krämer</a> 设计。
           </div>
           <div className="footer-copyright-eclipse-logo">
             <a href="https://www.eclipse.org/" target="_blank" rel="noopener noreferrer">
