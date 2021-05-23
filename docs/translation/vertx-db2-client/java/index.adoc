@@ -1,37 +1,38 @@
 = Reactive DB2 客户端
 :PREPARED_PARAMS: `?`​
 
-The Reactive DB2 Client is a client for DB2 with a straightforward API focusing on
-scalability and low overhead.
+响应式的DB2客户端具有直接简单的API，
+专注于可伸缩性和低开销。
 
-The client is reactive and non blocking, allowing to handle many database connections with a single thread.
+该客户端是响应式的、非阻塞的，可以用单个线程处理多个数据库连接。
 
-*Features*
+*特性*
 
-* Support for DB2 on Linux, Unix, and Windows
-* Limited support for DB2 on z/OS
-* Event driven
-* Lightweight
-* Built-in connection pooling
-* Prepared queries caching
-* Batch and cursor
-* Row streaming
-* RxJava 1 and RxJava 2
-* Direct memory to object without unnecessary copies
-* Java 8 Date and Time
-* SSL/TLS
-* HTTP/1.x CONNECT, SOCKS4a or SOCKS5 proxy support
+* 支持Linux、Unix，及Windows上的DB2
+* 对z/OS上的DB2提供有限支持
+* 事件驱动
+* 轻量级
+* 内置连接池
+* 预处理查询（Prepared query）缓存
+* 批处理及游标支持
+* 流式行处理
+* RxJava 1 与 RxJava 2 支持
+* 支持对象存储在直接内存，避免不必要的拷贝
+* 支持Java 8的日期和时间类型
+* 支持 SSL/TLS
+* 支持 HTTP/1.x 连接，SOCKS4a 及 SOCKS5 等代理
 
-*Current limitations*
+*当前限制*
 
-* No stored procedures support
-* Some column types (e.g. BLOB and CLOB) are not supported
+* 不支持存储过程
+* 不支持某些列类型（例如BLOB和CLOB） 
 
-== Usage
+[[_usage]]
+== 使用方法
 
-To use the Reactive DB2 Client add the following dependency to the _dependencies_ section of your build descriptor:
+使用响应式 DB2 客户端，需要将以下依赖项添加到项目构建工具的 _依赖_ 配置中：
 
-* Maven (in your `pom.xml`):
+* Maven (在您的 `pom.xml`):
 
 [source,xml]
 ----
@@ -41,7 +42,7 @@ To use the Reactive DB2 Client add the following dependency to the _dependencies
  <version>4.0.3</version>
 </dependency>
 ----
-* Gradle (in your `build.gradle` file):
+* Gradle (在您的 `build.gradle` 文件中):
 
 [source,groovy]
 ----
@@ -50,9 +51,10 @@ dependencies {
 }
 ----
 
-== Getting started
+[[_getting_started]]
+== 开始
 
-Here is the simplest way to connect, query and disconnect
+以下是最简单的连接，查询和断开连接方法
 
 [source,java]
 ----
@@ -63,14 +65,14 @@ DB2ConnectOptions connectOptions = new DB2ConnectOptions()
   .setUser("user")
   .setPassword("secret");
 
-// Pool options
+// 连接池选项
 PoolOptions poolOptions = new PoolOptions()
   .setMaxSize(5);
 
-// Create the client pool
+// 创建池
 DB2Pool client = DB2Pool.pool(connectOptions, poolOptions);
 
-// A simple query
+// 简单查询
 client
   .query("SELECT * FROM users WHERE id='julien'")
   .execute(ar -> {
@@ -81,14 +83,15 @@ client
     System.out.println("Failure: " + ar.cause().getMessage());
   }
 
-  // Now close the pool
+  // 现在关闭客户端池
   client.close();
 });
 ----
 
-== Connecting to DB2
+[[_connecting_to_db2]]
+== 连接 DB2
 
-Most of the time you will use a pool to connect to DB2:
+大多数时间，您将使用连接池连接到 DB2：
 
 [source,java]
 ----
@@ -99,18 +102,18 @@ DB2ConnectOptions connectOptions = new DB2ConnectOptions()
   .setUser("user")
   .setPassword("secret");
 
-// Pool options
+// 连接池配置
 PoolOptions poolOptions = new PoolOptions()
   .setMaxSize(5);
 
-// Create the pooled client
+// 创建池化的客户端
 DB2Pool client = DB2Pool.pool(connectOptions, poolOptions);
 ----
 
-The pooled client uses a connection pool and any operation will borrow a connection from the pool
-to execute the operation and release it to the pool.
+池化的客户端使用连接池，任何操作都将借用连接池中的连接来执行该操作，
+并将连接释放回连接池中。
 
-If you are running with Vert.x you can pass it your Vertx instance:
+如果您使用 Vert.x 运行，您可以将 Vertx 实例传递给它：
 
 [source,java]
 ----
@@ -121,24 +124,24 @@ DB2ConnectOptions connectOptions = new DB2ConnectOptions()
   .setUser("user")
   .setPassword("secret");
 
-// Pool options
+// 连接池配置
 PoolOptions poolOptions = new PoolOptions()
   .setMaxSize(5);
-// Create the pooled client
+// 创建池化的客户端
 DB2Pool client = DB2Pool.pool(vertx, connectOptions, poolOptions);
 ----
 
-You need to release the pool when you don't need it anymore:
+当您不再需要连接池时，您需要释放它：
 
 [source,java]
 ----
 pool.close();
 ----
 
-When you need to execute several operations on the same connection, you need to use a client
-`link:../../apidocs/io/vertx/db2client/DB2Connection.html[connection]`.
+当您需要在同一连接上执行多个操作时，您需要使用 
+`link:../../apidocs/io/vertx/db2client/DB2Connection.html[connection]` 客户端。
 
-You can easily get one from the pool:
+您可以轻松地从连接池中获取一个：
 
 [source,java]
 ----
@@ -149,18 +152,18 @@ DB2ConnectOptions connectOptions = new DB2ConnectOptions()
   .setUser("user")
   .setPassword("secret");
 
-// Pool options
+// 连接池配置
 PoolOptions poolOptions = new PoolOptions()
   .setMaxSize(5);
 
-// Create the pooled client
+// 创建池化的客户端
 DB2Pool client = DB2Pool.pool(vertx, connectOptions, poolOptions);
 
-// Get a connection from the pool
+// 从连接池获取一个连接
 client.getConnection().compose(conn -> {
   System.out.println("Got a connection from the pool");
 
-  // All operations execute on the same connection
+  // 以下所有操作都在同一个连接上执行
   return conn
     .query("SELECT * FROM users WHERE id='julien'")
     .execute()
@@ -168,7 +171,7 @@ client.getConnection().compose(conn -> {
       .query("SELECT * FROM users WHERE id='emad'")
       .execute())
     .onComplete(ar -> {
-      // Release the connection to the pool
+      // 将连接释放回连接池
       conn.close();
     });
 }).onComplete(ar -> {
@@ -181,15 +184,17 @@ client.getConnection().compose(conn -> {
 });
 ----
 
-Once you are done with the connection you must close it to release it to the pool, so it can be reused.
+连接使用完后，您必须关闭它以释放到连接池中，以便可以重复使用。
 
-== Configuration
+[[_configuration]]
+== 配置
 
-There are several alternatives for you to configure the client.
+有几个选项供您配置客户端。
 
-=== data object
+[[_data_object]]
+=== 数据对象
 
-A simple way to configure the client is to specify a `DB2ConnectOptions` data object.
+配置客户端的简单方法就是指定 `DB2ConnectOptions` 数据对象。
 
 [source,java]
 ----
@@ -200,43 +205,44 @@ DB2ConnectOptions connectOptions = new DB2ConnectOptions()
   .setUser("user")
   .setPassword("secret");
 
-// Pool Options
+// 连接池配置
 PoolOptions poolOptions = new PoolOptions().setMaxSize(5);
 
-// Create the pool from the data object
+// 从数据对象创建连接池
 DB2Pool pool = DB2Pool.pool(vertx, connectOptions, poolOptions);
 
 pool.getConnection(ar -> {
-  // Handling your connection
+  // 使用连接进行处理
 });
 ----
 
-You can also configure the generic properties with the `setProperties` or `addProperty` methods. Note `setProperties` will override the default client properties.
+您也可以使用 `setProperties` 及 `addProperty` 方法配置通用配置项。但请注意调用 `setProperties` 方法会覆盖默认的客户端配置。
 
-=== connection uri
+[[_connection_uri]]
+=== 连接 URI
 
-Apart from configuring with a `DB2ConnectOptions` data object, We also provide you an alternative way to connect when you want to configure with a connection URI:
+除了使用 `DB2ConnectOptions` 数据对象进行配置外，我们还为您提供了另外一种使用连接URI进行配置的方法：
 
 [source,java]
 ----
 String connectionUri = "db2://dbuser:secretpassword@database.server.com:50000/mydb";
 
-// Create the pool from the connection URI
+// 从连接URI创建连接池
 DB2Pool pool = DB2Pool.pool(connectionUri);
 
-// Create the connection from the connection URI
+// 从连接URI创建连接
 DB2Connection.connect(vertx, connectionUri, res -> {
-  // Handling your connection
+  // 使用连接进行处理
 });
 ----
 
-The URI format for a connection string is:
+连接字符串的URI格式为：
 
 ----
 db2://<USERNAME>:<PASSWORD>@<HOSTNAME>:<PORT>/<DBNAME>
 ----
 
-Currently the client supports the following parameter key words in connection uri
+目前，客户端支持以下的连接 uri 参数关键字：
 
 * host
 * port
@@ -244,11 +250,12 @@ Currently the client supports the following parameter key words in connection ur
 * password
 * dbname
 
-Note: configuring properties in connection URI will override the default properties.
+Note: 连接URI中配置的配置项会覆盖默认配置。
 
-== Connect retries
+[[_connect_retries]]
+== 连接重试
 
-You can configure the client to retry when a connection fails to be established.
+您可以将客户端配置为在连接无法建立时重试。
 
 [source,java]
 ----
@@ -259,7 +266,7 @@ options
 
 include::queries.adoc[]
 
-You can fetch generated keys by wrapping your query in `SELECT <COLUMNS> FROM FINAL TABLE ( <SQL> )`, for example:
+通过将查询包装在 `SELECT <COLUMNS> FROM FINAL TABLE ( <SQL> )`，可以获取生成的键，例如：
 
 [source,java]
 ----
@@ -284,15 +291,17 @@ include::transactions.adoc[]
 
 include::cursor.adoc[]
 
-== Tracing queries
+[[_tracing_queries]]
+== 追踪查询
 
 include::tracing.adoc[]
 
-== DB2 type mapping
+[[_db2_type_mapping]]
+== DB2 类型映射
 
-Currently the client supports the following DB2 types
+当前客户端支持以下 DB2 类型
 
-* BOOLEAN (`java.lang.Boolean`) (DB2 LUW only)
+* BOOLEAN (`java.lang.Boolean`) （只针对DB2 LUW）
 * SMALLINT (`java.lang.Short`)
 * INTEGER (`java.lang.Integer`)
 * BIGINT (`java.lang.Long`)
@@ -307,9 +316,9 @@ Currently the client supports the following DB2 types
 * TIMESTAMP (`java.time.LocalDateTime`)
 * BINARY (`byte[]`)
 * VARBINARY (`byte[]`)
-* ROWID (`io.vertx.db2client.impl.drda.DB2RowId` or `java.sql.RowId`) (DB2 z/OS only)
+* ROWID (`io.vertx.db2client.impl.drda.DB2RowId` or `java.sql.RowId`) （只针对DB2 z/OS）
 
-Some types that are currently NOT supported are:
+以下类型目前不支持：
 
 * XML
 * BLOB
@@ -317,12 +326,12 @@ Some types that are currently NOT supported are:
 * DBCLOB
 * GRAPHIC / VARGRAPHIC
 
-For a further documentation on DB2 data types, see the following resources:
+有关进一步介绍DB2数据类型的文档，请参考以下资源：
 
 * https://www.ibm.com/support/knowledgecenter/SSEPGG_11.5.0/com.ibm.db2.luw.sql.ref.doc/doc/r0008483.html[DB2 for LUW 11.5 data types]
 * https://www.ibm.com/support/knowledgecenter/SSEPEK_12.0.0/sqlref/src/tpc/db2z_datatypesintro.html[DB2 for z/OS 12.0 data types]
 
-Tuple decoding uses the above types when storing values, it also performs on the fly conversion of the actual value when possible:
+元组解码在存储值时使用上述类型，并且在可能的情况下还对实际值进行即时转换：
 
 [source,java]
 ----
@@ -332,18 +341,19 @@ pool
   RowSet<Row> rowSet = ar.result();
   Row row = rowSet.iterator().next();
 
-  // Stored as INTEGER column type and represented as java.lang.Integer
+  // INTEGER 类型字段读取出来是 java.lang.Integer
   Object value = row.getValue(0);
 
-  // Convert to java.lang.Long
+  // 转换为 java.lang.Long
   Long longValue = row.getLong(0);
 });
 ----
 
-== Using Java enum types
+[[_using_java_enum_types]]
+== 使用 Java 枚举类型
 
-You can map Java https://docs.oracle.com/javase/tutorial/java/javaOO/enum.html[enum types] to these column
-types:
+您可以将Java的 https://docs.oracle.com/javase/tutorial/java/javaOO/enum.html[枚举类型]
+映射为下面的列类型：
 
 - Strings (VARCHAR, TEXT)
 - Numbers (SMALLINT, INTEGER, BIGINT)
@@ -376,13 +386,14 @@ client.preparedQuery("SELECT day_num FROM FINAL TABLE ( INSERT INTO days (day_nu
    });
 ----
 
-The String type is matched with the Java enum's name returned by the `name()` method.
+String类型使用Java枚举 `name()` 方法返回的名字进行匹配。
 
-Number types are matched with the Java enum's ordinal returned by the `ordinal()` method and the row.get() method returns the corresponding enum's `name()` value at the ordinal position of the integer value retrieved.
+数值类型使用Java枚举 `ordinal()` 方法返回的序数进行匹配，row.get() 方法获取到的是整型值对应Java枚举序数的枚举值的 `name()` 值。
 
-== Collector queries
+[[_collector_queries]]
+== 集合类查询
 
-You can use Java collectors with the query API:
+您可以将查询API与Java集合类结合使用：
 
 [source,java]
 ----
@@ -390,14 +401,14 @@ Collector<Row, ?, Map<Long, String>> collector = Collectors.toMap(
   row -> row.getLong("id"),
   row -> row.getString("last_name"));
 
-// Run the query with the collector
+// 运行查询使用集合类
 client.query("SELECT * FROM users")
   .collecting(collector)
   .execute(ar -> {
   if (ar.succeeded()) {
     SqlResult<Map<Long, String>> result = ar.result();
 
-    // Get the map created by the collector
+    // 获取用集合类创建的map
     Map<Long, String> map = result.value();
     System.out.println("Got " + map);
   } else {
@@ -406,11 +417,11 @@ client.query("SELECT * FROM users")
 });
 ----
 
-The collector processing must not keep a reference on the `link:../../apidocs/io/vertx/sqlclient/Row.html[Row]` as
-there is a single row used for processing the entire set.
+集合类处理不能保留 `link:../../apidocs/io/vertx/sqlclient/Row.html[Row]` 
+的引用，因为只有一个 Row 对象用于处理整个集合。
 
-The Java `Collectors` provides many interesting predefined collectors, for example you can
-create easily create a string directly from the row set:
+Java `Collectors` 提供了许多有趣的预定义集合类，例如，
+您可以直接用 Row 中的集合轻松拼接成一个字符串：
 
 [source,java]
 ----
@@ -419,12 +430,12 @@ Collector<Row, ?, String> collector = Collectors.mapping(
   Collectors.joining(",", "(", ")")
 );
 
-// Run the query with the collector
+// 运行查询使用集合类
 client.query("SELECT * FROM users").collecting(collector).execute(ar -> {
     if (ar.succeeded()) {
       SqlResult<String> result = ar.result();
 
-      // Get the string created by the collector
+      // 获取用集合类创建的String
       String list = result.value();
       System.out.println("Got " + list);
     } else {
@@ -433,10 +444,11 @@ client.query("SELECT * FROM users").collecting(collector).execute(ar -> {
   });
 ----
 
-== Using SSL/TLS
+[[_using_ssltls]]
+== 使用 SSL/TLS
 
-To configure the client to use SSL connection, you can configure the `link:../../apidocs/io/vertx/db2client/DB2ConnectOptions.html[DB2ConnectOptions]`
-like a Vert.x `NetClient`.
+配置客户端使用SSL连接, 您可以像 Vert.x `NetClient` 一样配置
+`link:../../apidocs/io/vertx/db2client/DB2ConnectOptions.html[DB2ConnectOptions]` 。
 
 [source,java]
 ----
@@ -453,21 +465,21 @@ DB2ConnectOptions options = new DB2ConnectOptions()
 
 DB2Connection.connect(vertx, options, res -> {
   if (res.succeeded()) {
-    // Connected with SSL
+    // 使用SSL进行连接
   } else {
     System.out.println("Could not connect " + res.cause());
   }
 });
 ----
 
-More information can be found in the http://vertx.io/docs/vertx-core/java/#ssl[Vert.x documentation].
+更多详细信息，请参阅 http://vertx.io/docs/vertx-core/java/#ssl[Vert.x 文档].
 
+[[_using_a_proxy]]
+== 使用代理
 
-== Using a proxy
+您可以配置客户端使用  HTTP/1.x 连接、SOCKS4a 或 SOCKS5 代理。
 
-You can also configure the client to use an HTTP/1.x CONNECT, SOCKS4a or SOCKS5 proxy.
-
-More information can be found in the http://vertx.io/docs/vertx-core/java/#_using_a_proxy_for_client_connections[Vert.x documentation].
+更多详细信息，请参阅 http://vertx.io/docs/vertx-core/java/#_using_a_proxy_for_client_connections[Vert.x 文档]。
 
 ifeval::["java" == "java"]
 include::override/rxjava2.adoc[]
