@@ -8,7 +8,7 @@ insert(docs, "vertx-mongo-client",
   {
       id: "vertx-db2-client",
       name: "DB2 Client",
-      description: "响应式的 DB2 客户端。",
+      description: "响应式 DB2 客户端。",
       category: "databases",
       href: "/vertx-db2-client/java/",
       repository: "https://github.com/eclipse-vertx/vertx-sql-client",
