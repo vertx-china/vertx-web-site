@@ -37,12 +37,13 @@ compile 'io.vertx:vertx-rx-java:4.0.3'
 该辅助类提供了用于 Vert.x Core API 和 RxJava API 之间互相转化的静态方法。
 - 通过基于 Vert.x Core API 增强的 _Rx化的_ Vert.x API。
 
-=== Read stream support
+[[_read_stream_support]]
+=== 可读流支持
 
-RxJava `Observable` is a perfect match for Vert.x `ReadStream` class : both provide a flow of items.
+RxJava 中 `Observable` 的概念和 Vert.x 中 `ReadStream` 类是一对完美的匹配：都提供了一个对象流。
 
-The `link:../../apidocs/io/vertx/rx/java/RxHelper.html#toObservable-io.vertx.core.streams.ReadStream-[RxHelper.toObservable]` static methods convert
-a Vert.x read stream to an `rx.Observable`:
+静态方法 `link:../../apidocs/io/vertx/rx/java/RxHelper.html#toObservable-io.vertx.core.streams.ReadStream-[RxHelper.toObservable]` 用于将
+Vert.x 可读流转换为 `rx.Observable`：
 
 [source,java]
 ----
@@ -54,8 +55,8 @@ fileSystem.open("/data.txt", new OpenOptions(), result -> {
 });
 ----
 
-The _Rxified_ Vert.x API provides a `link:../../apidocs/io/vertx/rxjava/core/streams/ReadStream.html#toObservable--[toObservable]`  method on
-`link:../../apidocs/io/vertx/rxjava/core/streams/ReadStream.html[ReadStream]`:
+而 _Rx化的_ Vert.x API 在 `link:../../apidocs/io/vertx/rxjava/core/streams/ReadStream.html[ReadStream]` 类上提供了
+`link:../../apidocs/io/vertx/rxjava/core/streams/ReadStream.html#toObservable--[toObservable]` 方法：
 
 [source,java]
 ----
@@ -67,42 +68,42 @@ fs.open("/data.txt", new OpenOptions(), result -> {
 });
 ----
 
-Such observables arehot* observables, i.e. they will produce notifications regardless of subscriptions because
-a `ReadStream` can potentially emit items spontaneously or not, depending on the implementation:
+这样的 Observable 是所谓 *hot* Observable，即不管是否有订阅，它们都会产生通知。
+`ReadStream` 是否能自发地发射数据，这取决于它的具体实现：
 
-At subscription time, the adapter calls `link:../../apidocs/io/vertx/core/streams/ReadStream.html#handler-io.vertx.core.Handler-[handler]`
-to set its own handler.
+当订阅动作发生时，适配器会调用 `link:../../apidocs/io/vertx/core/streams/ReadStream.html#handler-io.vertx.core.Handler-[handler]`
+来设置它的 handler 。
 
-Some `ReadStream` implementations can start to emit events after this call, others will emit events whether an
-handler is set or not:
+某些 `ReadStream` 实现会在这个调用之后开始发射事件，而其他的则与 
+handler 是否设置无关：
 
-- `AsyncFile` produces buffer events after the handler is set
-- `HttpServerRequest` produces events independantly of the handler (i.e buffer may be lost if no handler is set)
+- `AsyncFile` 在 handler 设置后开始产生 buffer 事件
+- `HttpServerRequest` 则不依赖于此（即 如果 handler 未设置，buffer 可能会丢失）
 
-In both cases, subscribing to the `Observable` in the same call is safe because the event loop or the worker
-verticles cannot be called concurrently, so the subscription will always happens before the handler starts emitting
-data.
+在上述所有情形中，订阅 `Observable` 都是安全的。原因在于不管 event loop 还是 worker
+verticle 都不会被并发执行，所以订阅一定是在 handler 
+开始发射数据之前发生。
 
-When you need to delay the subscription, you need to `pause` the `ReadStream` and then `resume` it, which is what
-you would do with a `ReadStream`.
+当你想延迟订阅时，需要先 `暂停（pause）` `ReadStream` ，并在之后 `恢复（resume）` 它，
+这与使用 `ReadStream` 一样。
 
 [source,java]
 ----
 server.requestHandler(request -> {
   if (request.method() == HttpMethod.POST) {
 
-    // Stop receiving buffers
+    // 暂停接收 buffer
     request.pause();
 
     checkAuth(res -> {
 
-      // Now we can receive buffers again
+      // 现在可以重新接收 buffer
       request.resume();
 
       if (res.succeeded()) {
         Observable<Buffer> observable = request.toObservable();
         observable.subscribe(buff -> {
-          // Get buffers
+          // 获得 buffer
         });
       }
     });
@@ -110,10 +111,10 @@ server.requestHandler(request -> {
 });
 ----
 
-Likewise it is possible to turn an existing `Observable` into a Vert.x `ReadStream`.
+同样的，将一个 `Observable` 转变为 Vert.x `ReadStream` 也是可以的。
 
-The `link:../../apidocs/io/vertx/rx/java/RxHelper.html#toReadStream-rx.Observable-[RxHelper.toReadStream]`  static methods convert
-an `rx.Observable` to a Vert.x read stream:
+静态方法 `link:../../apidocs/io/vertx/rx/java/RxHelper.html#toReadStream-rx.Observable-[RxHelper.toReadStream]`  用于将 
+`rx.Observable` 转换为 Vert.x 可读流：
 
 [source,java]
 ----
@@ -123,13 +124,14 @@ Pump pump = Pump.pump(readStream, response);
 pump.start();
 ----
 
-=== Write stream support
+[[_write_stream_support]]
+=== 可写流支持
 
-A `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]`, like a `rx.Subscriber`, consumes items, and, when it can't keep-up, collaborates with the producer to avoid an ever-growing backlog.
+`link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` 类似于 `rx.Subscriber` ，它会消费数据，并且在消费速度无法跟上生产速度时与生产者协作，以避免积压的情况不断增加。
 
-Vert.x provides the `link:../../apidocs/io/vertx/rx/java/WriteStreamSubscriber.html[WriteStreamSubscriber]` adapter that you can use to send `Observable` items to any `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]`:
+Vert.x 提供了 `link:../../apidocs/io/vertx/rx/java/WriteStreamSubscriber.html[WriteStreamSubscriber]` 适配器，它可以发送 `Observable` 对象到任意 `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` ：
 
-.Sending buffers to an HTTP server response
+.将 buffer 发送到 HTTP 服务响应
 [source,java]
 ----
 response.setChunked(true);
@@ -137,8 +139,8 @@ WriteStreamSubscriber<io.vertx.core.buffer.Buffer> subscriber = io.vertx.rx.java
 observable.subscribe(subscriber);
 ----
 
-If you are progamming with the _Rxified_ Vert.x API, the `link:../../apidocs/io/vertx/rxjava/core/streams/WriteStream.html[WriteStream]` implementations provide a `toSubscriber` method.
-The previous example then becomes even more straightforward:
+如果您使用 _Rx化的_ Vert.x API 进行编程，`link:../../apidocs/io/vertx/rxjava/core/streams/WriteStream.html[WriteStream]` 的实现提供了一个 `toSubscriber` 方法。
+这样一来，上面的例子可以变得更直接明了：
 
 [source,java]
 ----
@@ -146,18 +148,18 @@ response.setChunked(true);
 observable.subscribe(response.toSubscriber());
 ----
 
-NOTE: When the `Observable` terminates successfully, the adapter invokes the `link:../../apidocs/io/vertx/rxjava/core/streams/WriteStream.html#end-io.vertx.core.Handler-[end]` method.
+NOTE: 当 `Observable` 成功结束时，该适配器会调用 `link:../../apidocs/io/vertx/rxjava/core/streams/WriteStream.html#end-io.vertx.core.Handler-[end]` 方法。
 
-CAUTION: The adapter sets the `link:../../apidocs/io/vertx/rxjava/core/streams/WriteStream.html[WriteStream]` `drain` and `exception` handlers, so don't use them after subscribing.
+CAUTION: 该适配器会设置 `link:../../apidocs/io/vertx/rxjava/core/streams/WriteStream.html[WriteStream]` 的 `drain` 和 `exception` handler，所以订阅后请不要使用它们。
 
-The `link:../../apidocs/io/vertx/rx/java/WriteStreamSubscriber.html[WriteStreamSubscriber]` adapter is able to invoke callbacks when:
+`link:../../apidocs/io/vertx/rx/java/WriteStreamSubscriber.html[WriteStreamSubscriber]` 适配器在下述情况下会调用回调方法：
 
-* the `Observable` terminates with an error, or
-* the `link:../../apidocs/io/vertx/rxjava/core/streams/WriteStream.html[WriteStream]` fails (e.g. HTTP connection is closed or filesystem is full), or
-* the `link:../../apidocs/io/vertx/rxjava/core/streams/WriteStream.html[WriteStream]` ends (i.e. all writes done and file is closed), or
-* the `link:../../apidocs/io/vertx/rxjava/core/streams/WriteStream.html[WriteStream]` ends with an error (i.e. all writes done and an error occured when closing the file)
+* `Observable` 错误地结束，或
+* `link:../../apidocs/io/vertx/rxjava/core/streams/WriteStream.html[WriteStream]` 失败（如 HTTP 连接被关闭，或文件系统已满），或
+* `link:../../apidocs/io/vertx/rxjava/core/streams/WriteStream.html[WriteStream]` 结束（即，所有写入已完成，且文件已关闭），或
+* `link:../../apidocs/io/vertx/rxjava/core/streams/WriteStream.html[WriteStream]` 错误地结束（即，所有写入已结束，当关闭文件时发生了错误）
 
-This allows for a more robust program design, as well as scheduling other tasks after the stream has been handled:
+这样不但可以设计更健壮的程序，而且可以在处理完流之后安排其他任务： 
 
 [source,java]
 ----
@@ -169,27 +171,28 @@ subscriber.onError(throwable -> {
   if (!response.headWritten() && response.closed()) {
     response.setStatusCode(500).end("oops");
   } else {
-    // log error
+    // 错误日志
   }
 });
 
 subscriber.onWriteStreamError(throwable -> {
-  // log error
+  // 错误日志
 });
 
 subscriber.onWriteStreamEnd(() -> {
-  // log end of transaction to audit system...
+  // 将事务结束记录到审计系统
 });
 
 observable.subscribe(subscriber);
 ----
 
-NOTE: If the `link:../../apidocs/io/vertx/rxjava/core/streams/WriteStream.html[WriteStream]` fails, the adapter unsubscribes from the `Observable`.
+NOTE: 如果 `link:../../apidocs/io/vertx/rxjava/core/streams/WriteStream.html[WriteStream]` 失败，则该是配置取消订阅 `Observable` 。
 
-=== Handler support
+[[_handler_support]]
+=== Handler 支持
 
-The `link:../../apidocs/io/vertx/rx/java/RxHelper.html[RxHelper]` can create an `link:../../apidocs/io/vertx/rx/java/ObservableHandler.html[ObservableHandler]`: an `Observable` with a
-`link:../../apidocs/io/vertx/rx/java/ObservableHandler.html#toHandler--[toHandler]` method returning an `Handler<T>` implementation:
+`link:../../apidocs/io/vertx/rx/java/RxHelper.html[RxHelper]` 类可以创建 `link:../../apidocs/io/vertx/rx/java/ObservableHandler.html[ObservableHandler]` 对象，它是一个 `Observable` 对象，
+它的 `link:../../apidocs/io/vertx/rx/java/ObservableHandler.html#toHandler--[toHandler]` 方法会返回 `Handler<T>` 接口的实现：
 
 [source,java]
 ----
@@ -200,41 +203,42 @@ observable.subscribe(id -> {
 vertx.setTimer(1000, observable.toHandler());
 ----
 
-The _Rxified_ Vert.x API does not provide a specific API for handler.
+_Rx化的_ Vert.x API 未提供针对 `Handler` 的 API。
 
-=== Async result support
+[[_async_result_support]]
+=== 异步结果支持
 
-You can create an RxJava `Subscriber` from an existing Vert.x `Handler<AsyncResult<T>>` and subscribe
-it to an `Observable` or a `Single`:
+以一个现有的 Vert.x `Handler<AsyncResult<T>>` 对象为基础，你可以创建一个 RxJava `Subscriber`，
+然后将其注册在 `Observable` 或 `Single` 上：
 
 [source,java]
 ----
 observable.subscribe(RxHelper.toSubscriber(handler1));
 
-// Subscribe to a Single
+// 订阅 Single
 single.subscribe(RxHelper.toSubscriber(handler2));
 ----
 
-The Vert.x `Handler<AsyncResult<T>>` construct occuring as last parameter of an asynchronous method can
-be mapped to an observable of a single element:
+在构造(construct)发生时，作为异步方法的最后一个参数的 Vert.x `Handler<AsyncResult<T>>`
+可以被映射为单个元素的 Observable：
 
-- when the callback is a success, the observer `onNext` method is called with the item
-and the `onComplete` method is immediately invoked after
-- when the callback is a failure, the observer `onError` method is called
+- 当回调成功时，观察者的 `onNext` 方法将被调用，参数就是这个对象；
+且其后 `onComplete` 方法会立即被调用。
+- 当回调失败时，观察者的 `onError` 方法将被调用。
 
-The `link:../../apidocs/io/vertx/rx/java/RxHelper.html#observableFuture--[RxHelper.observableFuture]` method creates an `link:../../apidocs/io/vertx/rx/java/ObservableFuture.html[ObservableFuture]`:
-an `Observable` with a `link:../../apidocs/io/vertx/rx/java/ObservableFuture.html#toHandler--[toHandler]` method returning a `Handler<AsyncResult<T>>`
-implementation:
+`link:../../apidocs/io/vertx/rx/java/RxHelper.html#observableFuture--[RxHelper.observableFuture]` 方法可以创建一个 `link:../../apidocs/io/vertx/rx/java/ObservableFuture.html[ObservableFuture]` 对象。
+这是一个 `Observable` 对象，它的 `link:../../apidocs/io/vertx/rx/java/ObservableFuture.html#toHandler--[toHandler]` 方法会返回 `Handler<AsyncResult<T>>`
+接口的实现：
 
 [source,java]
 ----
 ObservableFuture<HttpServer> observable = RxHelper.observableFuture();
 observable.subscribe(
     server -> {
-      // Server is listening
+      // 服务器在监听
     },
     failure -> {
-      // Server could not start
+      // 服务器无法启动
     }
 );
 vertx.createHttpServer(new HttpServerOptions().
@@ -243,10 +247,10 @@ vertx.createHttpServer(new HttpServerOptions().
 ).listen(observable.toHandler());
 ----
 
-The `ObservableFuture<Server>` will get a single `HttpServer` object, if the `listen` operation fails,
-the subscriber will be notified with the failure.
+我们可以从 `ObservableFuture<Server>` 中获取单个 `HttpServer` 对象。如果端口 `监听（listen）` 失败，
+订阅者将会接收到通知。
 
-The `link:../../apidocs/io/vertx/rx/java/RxHelper.html#toHandler-rx.Observer-[RxHelper.toHandler]` method adapts an existing `Observer` into an handler:
+`link:../../apidocs/io/vertx/rx/java/RxHelper.html#toHandler-rx.Observer-[RxHelper.toHandler]` 方法为观察者（`Observer`）和事件处理器（`Handler`）做了适配：
 
 [source,java]
 ----
@@ -264,7 +268,7 @@ Observer<HttpServer> observer = new Observer<HttpServer>() {
 Handler<AsyncResult<HttpServer>> handler = RxHelper.toFuture(observer);
 ----
 
-It also works with just actions:
+下面的代码也是可以的（译者注：直接基于`Action`）：
 
 [source,java]
 ----
@@ -277,7 +281,7 @@ Handler<AsyncResult<HttpServer>> handler2 = RxHelper.toFuture(onNext, onError);
 Handler<AsyncResult<HttpServer>> handler3 = RxHelper.toFuture(onNext, onError, onComplete);
 ----
 
-The _Rxified_ Vert.x API duplicates each such method with the `rx` prefix that returns an RxJava `Single`:
+_Rx化的_ Vert.x API 复制了类似的每一个方法，并冠以 `rx` 的前缀，它们都返回 RxJava 的 `Single` 对象：
 
 [source,java]
 ----
@@ -285,32 +289,33 @@ Single<HttpServer> single = vertx
   .createHttpServer()
   .rxListen(1234, "localhost");
 
-// Subscribe to bind the server
+// 订阅绑定端口的事件
 single.
     subscribe(
         server -> {
-          // Server is listening
+          // 服务器正在监听
         },
         failure -> {
-          // Server could not start
+          // 服务器无法启动
         }
     );
 ----
 
-Such single arecold* singles, and the corresponding API method is called on subscribe.
+这样的 Single 是 *“冷的”(cold)* ，对应的 API 方法将在注册时被调用。
 
-NOTE: the `rx*` methods replace the `*Observable` of the previous _Rxified_ versions with a semantic
-change to be more in line with RxJava.
+NOTE: 类似 `rx*` 的方法替换了以前版本中 `*Observable` 的方法，
+这样一个语义上的改变是为了与 RxJava 保持一致。
 
-=== Scheduler support
+[[_scheduler_support]]
+=== 调度器支持
 
-The reactive extension sometimes needs to schedule actions, for instance `Observable#timer` creates and returns
-a timer that emit periodic events. By default, scheduled actions are managed by RxJava, it means that the
-timer threads are not Vert.x threads and therefore not executing in a Vert.x event loop.
+有时候 Reactive 扩展库需要执行一些可调度的操作，例如 `Observable#timer`
+方法将创建一个能周期性发射事件的定时器并返回之。缺省情况下，这些可调度的操作由 RxJava 管理，
+这意味着定时器线程并非 Vert.x 线程，因此（这些操作）并不是在 Vert.x Event Loop 线程上执行的。
 
-When an RxJava method deals with a scheduler, it accepts an overloaded method accepting an extra `rx.Scheduler`,
-the `link:../../apidocs/io/vertx/rx/java/RxHelper.html#scheduler-io.vertx.core.Vertx-[RxHelper.scheduler]`  method will return a scheduler that can be used
-in such places.
+在 RxJava 中，有些操作通常会有接受一个 `rx.Scheduler` 参数的重载方法用于设定 `Scheduler`。
+`RxHelper` 类提供了一个 `link:../../apidocs/io/vertx/rx/java/RxHelper.html#scheduler-io.vertx.core.Vertx-[RxHelper.scheduler]` 方法，其返回的调度器可供 RxJava 
+的这些方法使用。比如：
 
 [source,java]
 ----
@@ -318,8 +323,8 @@ Scheduler scheduler = RxHelper.scheduler(vertx);
 Observable<Long> timer = Observable.timer(100, 100, TimeUnit.MILLISECONDS, scheduler);
 ----
 
-For blocking scheduled actions, a scheduler can be created with the `link:../../apidocs/io/vertx/rx/java/RxHelper.html#blockingScheduler-io.vertx.core.Vertx-[RxHelper.blockingScheduler]`
-method:
+对于阻塞型的可调度操作（blocking scheduled actions），我们可以通过 `link:../../apidocs/io/vertx/rx/java/RxHelper.html#blockingScheduler-io.vertx.core.Vertx-[RxHelper.blockingScheduler]`
+方法获得适用的调度器：
 
 [source,java]
 ----
@@ -327,9 +332,9 @@ Scheduler scheduler = RxHelper.blockingScheduler(vertx);
 Observable<Integer> obs = blockingObservable.observeOn(scheduler);
 ----
 
-RxJava can also be reconfigured to use the Vert.x scheduler, thanks to the scheduler hook created with
-`link:../../apidocs/io/vertx/rx/java/RxHelper.html#schedulerHook-io.vertx.core.Vertx-[RxHelper.schedulerHook]`, the returned scheduler hook
-uses a blocking scheduler for IO actions:
+RxJava 也能被配置成使用 Vert.x 的调度器，这得益于
+`link:../../apidocs/io/vertx/rx/java/RxHelper.html#schedulerHook-io.vertx.core.Vertx-[RxHelper.schedulerHook]` 方法创建的调度器钩子对象。
+对于 IO 操作这里使用了阻塞型的调度器：
 
 [source,java]
 ----
@@ -339,7 +344,7 @@ RxJavaHooks.setOnNewThreadScheduler(f -> hook.getNewThreadScheduler());
 RxJavaHooks.setOnComputationScheduler(f -> hook.getComputationScheduler());
 ----
 
-The _Rxified_ Vert.x API provides also similar method on the `link:../../apidocs/io/vertx/rxjava/core/RxHelper.html[RxHelper]` class:
+_Rx化的_ Vert.x API 在 `link:../../apidocs/io/vertx/rxjava/core/RxHelper.html[RxHelper]` 类中也提供了相似的方法：
 
 [source,java]
 ----
@@ -355,8 +360,8 @@ RxJavaSchedulersHook hook = io.vertx.rxjava.core.RxHelper.schedulerHook(vertx);
   RxJavaHooks.setOnComputationScheduler(f -> hook.getComputationScheduler());
 ----
 
-It is also possible to create a scheduler backed by a named worker pool. This can be useful if you want to re-use
-the specific thread pool for scheduling blocking actions:
+基于一个命名的工作线程池（named worker pool）创建调度器也是可以的，
+如果你想为了调度阻塞操作复用特定的线程池，这将会很有帮助：
 
 [source,java]
 ----
@@ -364,10 +369,11 @@ Scheduler scheduler = io.vertx.rxjava.core.RxHelper.scheduler(workerExecutor);
 Observable<Long> timer = Observable.interval(100, 100, TimeUnit.MILLISECONDS, scheduler);
 ----
 
-=== Json unmarshalling
+[[_json_unmarshalling]]
+=== JSON解码
 
-The `link:../../apidocs/io/vertx/rxjava/core/RxHelper.html#unmarshaller-java.lang.Class-[RxHelper.unmarshaller]` creates an `rx.Observable.Operator` that
-transforms an `Observable<Buffer>` in json format into an object observable:
+`link:../../apidocs/io/vertx/rxjava/core/RxHelper.html#unmarshaller-java.lang.Class-[RxHelper.unmarshaller]` 方法创建了一个 `rx.Observable.Operator` 对象，
+它可以将 `Observable<Buffer>` 变换为对象的 Observable：
 
 [source,java]
 ----
@@ -376,13 +382,13 @@ fileSystem.open("/data.txt", new OpenOptions(), result -> {
   Observable<Buffer> observable = RxHelper.toObservable(file);
   observable.lift(RxHelper.unmarshaller(MyPojo.class)).subscribe(
       mypojo -> {
-        // Process the object
+        // 处理对象
       }
   );
 });
 ----
 
-The same can be done with the _Rxified_ helper:
+_Rx化_ 的辅助类也能做同样的事：
 
 [source,java]
 ----
@@ -391,63 +397,67 @@ fileSystem.open("/data.txt", new OpenOptions(), result -> {
   Observable<Buffer> observable = file.toObservable();
   observable.lift(io.vertx.rxjava.core.RxHelper.unmarshaller(MyPojo.class)).subscribe(
       mypojo -> {
-        // Process the object
+        // 处理对象
       }
   );
 });
 ----
 
-=== Deploying a Verticle
+[[_deploying_a_verticle]]
+=== 部署Verticle
 
-The Rxified API cannot deploy an existing Verticle instance, the helper `link:../../apidocs/io/vertx/rx/java/RxHelper.html#observableFuture--[RxHelper.observableFuture]` method
-provides a solution to that.
+Rx化的 API 不能部署一个已经存在的 Verticle 实例。`link:../../apidocs/io/vertx/rx/java/RxHelper.html#observableFuture--[RxHelper.observableFuture]`
+方法为此提供了一个解决方案。
 
-The `link:../../apidocs/io/vertx/rxjava/core/RxHelper.html#deployVerticle-io.vertx.rxjava.core.Vertx-io.vertx.core.Verticle-[RxHelper.deployVerticle]` does it automatically
-for you, it deploys a `Verticle` and returns an `Observable<String>` of the deployment ID.
+所有工作都在 `link:../../apidocs/io/vertx/rxjava/core/RxHelper.html#deployVerticle-io.vertx.rxjava.core.Vertx-io.vertx.core.Verticle-[RxHelper.deployVerticle]`
+方法里自动完成，它会部署一个 `Verticle` 并返回包含部署 ID 的 `Observable<String>`。
 
 [source,java]
 ----
 Observable<String> deployment = RxHelper.deployVerticle(vertx, verticle);
 
 deployment.subscribe(id -> {
-  // Deployed
+  // 部署成功
 }, err -> {
-  // Could not deploy
+  // 部署失败
 });
 ----
 
-= Rxified API
+[[_rxified_api]]
+== Rx化的 API
 
-The _Rxified_ API is a code generated version of the Vert.x API, just like the _JavaScript_ or _Groovy_
-language. The API uses the `io.vertx.rxjava` prefix, for instance the `io.vertx.core.Vertx` class is
-translated to the `link:../../apidocs/io/vertx/rxjava/core/Vertx.html[Vertx]` class.
+_Rx化的_ API 是 Vert.x API 的一个代码自动生成版本，就像 Vert.x 的 _JavaScript_ 或 _Groovy_ 版本一样。
+这些 API 以 `io.vertx.rxjava` 为包名前缀，例如 `io.vertx.core.Vertx` 类被转化为
+`link:../../apidocs/io/vertx/rxjava/core/Vertx.html[Vertx]` 类。
 
-=== Embedding Rxfified Vert.x
+[[_embedding_rxfified_vert.x]]
+=== 嵌入Rx化的 Vert.x
 
-Just use the `link:../../apidocs/io/vertx/rxjava/core/Vertx.html#vertx--[Vertx.vertx]` methods:
+只需使用 `link:../../apidocs/io/vertx/rxjava/core/Vertx.html#vertx--[Vertx.vertx]` 方法：
 
 [source,java]
 ----
 Vertx vertx = io.vertx.rxjava.core.Vertx.vertx();
 ----
 
-=== As a Verticle
+[[_as_a_verticle]]
+=== 作为 Verticle
 
-Extend the `link:../../apidocs/io/vertx/rxjava/core/AbstractVerticle.html[AbstractVerticle]` class, it will wrap it for you:
+通过继承 `link:../../apidocs/io/vertx/rxjava/core/AbstractVerticle.html[AbstractVerticle]` 类，它会做一些包装（您将获得一个 RxJava Verticle）：
 
 [source,java]
 ----
 class MyVerticle extends io.vertx.rxjava.core.AbstractVerticle {
   public void start() {
-    // Use Rxified Vertx here
+    // 在此可使用Rx化的Vert.x了
   }
 }
 ----
 
-Deploying an RxJava verticle is still performed by the Java deployer and does not need a specified
-deployer.
+部署一个 RxJava Verticle 不需要特别的部署器，使用 Java
+部署器即可。
 
-Verticles having an asynchronous start can override instead the `rxStart` method and return a `Completable`:
+支持异步启动的 Verticle 可以重写 `rxStart` 方法并返回一个 `Completable` 实例：
 
 [source,java]
 ----
@@ -461,13 +471,15 @@ class MyVerticle extends io.vertx.rxjava.core.AbstractVerticle {
 }
 ----
 
-== Api examples
+[[_api_examples]]
+== API 例子
 
-Let's study now a few examples of using Vert.x with RxJava.
+让我们通过研究一些例子来了解相关 API 吧。
 
-=== EventBus message stream
+[[_eventBus_message_stream]]
+=== EventBus 消息流
 
-The event bus `link:../../apidocs/io/vertx/rxjava/core/eventbus/MessageConsumer.html[MessageConsumer]` provides naturally an `Observable<Message<T>>`:
+自然地， `link:../../apidocs/io/vertx/rxjava/core/eventbus/MessageConsumer.html[MessageConsumer]` 类提供了相关的 `Observable<Message<T>>` ：
 
 [source,java]
 ----
@@ -475,17 +487,17 @@ EventBus eb = vertx.eventBus();
 MessageConsumer<String> consumer = eb.<String>consumer("the-address");
 Observable<Message<String>> observable = consumer.toObservable();
 Subscription sub = observable.subscribe(msg -> {
-  // Got message
+  // 获得消息
 });
 
-// Unregisters the stream after 10 seconds
+// 10秒后注销
 vertx.setTimer(10000, id -> {
   sub.unsubscribe();
 });
 ----
 
-The `link:../../apidocs/io/vertx/rxjava/core/eventbus/MessageConsumer.html[MessageConsumer]` provides a stream of `link:../../apidocs/io/vertx/rxjava/core/eventbus/Message.html[Message]`.
-The `link:../../apidocs/io/vertx/rxjava/core/eventbus/Message.html#body--[body]` gives access to a new stream of message bodies if needed:
+`link:../../apidocs/io/vertx/rxjava/core/eventbus/MessageConsumer.html[MessageConsumer]` 类提供了 `link:../../apidocs/io/vertx/rxjava/core/eventbus/Message.html[Message]` 的流。
+如果需要，还可以通过 `link:../../apidocs/io/vertx/rxjava/core/eventbus/Message.html#body--[body]` 方法获得消息体组成的新流：
 
 [source,java]
 ----
@@ -494,7 +506,7 @@ MessageConsumer<String> consumer = eb.<String>consumer("the-address");
 Observable<String> observable = consumer.bodyStream().toObservable();
 ----
 
-RxJava map/reduce composition style can then be used:
+RxJava 的 map/reduce 组合风格在这里是相当有用的：
 
 [source,java]
 ----
@@ -513,9 +525,10 @@ observable.
     });
 ----
 
-=== Timers
+[[_timers]]
+=== 定时器Timers
 
-Timer task can be created with `link:../../apidocs/io/vertx/rxjava/core/Vertx.html#timerStream-long-[timerStream]`:
+定时器任务可以通过 `link:../../apidocs/io/vertx/rxjava/core/Vertx.html#timerStream-long-[timerStream]` 方法来创建：
 
 [source,java]
 ----
@@ -528,7 +541,7 @@ vertx.timerStream(1000).
     );
 ----
 
-Periodic task can be created with `link:../../apidocs/io/vertx/rxjava/core/Vertx.html#periodicStream-long-[periodicStream]`:
+周期性的任务可以通过 `link:../../apidocs/io/vertx/rxjava/core/Vertx.html#periodicStream-long-[periodicStream]` 方法来创建：
 
 [source,java]
 ----
@@ -541,7 +554,7 @@ vertx.periodicStream(1000).
     );
 ----
 
-The observable can be cancelled with an unsubscription:
+通过注销操作可以取消对 Observable 的订阅：
 
 [source,java]
 ----
@@ -549,7 +562,7 @@ vertx.periodicStream(1000).
     toObservable().
     subscribe(new Subscriber<Long>() {
       public void onNext(Long aLong) {
-        // Callback
+        // 回调
         unsubscribe();
       }
       public void onError(Throwable e) {}
@@ -557,13 +570,14 @@ vertx.periodicStream(1000).
     });
 ----
 
-=== Http client requests
+[[_http_client_requests]]
+=== HTTP客户端请求
 
-`link:../../apidocs/io/vertx/rxjava/core/http/HttpClient.html#rxRequest-io.vertx.core.http.RequestOptions-[rxRequest]` provides a single of an
-`link:../../apidocs/io/vertx/rxjava/core/http/HttpClientRequest.html[HttpClientRequest]`. The single reports a request failure.
+`link:../../apidocs/io/vertx/rxjava/core/http/HttpClient.html#rxRequest-io.vertx.core.http.RequestOptions-[rxRequest]` 方法返回一个
+`link:../../apidocs/io/vertx/rxjava/core/http/HttpClientRequest.html[HttpClientRequest]` 的 Single 对象。 这个 Single 对象可以将请求失败上报。
 
-Once you have a request, calling `link:../../apidocs/io/vertx/rxjava/core/http/HttpClientRequest.html#rxSend--[rxSend]` will
-send the request and gives a response back.
+调用 `link:../../apidocs/io/vertx/rxjava/core/http/HttpClientRequest.html#rxSend--[rxSend]` 
+方法可以将请求发送出去，并返回响应。
 
 [source,java]
 ----
@@ -573,16 +587,16 @@ Single<HttpClientResponse> request = client
   .flatMap(HttpClientRequest::rxSend);
 request.subscribe(
     response -> {
-      // Process the response
+      // 处理响应
     },
     error -> {
-      // Could not connect
+      // 无法连接
     }
 );
 ----
 
-The response can be processed as an `Observable<Buffer>` with the
-`link:../../apidocs/io/vertx/rxjava/core/http/HttpClientResponse.html#toObservable--[toObservable]` method:
+通过 `link:../../apidocs/io/vertx/rxjava/core/http/HttpClientResponse.html#toObservable--[toObservable]`
+方法可以将响应当成 `Observable<Buffer>` 来处理：
 
 [source,java]
 ----
@@ -595,14 +609,14 @@ request.toObservable().
           Observable<Buffer> observable = response.toObservable();
           observable.forEach(
               buffer -> {
-                // Process buffer
+                // 处理 buffer
               }
           );
         }
     );
 ----
 
-The same flow can be achieved with the `flatMap` operation:
+`flatMap` 操作也能获得同样的流：
 
 [source,java]
 ----
@@ -613,13 +627,13 @@ request.toObservable().
     flatMap(HttpClientResponse::toObservable).
     forEach(
         buffer -> {
-          // Process buffer
+          // 处理 buffer
         }
     );
 ----
 
-We can also unmarshall the `Observable<Buffer>` into an object using the `link:../../apidocs/io/vertx/rxjava/core/RxHelper.html#unmarshaller-java.lang.Class-[RxHelper.unmarshaller]`
-static method. This method creates an `Rx.Observable.Operator` unmarshalling buffers to an object:
+通过静态方法 `link:../../apidocs/io/vertx/rxjava/core/RxHelper.html#unmarshaller-java.lang.Class-[RxHelper.unmarshaller]` ，我们也能将 `Observable<Buffer>` 重组为对象。
+这个方法创建了一个 `Rx.Observable.Operator`（Rx 操作符）供重组操作使用：
 
 [source,java]
 ----
@@ -631,25 +645,26 @@ request.toObservable().
     lift(io.vertx.rxjava.core.RxHelper.unmarshaller(MyPojo.class)).
     forEach(
         pojo -> {
-          // Process pojo
+          // 处理 pojo
         }
     );
 ----
 
-=== Http server requests
+[[_http_server_requests]]
+=== HTTP服务端请求
 
-The `link:../../apidocs/io/vertx/rxjava/core/http/HttpServer.html#requestStream--[requestStream]` provides a callback for each incoming
-request:
+`link:../../apidocs/io/vertx/rxjava/core/http/HttpServer.html#requestStream--[requestStream]`
+方法对到达的每个请求都提供了回调：
 
 [source,java]
 ----
 Observable<HttpServerRequest> requestObservable = server.requestStream().toObservable();
 requestObservable.subscribe(request -> {
-  // Process request
+  // 处理请求
 });
 ----
 
-The `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html[HttpServerRequest]` can then be adapted to an `Observable<Buffer>`:
+`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html[HttpServerRequest]` 可以被适配为 `Observable<Buffer>` ：
 
 [source,java]
 ----
@@ -659,8 +674,8 @@ requestObservable.subscribe(request -> {
 });
 ----
 
-The `link:../../apidocs/io/vertx/rxjava/core/RxHelper.html#unmarshaller-java.lang.Class-[RxHelper.unmarshaller]` can be used to parse and map
-a json request to an object:
+`link:../../apidocs/io/vertx/rxjava/core/RxHelper.html#unmarshaller-java.lang.Class-[RxHelper.unmarshaller]` 方法可以用来解析 JSON 格式的请求，
+并将其映射为对象：
 
 [source,java]
 ----
@@ -672,25 +687,26 @@ requestObservable.subscribe(request -> {
 });
 ----
 
-=== Websocket client
+[[_websocket_client]]
+=== WebSocket客户端
 
-The `link:../../apidocs/io/vertx/rxjava/core/http/HttpClient.html#rxWebSocket-int-java.lang.String-java.lang.String-[rxWebSocket]` provides a single callback when the websocket
-connects, otherwise a failure:
+当 WebSocket 连接成功或失败时， `link:../../apidocs/io/vertx/rxjava/core/http/HttpClient.html#rxWebSocket-int-java.lang.String-java.lang.String-[rxWebSocket]` 
+方法对此提供了一次性的回调：
 
 [source,java]
 ----
 HttpClient client = vertx.createHttpClient(new HttpClientOptions());
 client.rxWebSocket(8080, "localhost", "/the_uri").subscribe(
     ws -> {
-      // Use the websocket
+      // 使用 websocket
     },
     error -> {
-      // Could not connect
+      // 连接失败
     }
 );
 ----
 
-The `link:../../apidocs/io/vertx/rxjava/core/http/WebSocket.html[WebSocket]` can then be turned into an `Observable<Buffer>` easily:
+`link:../../apidocs/io/vertx/rxjava/core/http/WebSocket.html[WebSocket]` 对象可以轻松地转换为 `Observable<Buffer>`：
 
 [source,java]
 ----
@@ -704,10 +720,11 @@ socketObservable.subscribe(
 );
 ----
 
-=== Websocket server
+[[_websocket_server]]
+=== WebSocket服务端
 
-The `link:../../apidocs/io/vertx/rxjava/core/http/HttpServer.html#webSocketStream--[webSocketStream]` provides a callback for each incoming
-connection:
+每当有新连接到达时， `link:../../apidocs/io/vertx/rxjava/core/http/HttpServer.html#webSocketStream--[webSocketStream]` 
+方法都会提供一次回调：
 
 [source,java]
 ----
@@ -721,7 +738,7 @@ socketObservable.subscribe(
 );
 ----
 
-The `link:../../apidocs/io/vertx/core/http/ServerWebSocket.html[ServerWebSocket]` can be turned into an `Observable<Buffer>` easily:
+`link:../../apidocs/io/vertx/core/http/ServerWebSocket.html[ServerWebSocket]` 对象可以轻松地转换为 `Observable<Buffer>` ：
 
 [source,java]
 ----

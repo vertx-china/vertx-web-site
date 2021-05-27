@@ -234,7 +234,7 @@ const entries = [
   {
     id: "vertx-rx-java2",
     name: "RxJava 2",
-    description: "RxJava 2 bindings for the Vert.x APIs, modules and clients.",
+    description: "用于Vert.x API，模块和客户端的 RxJava 2 绑定。",
     category: "reactive",
     href: "/vertx-rx/java2/",
     repository: "https://github.com/vert-x3/vertx-rx",
@@ -244,7 +244,7 @@ const entries = [
   {
     id: "vertx-rx-java",
     name: "RxJava 1",
-    description: "RxJava 1 bindings for the Vert.x APIs, modules and clients.",
+    description: "用于Vert.x API，模块和客户端的 RxJava 1 绑定。",
     category: "reactive",
     href: "/vertx-rx/java/",
     repository: "https://github.com/vert-x3/vertx-rx",
