@@ -388,7 +388,7 @@ fileSystem.open("/data.txt", new OpenOptions(), result -> {
 });
 ----
 
-_Rx化_ 的辅助类也能做同样的事：
+_Rx化_ 的辅助类也能做同样的事情：
 
 [source,java]
 ----
@@ -427,7 +427,7 @@ deployment.subscribe(id -> {
 == Rx化的 API
 
 _Rx化的_ API 是 Vert.x API 的一个代码自动生成版本，就像 Vert.x 的 _JavaScript_ 或 _Groovy_ 版本一样。
-这些 API 以 `io.vertx.rxjava` 为包名前缀，例如 `io.vertx.core.Vertx` 类被转化为
+这些 API 以 `io.vertx.rxjava` 为包名前缀，例如 `io.vertx.core.Vertx` 类对应为
 `link:../../apidocs/io/vertx/rxjava/core/Vertx.html[Vertx]` 类。
 
 [[_embedding_rxfified_vert.x]]
@@ -479,7 +479,7 @@ class MyVerticle extends io.vertx.rxjava.core.AbstractVerticle {
 [[_eventBus_message_stream]]
 === EventBus 消息流
 
-自然地， `link:../../apidocs/io/vertx/rxjava/core/eventbus/MessageConsumer.html[MessageConsumer]` 类提供了相关的 `Observable<Message<T>>` ：
+很自然地， `link:../../apidocs/io/vertx/rxjava/core/eventbus/MessageConsumer.html[MessageConsumer]` 类提供了相关的 `Observable<Message<T>>` ：
 
 [source,java]
 ----
