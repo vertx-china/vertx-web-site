@@ -434,7 +434,7 @@ _Rx化的_ API 是 Vert.x API 的一个代码自动生成版本，就像 Vert.x 
 [[_embedding_rxfified_vert.x]]
 === 嵌入Rx化的 Vert.x
 
-只需使用 ``link:../../apidocs/io/vertx/reactivex/core/Vertx.html#vertx--[Vertx.vertx]` 方法：
+只需使用 `link:../../apidocs/io/vertx/reactivex/core/Vertx.html#vertx--[Vertx.vertx]` 方法：
 
 [source,java]
 ----
