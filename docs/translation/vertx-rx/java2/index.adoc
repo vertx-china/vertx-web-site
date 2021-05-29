@@ -147,7 +147,7 @@ WriteStreamSubscriber<io.vertx.core.buffer.Buffer> subscriber = io.vertx.reactiv
 flowable.subscribe(subscriber);
 ----
 
-TIP: There is also a `io.vertx.reactivex.WriteStreamObserver` adapter for the non-backpressured `io.reactivex.Observable`.
+TIP: 另外也存在用于非背压的 `io.reactivex.Observable` 使用的 `io.vertx.reactivex.WriteStreamObserver` 适配器。
 The difference is that this adapter will send items to the `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` even when it can't keep-up with the producer rate.
 
 如果您使用 _Rx化的_ Vert.x API 进行编程，`link:../../apidocs/io/vertx/reactivex/core/streams/WriteStream.html[WriteStream]` 的实现提供了一个 `toSubscriber` 方法。
